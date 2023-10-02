@@ -1,0 +1,51 @@
+.splitpanes--vertical > .splitpanes__pane {
+    transition: none !important;
+}
+
+.splitpanes--dragging .splitpanes__pane {
+    transition: none !important;
+}
+
+.splitpanes.chromoskein .splitpanes__pane {
+    background-color: rgb(30, 30, 30);
+    position: relative;
+}
+
+.splitpanes.chromoskein .splitpanes__splitter {
+    background-color: rgb(60, 60, 60);
+    position: relative;
+}
+
+.splitpanes.chromoskein .splitpanes__splitter:before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    transition: opacity 0.4s;
+    background-color: rgba(90, 90, 90, 0.4);
+    opacity: 0;
+    z-index: 1;
+}
+
+.splitpanes.chromoskein .splitpanes__splitter:hover:before {
+    opacity: 1;
+}
+
+.splitpanes.chromoskein .splitpanes__splitter.splitpanes__splitter__active {
+    z-index: 2;
+    /* Fix an issue of overlap fighting with a near hovered splitter */
+}
+
+.splitpanes.chromoskein.splitpanes--vertical>.splitpanes__splitter:before {
+    left: -8px;
+    right: -8px;
+    height: 100%;
+    cursor: col-resize;
+}
+
+.splitpanes.chromoskein.splitpanes--horizontal>.splitpanes__splitter:before {
+    top: -8px;
+    bottom: -8px;
+    width: 100%;
+    cursor: row-resize;
+}
