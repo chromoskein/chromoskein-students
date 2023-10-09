@@ -50,6 +50,7 @@
   const graphicsLibrary: Writable<Graphics.GraphicsLibrary | null> = writable(null);
 
   let viewport: Graphics.Viewport3D | null = null;
+  let viewport2d: Graphics.DistanceViewport | null = null;
 
   //#region Data
   const filenames: string[] = new Array(600).fill(null).map((v, i) => "./timeseries/timestep_" + (i + 1).toString() + ".XYZ");
@@ -234,6 +235,8 @@
   import { random } from "graphology-layout";
   import * as graphologyCanvas from "graphology-canvas";
   import Sigma from "sigma";
+    import Viewport2D from "./Viewport2D.svelte";
+    import DistanceMap from "./objects/DistanceMap.svelte";
 
   function componentToHex(c) {
     var hex = c.toString(16);
@@ -359,6 +362,14 @@
             }}
           /> -->
           <!-- <div bind:this={sigmaContainer} style="width: 400px; height: 400px; display: relative; background: white;" /> -->
+          {#if $adapter && $device && $graphicsLibrary && dataTimesteps && dataTimesteps.length > volumeTimeRange[1]}
+            <Viewport2D> 
+              <DistanceMap
+                points={dataTimesteps[selectedTimestep]}
+              />
+            </Viewport2D>
+          {/if}
+          <!--
           <div class={`arrows ${blobsStyle}`}>
             {#if dataClustersGivenK && dataPathlines}
               {#each Array(blobsAmount) as _, index (index)}
@@ -375,6 +386,7 @@
               {/each}
             {/if}
           </div>
+          -->
         </Pane>
         <Pane size={90}>
           {#if $adapter && $device && $graphicsLibrary && dataTimesteps && dataTimesteps.length > volumeTimeRange[1]}
@@ -410,7 +422,7 @@
       </Splitpanes>
     </Pane>
     <Pane size={20}>
-      <div style="padding: 8px;">
+      <div style="padding: 8px; color:white">
         <Accordion>
           <AccordionItem open title="Volume">
             <Checkbox labelText="Visible" bind:checked={volumeVisible} />

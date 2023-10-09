@@ -3,6 +3,7 @@ import type { SmoothCamera } from "./cameras/smooth";
 import { Mesh } from "./rendering/objects/mesh";
 import { Circle, RoundedCone, RoundedConeInstanced, Sphere, Spline, SignedDistanceGrid, Volume } from "./rendering/objects/parametric";
 import { Scene } from "./scene";
+import { DistanceViewport } from "./viewports/distanceViewport";
 import { Viewport3D } from "./viewports/index";
 
 export * from "./cameras/index";
@@ -88,6 +89,10 @@ export class GraphicsLibrary {
 
     public create3DViewport(scene: Scene | null = null, camera: OrbitCamera | SmoothCamera | null = null): Viewport3D {
         return new Viewport3D(this, scene, camera);
+    }
+
+    public create2DViewport(): DistanceViewport {
+        return new DistanceViewport(this);
     }
 
     public createScene(): Scene {
