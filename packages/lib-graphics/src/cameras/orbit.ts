@@ -24,6 +24,10 @@ export class OrbitCamera extends Camera {
         this.updateCPU();
     }
 
+    public get distance(){
+        return this._distance;
+    }
+
     public set distance(distance: number) {
         this._distance = distance;
 

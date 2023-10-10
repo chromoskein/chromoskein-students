@@ -1,4 +1,5 @@
-import { GraphicsLibrary, Pass, PassRenderSettings } from "../../..";
+import { GraphicsLibrary, PassRenderSettings } from "../../..";
+import { Pass } from "../shared";
 import { BlueNoise } from "./noise";
 import { Pipelines } from "./pipelines";
 import * as r from 'restructure';
