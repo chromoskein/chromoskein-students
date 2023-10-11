@@ -237,6 +237,7 @@
   import Sigma from "sigma";
     import Viewport2D from "./Viewport2D.svelte";
     import DistanceMap from "./objects/DistanceMap.svelte";
+    import ChromatinViewport from "./ChromatinViewport.svelte";
 
   function componentToHex(c) {
     var hex = c.toString(16);
@@ -318,7 +319,7 @@
   <Splitpanes theme="chromoskein" horizontal={false}>
     <Pane>
       <Splitpanes theme="chromoskein" horizontal={false}>
-        <Pane size={10}>
+        <Pane size={50}>
           <!-- <LineChart
             theme="g90"
             data={lineChartMovementAmount}
@@ -363,32 +364,41 @@
           /> -->
           <!-- <div bind:this={sigmaContainer} style="width: 400px; height: 400px; display: relative; background: white;" /> -->
           {#if $adapter && $device && $graphicsLibrary && dataTimesteps && dataTimesteps.length > volumeTimeRange[1]}
+            <div class="arrows"> 
+              <ChromatinViewport
+                chromatinParts={[dataTimesteps[selectedTimestep]]}
+                approximateCurve={pathlinesApproximate}
+                radius={blobsRadius}
+              />
+            </div>
+          <!--
             <Viewport2D> 
               <DistanceMap
                 points={dataTimesteps[selectedTimestep]}
               />
             </Viewport2D>
-          {/if}
-          <!--
-          <div class={`arrows ${blobsStyle}`}>
-            {#if dataClustersGivenK && dataPathlines}
-              {#each Array(blobsAmount) as _, index (index)}
-                <PathlineViewport
-                  {dataClustersGivenK}
-                  {dataPathlines}
-                  t={selectedTimestep / (dataTimesteps.length - 1)}
-                  currentLevel={blobsAmount}
-                  clusterIndex={index}
-                  simplifyFactor={pathlinesSimplifyFactor}
-                  showChildren={pathlinesShowChildren}
-                  approximateCurve={pathlinesApproximate}
-                />
-              {/each}
-            {/if}
-          </div>
           -->
+          <!--
+            <div class={`arrows ${blobsStyle}`}>
+              {#if dataClustersGivenK && dataPathlines}
+                {#each Array(blobsAmount) as _, index (index)}
+                  <PathlineViewport
+                    {dataClustersGivenK}
+                    {dataPathlines}
+                    t={selectedTimestep / (dataTimesteps.length - 1)}
+                    currentLevel={blobsAmount}
+                    clusterIndex={index}
+                    simplifyFactor={pathlinesSimplifyFactor}
+                    showChildren={pathlinesShowChildren}
+                    approximateCurve={pathlinesApproximate}
+                  />
+                {/each}
+              {/if}
+            </div>
+          -->
+          {/if}
         </Pane>
-        <Pane size={90}>
+        <Pane size={50}>
           {#if $adapter && $device && $graphicsLibrary && dataTimesteps && dataTimesteps.length > volumeTimeRange[1]}
             <Viewport3D bind:viewport>
               <TimeVolume

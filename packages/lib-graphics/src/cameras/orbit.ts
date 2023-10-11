@@ -7,7 +7,7 @@ import { mat4, vec3 } from "gl-matrix";
 export class OrbitCamera extends Camera {
     private _rotX = 0.0;
     private _rotY = 0.0;
-    private _distance = 2.0;
+    private _distance = 4.0;
     private _lookAtPosition: vec3 = vec3.fromValues(0.0, 0.0, 0.0);
     private _upVector: vec3;
 
