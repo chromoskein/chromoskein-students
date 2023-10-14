@@ -10,6 +10,7 @@
   export let radius = 0.3;
   export let points: vec3[] = [];
   export let color: vec3 = vec3.fromValues(1.0, 1.0, 1.0);
+  export let multicolored: boolean = false;
 
   let object: Graphics.RoundedConeInstanced;
   let objectID: number | null = null;
@@ -37,6 +38,14 @@
 
       object.properties[i].startRadius = radius;
       object.properties[i].endRadius = radius;
+
+      if (multicolored) {
+        color[2] = 0.0;
+        color[1] = 0.0 + i * 1.0/points.length;
+      } else {
+        color[2] = 1.0;
+        color[1] = 1.0;
+      }
 
       object.properties[i].color = [color[0], color[1], color[2], 1.0];
     }

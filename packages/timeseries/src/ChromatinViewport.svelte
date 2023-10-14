@@ -9,6 +9,7 @@
     export let chromatinParts: vec3[][] = null;
     export let approximateCurve: boolean = false;
     export let radius : number = 0.03;
+    export let multicolored: boolean = false;
 
     let pathlines: vec3[][] | null = null;
     let colors: vec3[] | null = null;
@@ -21,7 +22,7 @@
     $: if (chromatinParts) {
         colors = new Array<vec3>();
         for (let i = 0; i < chromatinParts.length; i++) {
-            colors.push(vec3.fromValues(1.0, 1.0, 1.0));    
+            colors.push(vec3.fromValues(1.0, 1.0, 1.0));
         }
     }
 
@@ -36,13 +37,13 @@
         {#if !approximateCurve && pathlines}
             {#each pathlines as chromatinPart, index} 
                 <!-- Adds a ContinuousTube for each chromatin part into the scene -->
-                <ContinuousTube points={chromatinPart} radius={radius} color={colors[index]} />
+                <ContinuousTube points={chromatinPart} radius={radius} color={colors[index]} multicolored={multicolored} />
             {/each}
         {/if}
         
         {#if approximateCurve && chromatinParts}
             {#each splinePathlines as chromatinPartSpline, index} 
-                <Spline points={chromatinPartSpline} radius={radius} color={colors[index]} />
+                <Spline points={chromatinPartSpline} radius={radius} color={colors[index]}  multicolored={multicolored} />
             {/each}
         {/if}
         
