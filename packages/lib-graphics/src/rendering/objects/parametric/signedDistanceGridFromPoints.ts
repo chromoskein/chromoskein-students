@@ -1,3 +1,6 @@
+
+import { GridTextureSize } from "./signedDistanceGrid";
+
 export const signedDistanceGridFromPoints = () => {
     return /* wgsl */`
 
@@ -25,16 +28,17 @@ fn sdSphere(p: vec3<f32>, c: vec3<f32>, s: f32 ) -> f32
 // @group(0) @binding(0) var<uniform> globals: GlobalsStruct;
 @group(0) @binding(0) var<storage, read> points: array<vec4<f32>>;
 @group(0) @binding(1) var grid: texture_storage_3d<r32float, write>;
+@group(0) @binding(2) var<storage, read> delimiters: array<u32>;
 
 @compute @workgroup_size(4, 4, 4) fn main(@builtin(global_invocation_id) GlobalInvocationID: vec3<u32>) {
-    let positionNDC = (1.0 / 64.0) * vec3<f32>(GlobalInvocationID.xyz) + vec3<f32>(1.0 / 128.0);
+    let positionNDC = (1.0 / ${GridTextureSize}) * vec3<f32>(GlobalInvocationID.xyz) + vec3<f32>(1.0 / ${2 * GridTextureSize});
     let p = 2.0 * (positionNDC - vec3<f32>(0.5)); // [-1, 1]
 
     let radius = points[0].w;
     
     var sdf = sdCapsule(p, points[0].xyz, points[1].xyz, radius);
     let len: u32 = arrayLength(&points);
-    for(var i: u32 = 0; i < len - 1; i++) {
+    for(var i: u32 = delimiters[0]; i < delimiters[1] - 1; i++) {
         let p1 = points[i].xyz;
         let p2 = points[i + 1].xyz;
 
