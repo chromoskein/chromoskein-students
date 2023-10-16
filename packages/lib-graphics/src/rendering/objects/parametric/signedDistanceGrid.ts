@@ -84,6 +84,7 @@ export interface SignedDistanceGridProperties {
     translate: vec4,
     scale: vec4,
 }
+const SignedDistanceGridStructUniformSize: number = 176;
 
 export const SignedDistanceGridStruct = new r.Struct({
     modelMatrix: new r.Array(r.floatle, 16),
@@ -111,7 +112,7 @@ export class SignedDistanceGrid extends IParametricObject {
             entries: [{
                 binding: 0,
                 visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-                buffer: { type: 'uniform' },
+                buffer: { type: 'read-only-storage' },
             }, {
                 binding: 1,
                 visibility: GPUShaderStage.FRAGMENT,
@@ -130,10 +131,10 @@ export class SignedDistanceGrid extends IParametricObject {
         ];
     }
 
-    public properties: SignedDistanceGridProperties;
+    public properties: SignedDistanceGridProperties[];
 
     //#region GPU Code
-    public static gpuCodeGlobals = /* wgsl */`
+    public static gpuCodeGlobals: string = /* wgsl */`
         struct ${this.typeName} {
             modelMatrix: mat4x4<f32>,
             modelMatrixInverse: mat4x4<f32>,
@@ -142,7 +143,7 @@ export class SignedDistanceGrid extends IParametricObject {
             scale: vec3<f32>,
         };
         
-        @group(1) @binding(0) var<uniform> ${this.variableName}: ${this.typeName};
+        @group(1) @binding(0) var<storage, read> ${this.variableName}: array<${this.typeName}>;
         @group(1) @binding(1) var ${this.variableName}Texture: texture_3d<f32>;
         @group(1) @binding(2) var linearSampler: sampler;
         `;
@@ -151,36 +152,34 @@ export class SignedDistanceGrid extends IParametricObject {
         public static gpuCodeGetObjectUntypedArray = ``;
 
         static gpuCodeIntersectionTest = /* wgsl */`
-        fn calcNormal(p: vec3<f32>) -> vec3<f32> // for function f(p)
+        fn calcNormal(p: vec3<f32>, i: u32) -> vec3<f32> // for function f(p)
         {
             let h = 0.1;
             let k = vec2<f32>(1.0, -1.0);
 
-            return normalize( k.xyy*sampleGrid( p + k.xyy*h ) + 
-                              k.yyx*sampleGrid( p + k.yyx*h ) + 
-                              k.yxy*sampleGrid( p + k.yxy*h ) + 
-                              k.xxx*sampleGrid( p + k.xxx*h ) );
+            return normalize( k.xyy*sampleGrid( p + k.xyy*h , i ) + 
+                              k.yyx*sampleGrid( p + k.yyx*h , i ) + 
+                              k.yxy*sampleGrid( p + k.yxy*h , i ) + 
+                              k.xxx*sampleGrid( p + k.xxx*h , i ) );
         }
 
-        fn sampleGrid(p: vec3<f32>) -> f32 {
+        fn sampleGrid(p: vec3<f32>, i: u32) -> f32 {
             var coords = 0.5 * p + vec3<f32>(0.5);
-            // coords.y = 1.0 - coords.y;
-            // coords.z = 1.0 - coords.z;
             coords = ${GridTextureSize} * coords;
             let coordsU32 = vec3<u32>(floor(coords));
             let coordsFract = fract(coords);
             let tx = coordsFract.x;
-            let ty = coordsFract.y;
+            let ty = coordsFract.y;       
             let tz = coordsFract.z;
 
-            let c000 = textureLoad(${this.variableName}Texture, clamp(coordsU32 + vec3<u32>(0, 0, 0), vec3<u32>(0), vec3<u32>(${GridTextureSize - 1})), 0).x;
-            let c100 = textureLoad(${this.variableName}Texture, clamp(coordsU32 + vec3<u32>(1, 0, 0), vec3<u32>(0), vec3<u32>(${GridTextureSize - 1})), 0).x;
-            let c010 = textureLoad(${this.variableName}Texture, clamp(coordsU32 + vec3<u32>(0, 1, 0), vec3<u32>(0), vec3<u32>(${GridTextureSize - 1})), 0).x;
-            let c110 = textureLoad(${this.variableName}Texture, clamp(coordsU32 + vec3<u32>(1, 1, 0), vec3<u32>(0), vec3<u32>(${GridTextureSize - 1})), 0).x;
-            let c001 = textureLoad(${this.variableName}Texture, clamp(coordsU32 + vec3<u32>(0, 0, 1), vec3<u32>(0), vec3<u32>(${GridTextureSize - 1})), 0).x;
-            let c101 = textureLoad(${this.variableName}Texture, clamp(coordsU32 + vec3<u32>(1, 0, 1), vec3<u32>(0), vec3<u32>(${GridTextureSize - 1})), 0).x;
-            let c011 = textureLoad(${this.variableName}Texture, clamp(coordsU32 + vec3<u32>(0, 1, 1), vec3<u32>(0), vec3<u32>(${GridTextureSize - 1})), 0).x;
-            let c111 = textureLoad(${this.variableName}Texture, clamp(coordsU32 + vec3<u32>(1, 1, 1), vec3<u32>(0), vec3<u32>(${GridTextureSize - 1})), 0).x;
+            let c000 = textureLoad(${this.variableName}Texture, clamp(coordsU32 + vec3<u32>(0, 0, 0 + i * ${GridTextureSize}), vec3<u32>(0, 0, i * ${GridTextureSize}), vec3<u32>(${GridTextureSize - 1}, ${GridTextureSize - 1}, i * ${GridTextureSize} + ${GridTextureSize - 1})), 0).x;
+            let c100 = textureLoad(${this.variableName}Texture, clamp(coordsU32 + vec3<u32>(1, 0, 0 + i * ${GridTextureSize}), vec3<u32>(0, 0, i * ${GridTextureSize}), vec3<u32>(${GridTextureSize - 1}, ${GridTextureSize - 1}, i * ${GridTextureSize} + ${GridTextureSize - 1})), 0).x;
+            let c010 = textureLoad(${this.variableName}Texture, clamp(coordsU32 + vec3<u32>(0, 1, 0 + i * ${GridTextureSize}), vec3<u32>(0, 0, i * ${GridTextureSize}), vec3<u32>(${GridTextureSize - 1}, ${GridTextureSize - 1}, i * ${GridTextureSize} + ${GridTextureSize - 1})), 0).x;
+            let c110 = textureLoad(${this.variableName}Texture, clamp(coordsU32 + vec3<u32>(1, 1, 0 + i * ${GridTextureSize}), vec3<u32>(0, 0, i * ${GridTextureSize}), vec3<u32>(${GridTextureSize - 1}, ${GridTextureSize - 1}, i * ${GridTextureSize} + ${GridTextureSize - 1})), 0).x;
+            let c001 = textureLoad(${this.variableName}Texture, clamp(coordsU32 + vec3<u32>(0, 0, 1 + i * ${GridTextureSize}), vec3<u32>(0, 0, i * ${GridTextureSize}), vec3<u32>(${GridTextureSize - 1}, ${GridTextureSize - 1}, i * ${GridTextureSize} + ${GridTextureSize - 1})), 0).x;
+            let c101 = textureLoad(${this.variableName}Texture, clamp(coordsU32 + vec3<u32>(1, 0, 1 + i * ${GridTextureSize}), vec3<u32>(0, 0, i * ${GridTextureSize}), vec3<u32>(${GridTextureSize - 1}, ${GridTextureSize - 1}, i * ${GridTextureSize} + ${GridTextureSize - 1})), 0).x;
+            let c011 = textureLoad(${this.variableName}Texture, clamp(coordsU32 + vec3<u32>(0, 1, 1 + i * ${GridTextureSize}), vec3<u32>(0, 0, i * ${GridTextureSize}), vec3<u32>(${GridTextureSize - 1}, ${GridTextureSize - 1}, i * ${GridTextureSize} + ${GridTextureSize - 1})), 0).x;
+            let c111 = textureLoad(${this.variableName}Texture, clamp(coordsU32 + vec3<u32>(1, 1, 1 + i * ${GridTextureSize}), vec3<u32>(0, 0, i * ${GridTextureSize}), vec3<u32>(${GridTextureSize - 1}, ${GridTextureSize - 1}, i * ${GridTextureSize} + ${GridTextureSize - 1})), 0).x;
 
             return 
                 (1.0 - tx) * (1.0 - ty) * (1.0 - tz) * c000 + 
@@ -193,7 +192,7 @@ export class SignedDistanceGrid extends IParametricObject {
                 tx * ty * tz * c111; 
         }
 
-        fn ray${this.typeName}Intersection(ray: Ray, ${this.variableName}: ${this.typeName}) -> Intersection {
+        fn ray${this.typeName}Intersection(ray: Ray, ${this.variableName}: ${this.typeName}, index: u32) -> Intersection {
             let rayOriginLocalSpace = (${this.variableName}.modelMatrixInverse * vec4<f32>(ray.origin, 1.0)).xyz;
             let rayDirectionLocalSpace = normalize(${this.variableName}.modelMatrixInverse * vec4<f32>(ray.direction, 0.0)).xyz;
 
@@ -227,7 +226,7 @@ export class SignedDistanceGrid extends IParametricObject {
             var distance = 0.0;
             for(var i = 0; i < ${GridTextureSize}; i++) {
                 intersection = rayOriginLocalSpace + t * rayDirectionLocalSpace;
-                distance = sampleGrid(intersection);
+                distance = sampleGrid(intersection, index);
 
                 if (abs(distance) <= 0.0005) {
                     break;
@@ -244,18 +243,42 @@ export class SignedDistanceGrid extends IParametricObject {
             return Intersection(
                 t,
                 (${this.variableName}.modelMatrix * vec4<f32>(intersection, 1.0)).xyz,
-                calcNormal(intersection)
+                calcNormal(intersection, index)
             );
         }
     `;
+
+    public static gpuCodeGetIntersection(name: string, typeName: string): string {
+        return /* wgsl */`
+        var intersection = ray${typeName}Intersection(ray, ${name}[0], 0);
+        var color = vec4<f32>(0.0, 0.0, 0.0, 1.0);
+        
+        intersection = ray${typeName}Intersection(ray, ${name}[0], 0);
+        color = vec4(${this.variableName}[0].color.rgb, 1.0);
+        
+        if (arrayLength(&${name}) > 2) {
+            var intersection1 = ray${typeName}Intersection(ray, ${name}[1], 1);
+            var intersection2 = ray${typeName}Intersection(ray, ${name}[2], 2);
+            if (intersection1.t > 0.0 && intersection2.t > 0.0) {
+                intersection = intersection2;
+                color = vec4(${this.variableName}[2].color.rgb * 0.5 +  ${this.variableName}[1].color.rgb * 0.5, 1.0);
+            } else if (intersection1.t > 0.0) {
+                intersection = intersection1;
+                color = vec4(${this.variableName}[1].color.rgb, 1.0);
+            } else if (intersection2.t > 0.0) {
+                intersection = intersection2;
+                color = vec4(${this.variableName}[2].color.rgb, 1.0);
+            } else {
+                intersection.t = -1.0;
+            }    
+        }
+        
+    `}
 
     static gpuCodeGetOutputValue(variable: 'color' | 'normal' | 'ao'): string {
         switch (variable) {
             case 'color': {
                 return /* wgsl */`
-                    var color = vec4<f32>(0.0, 0.0, 0.0, 1.0);
-
-                    color = vec4(${this.variableName}.color.rgb, 1.0);
                 `;
             }
             case 'normal': {
@@ -271,9 +294,9 @@ export class SignedDistanceGrid extends IParametricObject {
         }
     }
 
-    static gpuCodeGetBoundingRectangleVertex = `
-        let begin = ${this.variableName}.modelMatrix * vec4<f32>(-1.0, -1.0, -1.0, 1.0);
-        let end = ${this.variableName}.modelMatrix * vec4<f32>(1.0);
+    static gpuCodeGetBoundingRectangleVertex = /*wgsl*/`
+        let begin = ${this.variableName}[0].modelMatrix * vec4<f32>(-1.0, -1.0, -1.0, 1.0);
+        let end = ${this.variableName}[0].modelMatrix * vec4<f32>(1.0);
 
         let center = 0.5 * (begin.xyz + end.xyz);
         let radius = distance(center, begin.xyz);
@@ -293,19 +316,22 @@ export class SignedDistanceGrid extends IParametricObject {
     private _bindGroup: GPUBindGroup | null = null;
     private _texture: GPUTexture | null = null;
 
-    constructor(id: number, graphicsLibrary: GraphicsLibrary, allocator: Allocator) {
+    constructor(id: number, graphicsLibrary: GraphicsLibrary, allocator: Allocator, instances: number = 1) {
         super(id, graphicsLibrary, allocator);
 
         this._pipelines = Pipelines.getInstance(graphicsLibrary);
 
-        this._allocation = allocator.allocate(256);
+        this._allocation = allocator.allocate(SignedDistanceGridStructUniformSize * instances);
 
-        this.properties = SignedDistanceGridStruct.fromBuffer(new Uint8Array(256));
-        this.properties.modelMatrix = mat4.create();
-        this.properties.modelMatrixInverse = mat4.invert(mat4.create(), this.properties.modelMatrix);
-        this.properties.color = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
-        this.properties.translate = vec4.fromValues(0.0, 0.0, 0.0, 0.0);
-        this.properties.scale = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
+        this.properties = new r.Array(SignedDistanceGridStruct, instances);
+        for (let i = 0; i < instances; i++){
+            this.properties[i] = SignedDistanceGridStruct.fromBuffer(new Uint8Array(SignedDistanceGridStructUniformSize));
+            this.properties[i].modelMatrix = mat4.create();
+            this.properties[i].modelMatrixInverse = mat4.invert(mat4.create(), this.properties[i].modelMatrix);
+            this.properties[i].color = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
+            this.properties[i].translate = vec4.fromValues(0.0, 0.0, 0.0, 0.0);
+            this.properties[i].scale = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
+        }
         this.onAllocationMoved();
     }
 
@@ -341,7 +367,7 @@ export class SignedDistanceGrid extends IParametricObject {
     //     this.onAllocationMoved();
     // }
 
-    public fromPoints(device: GPUDevice, points: Array<vec3>, radius: number = 0.05) {
+    public fromPoints(device: GPUDevice, points: Array<Array<vec3>>, radius: number = 0.05) {
         const pipeline = this._pipelines.computePipelines.get('gridFromPoints');
         const bgl = this._pipelines.bindGroupLayouts.get('gridFromPoints');
 
@@ -353,7 +379,7 @@ export class SignedDistanceGrid extends IParametricObject {
                 size: {
                     width: GridTextureSize,
                     height: GridTextureSize,
-                    depthOrArrayLayers: GridTextureSize,
+                    depthOrArrayLayers: points.length * GridTextureSize,
                 },
                 mipLevelCount: 1,
                 dimension: "3d",
@@ -362,19 +388,30 @@ export class SignedDistanceGrid extends IParametricObject {
             });
         }
 
-        const writeRadius = radius * (1.0 / this.properties.scale[0]);
+        const writeRadius = radius * (1.0 / this.properties[0].scale[0]);
 
-        const delimitersCPUBuffer = new Uint32Array(2);
-        const pointsCPUBuffer = new Float32Array(points.length * 4);
-        
-        delimitersCPUBuffer.set([0, points.length], 0)
+        const delimitersCPUBuffer = new Uint32Array(points.length + 1);
+        let delimiters = [0];
+        let len = 0;
         for(let i = 0; i < points.length; i++) {
-            pointsCPUBuffer.set(points[i], 4 * i);
-            pointsCPUBuffer.set([writeRadius], 4 * i + 3);
+            len += points[i].length;
+            delimiters.push(len);
+        }
+        delimitersCPUBuffer.set(delimiters, 0);
+
+        const pointsCPUBuffer = new Float32Array(len * 4);
+        
+        let offset = 0;
+        for (let j = 0; j < points.length; j++) {
+            for(let i = 0; i < points[j].length; i++) {
+                pointsCPUBuffer.set(points[j][i], 4 * i + 4 * offset);
+                pointsCPUBuffer.set([writeRadius], 4 * i + 3 + 4 * offset);
+            }
+            offset += points[j].length;
         }
 
-        const pointsBuffer = device.createBuffer({ size: points.length * 4 * 4, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE });
-        const delmitersBuffer = device.createBuffer( { size: 2 * 4, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE })
+        const pointsBuffer = device.createBuffer({ size: len * 4 * 4, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE });
+        const delmitersBuffer = device.createBuffer( { size: delimiters.length * 4, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE })
         const bindGroup = device.createBindGroup({
             layout: bgl,
             entries: [{
@@ -396,7 +433,7 @@ export class SignedDistanceGrid extends IParametricObject {
         computePass.setPipeline(pipeline);
         computePass.setBindGroup(0, bindGroup);
         const workgroupSize: number = GridTextureSize / 4;
-        computePass.dispatchWorkgroups(workgroupSize, workgroupSize, workgroupSize);
+        computePass.dispatchWorkgroups(workgroupSize, workgroupSize, points.length * workgroupSize);
         computePass.end();
 
         device.queue.submit([commandEncoder.finish()]);
@@ -404,29 +441,29 @@ export class SignedDistanceGrid extends IParametricObject {
         this.onAllocationMoved();
     }
 
-    public set translate(t: vec3) {
-        this.properties.translate = [t[0], t[1], t[2], 1.0];
-        this.properties.modelMatrix = mat4.create();
-        mat4.scale(this.properties.modelMatrix, this.properties.modelMatrix, vec3.fromValues(this.properties.scale[0], this.properties.scale[1], this.properties.scale[2]));
-        mat4.translate(this.properties.modelMatrix, this.properties.modelMatrix, t);
+    public translate(t: vec3, index: number = 0) {
+        this.properties[index].translate = [t[0], t[1], t[2], 1.0];
+        this.properties[index].modelMatrix = mat4.create();
+        mat4.scale(this.properties[index].modelMatrix, this.properties[index].modelMatrix, vec3.fromValues(this.properties[index].scale[index], this.properties[index].scale[1], this.properties[index].scale[2]));
+        mat4.translate(this.properties[index].modelMatrix, this.properties[index].modelMatrix, t);
 
-        this.properties.modelMatrixInverse = mat4.invert(mat4.create(), this.properties.modelMatrix);
+        this.properties[index].modelMatrixInverse = mat4.invert(mat4.create(), this.properties[index].modelMatrix);
 
         this._dirtyCPU = true;
         this._dirtyGPU = true;
     }
 
-    public set scale(s: number) {
-        this.properties.scale = [s, s, s, 1.0];
-        this.properties.modelMatrix = mat4.create();
-        mat4.scale(this.properties.modelMatrix, this.properties.modelMatrix, vec3.fromValues(s, s, s));  
+    public scale(s: number, index: number = 0) {
+        this.properties[index].scale = [s, s, s, 1.0];
+        this.properties[index].modelMatrix = mat4.create();
+        mat4.scale(this.properties[index].modelMatrix, this.properties[index].modelMatrix, vec3.fromValues(s, s, s));  
         // mat4.translate(this.properties.modelMatrix, this.properties.modelMatrix, vec3.fromValues(this.properties.translate[0], this.properties.translate[1], this.properties.translate[2]));      
 
-        this.properties.modelMatrix[12] = this.properties.translate[0];
-        this.properties.modelMatrix[13] = this.properties.translate[1];
-        this.properties.modelMatrix[14] = this.properties.translate[2];
-        this.properties.modelMatrix[15] = 1.0;
-        this.properties.modelMatrixInverse = mat4.invert(mat4.create(), this.properties.modelMatrix);
+        this.properties[index].modelMatrix[12] = this.properties[index].translate[0];
+        this.properties[index].modelMatrix[13] = this.properties[index].translate[1];
+        this.properties[index].modelMatrix[14] = this.properties[index].translate[2];
+        this.properties[index].modelMatrix[15] = 1.0;
+        this.properties[index].modelMatrixInverse = mat4.invert(mat4.create(), this.properties[index].modelMatrix);
 
         this._dirtyCPU = true;
         this._dirtyGPU = true;
@@ -473,6 +510,8 @@ export class SignedDistanceGrid extends IParametricObject {
 
     public toBuffer(buffer: ArrayBuffer, offset: number): void {
         const u8View = new Uint8Array(buffer, offset);
-        u8View.set(SignedDistanceGridStruct.toBuffer(this.properties), 0);
+        for (let i = 0; i < this.properties.length; i++) {
+            u8View.set(SignedDistanceGridStruct.toBuffer(this.properties[i]), i * SignedDistanceGridStructUniformSize);
+        }
     }
 }

@@ -21,11 +21,11 @@
     let objectID: number | null = null;
 
 
-    $: if (viewport) [object, objectID] = $viewport.scene.addObject(SignedDistanceGrid);
-    $: if (object) object.translate = [translate[0], translate[1], translate[2]];
-    $: if (object) object.scale = scale;
-    $: if (object) { object.properties.color = vec4.fromValues(color[0], color[1], color[2], 1.0); object.setDirtyCPU(); };
-    $: if (object) object.fromPoints($device, points, radius);
+    $: if (viewport) [object, objectID] = $viewport.scene.addObjectInstanced(SignedDistanceGrid, 1);
+    $: if (object) object.translate([translate[0], translate[1], translate[2]], 0);
+    $: if (object) object.scale(scale, 0);
+    $: if (object) { object.properties[0].color = vec4.fromValues(color[0], color[1], color[2], 1.0); object.setDirtyCPU(); };
+    $: if (object) object.fromPoints($device, [points], radius);
     $: if (object) object.visible = visible;
 
     onMount(() => {

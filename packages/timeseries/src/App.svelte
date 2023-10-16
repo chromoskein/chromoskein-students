@@ -131,30 +131,50 @@
       for (const [index, clusteredPathline] of dataClusteredPathlines.entries()) {
         const points = clusteredPathline.map((pathline) => pathline[timestep]);
 
-        let bb = Graphics.BoundingBoxFromPoints(points);
-        Graphics.BoundingBoxCalculateCenter(bb);
-
-        let bbSizeLengthsVec3 = vec3.sub(vec3.create(), bb.max, bb.min);
-        let bbSizeLengths = [Math.abs(bbSizeLengthsVec3[0]), Math.abs(bbSizeLengthsVec3[1]), Math.abs(bbSizeLengthsVec3[2])];
-        let maxLength = Math.max(...bbSizeLengths) * 0.25;
-
-        bb.min = vec3.add(vec3.create(), bb.min, vec3.fromValues(-maxLength, -maxLength, -maxLength));
-        bb.max = vec3.add(vec3.create(), bb.max, vec3.fromValues(maxLength, maxLength, maxLength));
-
-        const normalizedPoints: Array<vec3> = Graphics.normalizePointsByBoundingBox(bb, points);
-
-        bbSizeLengthsVec3 = vec3.sub(vec3.create(), bb.max, bb.min);
-        bbSizeLengths = [Math.abs(bbSizeLengthsVec3[0]), Math.abs(bbSizeLengthsVec3[1]), Math.abs(bbSizeLengthsVec3[2])];
-        maxLength = Math.max(...bbSizeLengths);
-
-        blobsPointsAtTimestep.push({
-          normalizedPoints,
-          center: vec3.clone(bb.center),
-          scale: 0.5 * maxLength,
-        });
+        blobsPointsAtTimestep.push(blobFromPoints(points));
       }
 
       blobs.push(blobsPointsAtTimestep);
+    }
+  }
+
+  let matryoshkaColors: vec3[] = [];
+  let matryoshkaBlobs: {
+    normalizedPoints: vec3[];
+    center: vec3;
+    scale: number;
+  }[][] = [];
+
+  $: if (dataClustersGivenK && dataPathlines) {
+    matryoshkaBlobs = [];
+    matryoshkaColors = [];
+    let depth = 2;
+    let k = 1;
+
+    let clusterPoints = [];
+    for (let i = 0; i < depth; i++) {
+      let clusters = dataClustersGivenK[k];
+
+      for (const [clusterIndex, cluster] of clusters.entries()) {
+        clusterPoints.push(dataPathlines.slice(cluster.from, cluster.to + 1));
+        matryoshkaColors.push(cluster.color.rgb);
+      }
+      k = k * 2;
+    }
+
+    for (let timestep = 0; timestep < dataTimesteps.length; timestep++) {
+      let blobsPointsAtTimestep: {
+        normalizedPoints: vec3[];
+        center: vec3;
+        scale: number;
+      }[] = [];
+      for (const [index, clusteredPathline] of clusterPoints.entries()) {
+        const points = clusteredPathline.map((pathline) => pathline[timestep]);
+
+        blobsPointsAtTimestep.push(blobFromPoints(points));
+      }
+
+      matryoshkaBlobs.push(blobsPointsAtTimestep);
     }
   }
 
@@ -182,7 +202,7 @@
 
   //#region Configuration
   // Volume
-  let volumeVisible = true;
+  let volumeVisible = false;
   let volumeTransparency = 0.15;
   let volumeRadius = 0.03;
   let volumeColormapChoice = "Cool Warm";
@@ -194,6 +214,7 @@
   let blobsRadius = 0.03;
   let blobsAmount = 1;
   let blobsColored = true;
+  let blobMatryoshka = true;
 
   let pathlinesSimplifyFactor = 0.0;
   let pathlinesShowChildren = false;
@@ -238,6 +259,7 @@
     import Viewport2D from "./Viewport2D.svelte";
     import DistanceMap from "./objects/DistanceMap.svelte";
     import ChromatinViewport from "./ChromatinViewport.svelte";
+    import SignedDistanceGridBlended from "./objects/SignedDistanceGridBlended.svelte";
 
   function componentToHex(c) {
     var hex = c.toString(16);
@@ -246,6 +268,31 @@
 
   function rgbToHex(r, g, b) {
     return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
+  }
+
+
+  function blobFromPoints(points) {
+    let bb = Graphics.BoundingBoxFromPoints(points);
+    Graphics.BoundingBoxCalculateCenter(bb);
+
+    let bbSizeLengthsVec3 = vec3.sub(vec3.create(), bb.max, bb.min);
+    let bbSizeLengths = [Math.abs(bbSizeLengthsVec3[0]), Math.abs(bbSizeLengthsVec3[1]), Math.abs(bbSizeLengthsVec3[2])];
+    let maxLength = Math.max(...bbSizeLengths) * 0.25;
+
+    bb.min = vec3.add(vec3.create(), bb.min, vec3.fromValues(-maxLength, -maxLength, -maxLength));
+    bb.max = vec3.add(vec3.create(), bb.max, vec3.fromValues(maxLength, maxLength, maxLength));
+
+    const normalizedPoints: Array<vec3> = Graphics.normalizePointsByBoundingBox(bb, points);
+
+    bbSizeLengthsVec3 = vec3.sub(vec3.create(), bb.max, bb.min);
+    bbSizeLengths = [Math.abs(bbSizeLengthsVec3[0]), Math.abs(bbSizeLengthsVec3[1]), Math.abs(bbSizeLengthsVec3[2])];
+    maxLength = Math.max(...bbSizeLengths);
+
+    return {
+      normalizedPoints,
+      center: vec3.clone(bb.center),
+      scale: 0.5 * maxLength,
+    };
   }
 
   let sigmaContainer: HTMLDivElement;
@@ -287,10 +334,8 @@
   }
 
   let visibleClusters: boolean[] = [];
-  $: console.log(visibleClusters);
   $: {
     visibleClusters = new Array(blobsAmount).fill(true);
-    console.log("because this shit is run");
   }
 
   let blobsStyle = "arrows-2x2";
@@ -409,7 +454,14 @@
                 colormap={volumeColormap}
                 func={volumeFunction}
               />
-              {#if blobs[selectedTimestep]}
+              {#if blobMatryoshka && matryoshkaBlobs && matryoshkaBlobs[selectedTimestep]}
+                <SignedDistanceGridBlended
+                  blobs={matryoshkaBlobs[selectedTimestep]}
+                  colors={matryoshkaColors}
+                  radius={blobsRadius}
+                />
+              {/if}
+              {#if blobs[selectedTimestep] && !blobMatryoshka}
                 {#each blobs[selectedTimestep] as blob, i}
                   <SignedDistanceGrid
                     points={blob.normalizedPoints}
@@ -457,6 +509,7 @@
           <AccordionItem open title="Blobby Clusters">
             <Checkbox labelText="Visible" bind:checked={blobsVisible} />
             <Checkbox labelText="Colored" bind:checked={blobsColored} />
+            <Checkbox labelText="Matryoshka" bind:checked={blobMatryoshka} />
 
             <Slider labelText="Amount" fullWidth min={1} max={16} bind:value={blobsAmount} />
             <Slider labelText="Radius" fullWidth min={0.01} max={0.1} step={0.01} bind:value={blobsRadius} />

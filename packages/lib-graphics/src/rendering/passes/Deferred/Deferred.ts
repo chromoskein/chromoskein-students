@@ -44,7 +44,8 @@ class Pipelines {
                     color: ty.gpuCodeGetOutputValue('color'),
                     normal: ty.gpuCodeGetOutputValue('normal'),
                     ao: ty.gpuCodeGetOutputValue('ao')
-                }
+                },
+                ty.gpuCodeGetIntersection(ty.variableName, ty.typeName)
             );
 
             const shaderModule = device.createShaderModule({

@@ -63,5 +63,7 @@ export abstract class IParametricObject extends ConcreteObject {
      *  - Camera
      */
      public static gpuCodeGetBoundingRectangleVertex: string;
+
+     public static gpuCodeGetIntersection(name: string, typeName: string): string { return /* wgsl */`var intersection = ray${typeName}Intersection(ray, ${name});`}
     //#endregion
 }
