@@ -139,16 +139,32 @@
   }
 
   let matryoshkaColors: vec3[] = [];
+  let matryoshkaRadius: number[] = [];
   let matryoshkaBlobs: {
     normalizedPoints: vec3[];
     center: vec3;
     scale: number;
   }[][] = [];
 
-  $: if (dataClustersGivenK && dataPathlines) {
+  $: if (blobsRadius) {
+    let depth = 2;
+    let maxRadius = blobsRadius + depth * 0.01;
+    let k = 1;
+
+    matryoshkaRadius = [];
+    for (let i = 0; i < depth; i++) {
+
+      for (let j = 0; j < k; j++) {
+        matryoshkaRadius.push(maxRadius);
+      }
+      maxRadius -= 0.01;
+      k = k * 2;
+    }
+  }
+
+  $: if (dataClustersGivenK && dataPathlines && depth) {
     matryoshkaBlobs = [];
     matryoshkaColors = [];
-    let depth = 2;
     let k = 1;
 
     let clusterPoints = [];
@@ -214,7 +230,9 @@
   let blobsRadius = 0.03;
   let blobsAmount = 1;
   let blobsColored = true;
-  let blobMatryoshka = true;
+  let blobMatryoshka = false;
+  let blobAlpha = 0.4;
+  let depth = 2;
 
   let pathlinesSimplifyFactor = 0.0;
   let pathlinesShowChildren = false;
@@ -461,7 +479,7 @@
                 <SignedDistanceGridBlended
                   blobs={matryoshkaBlobs[selectedTimestep]}
                   colors={matryoshkaColors}
-                  radius={blobsRadius}
+                  radius={matryoshkaRadius}
                 />
               {/if}
               {#if blobs[selectedTimestep] && !blobMatryoshka}
@@ -489,7 +507,7 @@
     <Pane size={20}>
       <div style="padding: 8px; color:white">
         <Accordion>
-          <AccordionItem open title="Volume">
+          <AccordionItem title="Volume">
             <Checkbox labelText="Visible" bind:checked={volumeVisible} />
             <Slider labelText="Transparency" fullWidth min={0.0} max={1.0} step={0.01} bind:value={volumeTransparency} />
             <Slider labelText="Radius" fullWidth min={0.0} max={0.1} step={0.01} bind:value={volumeRadius} />
@@ -516,6 +534,8 @@
 
             <Slider labelText="Amount" fullWidth min={1} max={16} bind:value={blobsAmount} />
             <Slider labelText="Radius" fullWidth min={0.01} max={0.1} step={0.01} bind:value={blobsRadius} />
+            <Slider labelText="Alpha" fullWidth min={0.05} max={1.0} step={0.05} bind:value={blobAlpha} />
+            <Slider labelText="Depth" fullWidth min={1} max={4} bind:value={depth} />
 
             <!-- {#each visibleClusters as visibleCluster, i}
               <Checkbox
@@ -544,7 +564,7 @@
             {/if}
           </AccordionItem>
 
-          <AccordionItem title="Average pathline">
+          <AccordionItem open title="Average pathline">
             <Slider labelText="Simplify " fullWidth min={0.0} max={0.5} step={0.01} bind:value={pathlinesSimplifyFactor} />
             <Checkbox labelText="Show direct children pathlines" bind:checked={pathlinesShowChildren} />
             <Checkbox labelText="Show curve approximation" bind:checked={pathlinesApproximate} />

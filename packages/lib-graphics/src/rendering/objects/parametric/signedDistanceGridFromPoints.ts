@@ -35,7 +35,14 @@ fn sdSphere(p: vec3<f32>, c: vec3<f32>, s: f32 ) -> f32
 
     let begin = GlobalInvocationID.z / ${GridTextureSize};
     // let begin = 0;
-    let radius = points[begin].w;
+    var radius = points[begin].w;
+    if (begin == 0) {
+      radius += 0.01;
+    } else if (begin > 2) {
+      radius -= 0.015;
+    } else if (begin > 4) {
+      radius -= 0.03;
+    }
 
     var sdf = sdCapsule(p, points[begin].xyz, points[begin + 1].xyz, radius);
     for(var i: u32 = delimiters[begin]; i < delimiters[begin + 1] - 1; i++) {

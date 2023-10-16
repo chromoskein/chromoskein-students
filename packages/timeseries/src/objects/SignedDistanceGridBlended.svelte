@@ -7,8 +7,9 @@
     import { vec3, vec4 } from "gl-matrix";
 
     export let visible = true;
-    export let radius = 0.05;
+    export let radius: number[] = [];
     export let colors: vec3[] = [];
+    export let alpha = 0.5;
 
     export let blobs: {
         normalizedPoints: vec3[];
@@ -35,7 +36,7 @@
     };
     $: if (object) {
         for (let i = 0; i < blobs.length; i++) {
-            object.properties[i].color = vec4.fromValues(colors[i][0], colors[i][1], colors[i][2], 0.5);
+            object.properties[i].color = vec4.fromValues(colors[i][0], colors[i][1], colors[i][2], alpha);
         }
         object.setDirtyCPU();
     };

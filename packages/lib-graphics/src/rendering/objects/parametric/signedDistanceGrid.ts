@@ -143,6 +143,13 @@ export class SignedDistanceGrid extends IParametricObject {
             scale: vec3<f32>,
         };
         
+        struct ObjectIntersection {
+            t: f32,
+            position: vec3<f32>,
+            normal: vec3<f32>,
+            index: i32,
+        };
+
         @group(1) @binding(0) var<storage, read> ${this.variableName}: array<${this.typeName}>;
         @group(1) @binding(1) var ${this.variableName}Texture: texture_3d<f32>;
         @group(1) @binding(2) var linearSampler: sampler;
@@ -246,6 +253,60 @@ export class SignedDistanceGrid extends IParametricObject {
                 calcNormal(intersection, index)
             );
         }
+
+
+        fn findClosestIntersection(ray: Ray, index: i32) -> ObjectIntersection {
+            var bestDistance: f32 = 10000.0;
+            var found = false;
+            var bestIntersection: Intersection = ray${this.typeName}Intersection(ray, ${this.variableName}[0], 0);
+            var foundIndex: i32 = 0;
+
+            for(var i: u32 = 0; i < arrayLength(&${this.variableName}); i++) {
+                if (index == i32(i)) {
+                    continue;
+                }
+
+                var intersection = ray${this.typeName}Intersection(ray, ${this.variableName}[i], i);
+                if (intersection.t > 0.0 && distance(ray.origin, intersection.position) < bestDistance) {
+                    found = true;
+                    bestIntersection = intersection;
+                    bestDistance = distance(ray.origin, intersection.position);
+                    foundIndex = i32(i);
+                }
+            }
+
+            if (!found) {
+                return ObjectIntersection(
+                    -1.0,
+                    vec3<f32>(0.0),
+                    vec3<f32>(0.0),
+                    -1
+                );
+            } else {
+                return ObjectIntersection(
+                    bestIntersection.t,
+                    bestIntersection.position,
+                    bestIntersection.normal,
+                    foundIndex
+                );
+            }
+        }
+
+        fn TraceRay(ray: Ray) -> vec3<f32> {
+            var r = ray;
+            var intersection = findClosestIntersection(r, -1);
+            var color = vec3<f32>(0.0, 0.0, 0.0);
+            var alphaCoef = 1.0;
+            while (intersection.t >= 0.0) {
+                var alpha = ${this.variableName}[intersection.index].color.a;
+                color = color + alphaCoef * alpha * ${this.variableName}[intersection.index].color.rgb;
+                alphaCoef = alphaCoef * (1 - alpha);
+
+                r = Ray(intersection.position, r.direction);
+                intersection = findClosestIntersection(r, intersection.index);
+            }
+            return color;
+        }
     `;
 
     public static gpuCodeGetIntersection(name: string, typeName: string): string {
@@ -257,20 +318,11 @@ export class SignedDistanceGrid extends IParametricObject {
         color = vec4(${this.variableName}[0].color.rgb, 1.0);
         
         if (arrayLength(&${name}) > 2) {
-            var intersection1 = ray${typeName}Intersection(ray, ${name}[1], 1);
-            var intersection2 = ray${typeName}Intersection(ray, ${name}[2], 2);
-            if (intersection1.t > 0.0 && intersection2.t > 0.0) {
-                intersection = intersection2;
-                color = vec4(${this.variableName}[2].color.rgb * 0.5 +  ${this.variableName}[1].color.rgb * 0.5, 1.0);
-            } else if (intersection1.t > 0.0) {
-                intersection = intersection1;
-                color = vec4(${this.variableName}[1].color.rgb, 1.0);
-            } else if (intersection2.t > 0.0) {
-                intersection = intersection2;
-                color = vec4(${this.variableName}[2].color.rgb, 1.0);
-            } else {
-                intersection.t = -1.0;
-            }    
+            color = vec4<f32>(TraceRay(ray), 1.0);  
+            var objectIntersection = findClosestIntersection(ray, -1);
+            intersection.t = objectIntersection.t;
+            intersection.position = objectIntersection.position;
+            intersection.normal = objectIntersection.normal;
         }
         
     `}
@@ -367,7 +419,7 @@ export class SignedDistanceGrid extends IParametricObject {
     //     this.onAllocationMoved();
     // }
 
-    public fromPoints(device: GPUDevice, points: Array<Array<vec3>>, radius: number = 0.05) {
+    public fromPoints(device: GPUDevice, points: Array<Array<vec3>>, radius: Array<number> = [0.05]) {
         const pipeline = this._pipelines.computePipelines.get('gridFromPoints');
         const bgl = this._pipelines.bindGroupLayouts.get('gridFromPoints');
 
@@ -388,21 +440,23 @@ export class SignedDistanceGrid extends IParametricObject {
             });
         }
 
-        const writeRadius = radius * (1.0 / this.properties[0].scale[0]);
-
+        
         const delimitersCPUBuffer = new Uint32Array(points.length + 1);
         let delimiters = [0];
         let len = 0;
+        delimitersCPUBuffer.set([0], 0);
         for(let i = 0; i < points.length; i++) {
             len += points[i].length;
             delimiters.push(len);
+            delimitersCPUBuffer.set([len], i + 1);
         }
-        delimitersCPUBuffer.set(delimiters, 0);
-
+        
         const pointsCPUBuffer = new Float32Array(len * 4);
         
         let offset = 0;
         for (let j = 0; j < points.length; j++) {
+            let writeRadius = radius[j] * (1.0 / this.properties[0].scale[0]);
+            console.log(writeRadius);
             for(let i = 0; i < points[j].length; i++) {
                 pointsCPUBuffer.set(points[j][i], 4 * i + 4 * offset);
                 pointsCPUBuffer.set([writeRadius], 4 * i + 3 + 4 * offset);
