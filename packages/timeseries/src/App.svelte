@@ -220,7 +220,9 @@
   let pathlinesShowChildren = false;
   let pathlinesApproximate = false;
 
-  let selectedTimestep = 0;
+  let selectedTimestep = 0; 
+  
+  let isMulticolored = false;
   //#endregion Configuration
 
   let lineChartMovementAmount = [];
@@ -414,6 +416,7 @@
                 chromatinParts={[dataTimesteps[selectedTimestep]]}
                 approximateCurve={pathlinesApproximate}
                 radius={blobsRadius}
+                multicolored={isMulticolored}
               />
             </div>
           <!--
@@ -545,6 +548,7 @@
             <Slider labelText="Simplify " fullWidth min={0.0} max={0.5} step={0.01} bind:value={pathlinesSimplifyFactor} />
             <Checkbox labelText="Show direct children pathlines" bind:checked={pathlinesShowChildren} />
             <Checkbox labelText="Show curve approximation" bind:checked={pathlinesApproximate} />
+            <Checkbox labelText="Multicolored" bind:checked={isMulticolored} />
           </AccordionItem>
 
           <!-- <AccordionItem title="Pathlines" /> -->
