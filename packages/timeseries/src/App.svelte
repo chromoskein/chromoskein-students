@@ -233,6 +233,7 @@
   let blobMatryoshka = false;
   let blobAlpha = 0.4;
   let depth = 2;
+  let approximated = false;
 
   let pathlinesSimplifyFactor = 0.0;
   let pathlinesShowChildren = false;
@@ -482,7 +483,7 @@
                   radius={matryoshkaRadius}
                 />
               {/if}
-              {#if blobs[selectedTimestep] && !blobMatryoshka}
+              {#if blobs[selectedTimestep] && !blobMatryoshka && !approximated}
                 {#each blobs[selectedTimestep] as blob, i}
                   <SignedDistanceGrid
                     points={blob.normalizedPoints}
@@ -492,6 +493,15 @@
                     visible={blobsVisible && visibleClusters[i]}
                     color={blobsColored ? dataClustersGivenK[blobsAmount][i].color.rgb : vec3.fromValues(1.0, 1.0, 1.0)}
                   />
+                {/each}
+              {/if}
+              {#if blobs[selectedTimestep] && approximated && !blobMatryoshka}
+                {#each blobs[selectedTimestep] as blob, i}
+                <Sphere
+                  radius={blob.normalizedPoints.length / 1000.0 * 2}
+                  center={blob.center}
+                  color={blobsColored ? [dataClustersGivenK[blobsAmount][i].color.rgb[0], dataClustersGivenK[blobsAmount][i].color.rgb[1], dataClustersGivenK[blobsAmount][i].color.rgb[2], 1.0] : [1.0, 1.0, 1.0, 1.0]} 
+                />
                 {/each}
               {/if}
               <!-- {#if dataClusteredClustersCentroid}
@@ -531,6 +541,7 @@
             <Checkbox labelText="Visible" bind:checked={blobsVisible} />
             <Checkbox labelText="Colored" bind:checked={blobsColored} />
             <Checkbox labelText="Matryoshka" bind:checked={blobMatryoshka} />
+            <Checkbox labelText="Approximated" bind:checked={approximated} />
 
             <Slider labelText="Amount" fullWidth min={1} max={16} bind:value={blobsAmount} />
             <Slider labelText="Radius" fullWidth min={0.01} max={0.1} step={0.01} bind:value={blobsRadius} />
