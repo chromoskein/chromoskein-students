@@ -358,8 +358,8 @@ function dendrogramClick(depth) {
                 radius={volumeRadius}
                 colormap={volumeColormap}
                 func={volumeFunction}
-            />
-            {#if blobMatryoshka && !approximated}
+              />
+              {#if blobMatryoshka && !approximated}
                 <SignedDistanceGridBlended
                   points={matryoshkaBlobPoints}
                   scales={matryoshkaBlobScales}
@@ -367,30 +367,30 @@ function dendrogramClick(depth) {
                   colors={matryoshkaColors}
                   radius={matryoshkaRadius}
                   alpha={blobAlpha}
-            />
-            {/if}
-            {#if blobs[selectedTimestep] && !blobMatryoshka && !approximated}
-              {#each blobs[selectedTimestep] as blob, i}
-                <SignedDistanceGrid
-                  points={blob.normalizedPoints}
-                  translate={blob.center}
-                  scale={blob.scale}
-                  radius={blobsRadius}
-                  visible={blobsVisible}
-                  color={blobsColored ? dataClustersGivenK[blobsAmount][i].color.rgb : vec3.fromValues(1.0, 1.0, 1.0)}
-                />
-              {/each}
-            {/if}
-            {#if blobs[selectedTimestep] && approximated && !blobMatryoshka}
-              {#each blobs[selectedTimestep] as blob, i}
-                <Sphere
-                radius={blob.normalizedPoints.length / 1000.0 * 2}
-                center={blob.center}
-                color={blobsColored ? [dataClustersGivenK[blobsAmount][i].color.rgb[0], dataClustersGivenK[blobsAmount][i].color.rgb[1], dataClustersGivenK[blobsAmount][i].color.rgb[2], 1.0] : [1.0, 1.0, 1.0, 1.0]} 
-                />
-              {/each}
-            {/if}
-          </Viewport3D>
+              />
+              {/if}
+              {#if blobs[selectedTimestep] && !blobMatryoshka && !approximated}
+                {#each blobs[selectedTimestep] as blob, i}
+                  <SignedDistanceGrid
+                    points={blob.normalizedPoints}
+                    translate={blob.center}
+                    scale={blob.scale}
+                    radius={blobsRadius}
+                    visible={blobsVisible}
+                    color={blobsColored ? dataClustersGivenK[blobsAmount][i].color.rgb : vec3.fromValues(1.0, 1.0, 1.0)}
+                  />
+                {/each}
+              {/if}
+              {#if blobs[selectedTimestep] && approximated && !blobMatryoshka}
+                {#each blobs[selectedTimestep] as blob, i}
+                  <Sphere
+                  radius={blob.normalizedPoints.length / 1000.0 * 2}
+                  center={blob.center}
+                  color={blobsColored ? [dataClustersGivenK[blobsAmount][i].color.rgb[0], dataClustersGivenK[blobsAmount][i].color.rgb[1], dataClustersGivenK[blobsAmount][i].color.rgb[2], 1.0] : [1.0, 1.0, 1.0, 1.0]} 
+                  />
+                {/each}
+              {/if}
+            </Viewport3D>
           {/if}
         </Pane>
       </Splitpanes>
