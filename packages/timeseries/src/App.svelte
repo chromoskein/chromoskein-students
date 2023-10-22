@@ -50,7 +50,6 @@
   const graphicsLibrary: Writable<Graphics.GraphicsLibrary | null> = writable(null);
 
   let viewport: Graphics.Viewport3D | null = null;
-  let viewport2d: Graphics.DistanceViewport | null = null;
 
   //#region Data
   const filenames: string[] = new Array(600).fill(null).map((v, i) => "./timeseries/timestep_" + (i + 1).toString() + ".XYZ");
@@ -146,25 +145,40 @@
     scale: number;
   }[][] = [];
 
+  let matryoshkaBlobPoints: vec3[][] = [];
+  let matryoshkaBlobCenters: vec3[] = [];
+  let matryoshkaBlobScales: number[] = [];
+
+  $: if (matryoshkaBlobs[selectedTimestep]) {
+    matryoshkaBlobPoints.length = 0;
+    matryoshkaBlobCenters.length = 0;
+    matryoshkaBlobScales.length = 0;
+    for (let i = 0; i < matryoshkaBlobs[selectedTimestep].length; i++) {
+      matryoshkaBlobPoints.push(matryoshkaBlobs[selectedTimestep][i].normalizedPoints);
+      matryoshkaBlobCenters.push(matryoshkaBlobs[selectedTimestep][i].center);
+      matryoshkaBlobScales.push(matryoshkaBlobs[selectedTimestep][i].scale);
+    }
+  }
+
   $: if (blobsRadius) {
-    let depth = 2;
-    let maxRadius = blobsRadius + depth * 0.01;
+    let maxRadius = blobsRadius + depth * 0.015;
     let k = 1;
 
-    matryoshkaRadius = [];
+    matryoshkaRadius.length = 0;
+    // matryoshkaRadius = [];
     for (let i = 0; i < depth; i++) {
 
       for (let j = 0; j < k; j++) {
         matryoshkaRadius.push(maxRadius);
       }
-      maxRadius -= 0.01;
+      maxRadius -= 0.015;
       k = k * 2;
     }
   }
 
   $: if (dataClustersGivenK && dataPathlines && depth) {
-    matryoshkaBlobs = [];
-    matryoshkaColors = [];
+    matryoshkaBlobs.length = 0;
+    matryoshkaColors.length = 0;
     let k = 1;
 
     let clusterPoints = [];
@@ -475,11 +489,14 @@
                 colormap={volumeColormap}
                 func={volumeFunction}
               />
-              {#if blobMatryoshka && matryoshkaBlobs && matryoshkaBlobs[selectedTimestep]}
+              {#if blobMatryoshka}
                 <SignedDistanceGridBlended
-                  blobs={matryoshkaBlobs[selectedTimestep]}
+                  points={matryoshkaBlobPoints}
+                  scales={matryoshkaBlobScales}
+                  translates={matryoshkaBlobCenters}
                   colors={matryoshkaColors}
                   radius={matryoshkaRadius}
+                  alpha={blobAlpha}
                 />
               {/if}
               {#if blobs[selectedTimestep] && !blobMatryoshka}
@@ -494,11 +511,6 @@
                   />
                 {/each}
               {/if}
-              <!-- {#if dataClusteredClustersCentroid}
-                {#each dataClusteredClustersCentroid as centroids, i}
-                  <ContinuousTube points={centroids} radius={0.01} color={colors[i]} />
-                {/each}
-              {/if} -->
             </Viewport3D>
           {/if}
         </Pane>
