@@ -15,25 +15,22 @@
   import "./styles/splitpanes.css";
   import { Pane, Splitpanes } from "svelte-splitpanes";
 
-  import { averagePathlines, loadTimesteps, normalizePointClouds, timestepsToPathlines, loadBitmap, clusterPathlines, centroid } from "./utils/main";
+  import { loadTimesteps, normalizePointClouds, timestepsToPathlines, loadBitmap, clusterPathlines, centroid } from "./utils/main";
   import type { ClusterNode } from "./utils/main";
 
+  import ChromatinViewport from "./ChromatinViewport.svelte";
+  import SignedDistanceGridBlended from "./objects/SignedDistanceGridBlended.svelte";
   import "carbon-components-svelte/css/g100.css";
   import { Header, SkipToContent, Checkbox, Accordion, AccordionItem, Select, SelectItem } from "carbon-components-svelte";
   import RangeSlider from "svelte-range-slider-pips";
   import { Slider } from "carbon-components-svelte";
   import TimeVolume from "./objects/TimeVolume.svelte";
   import SignedDistanceGrid from "./objects/SignedDistanceGrid.svelte";
-  import ContinuousTube from "./objects/ContinuousTube.svelte";
   import { treeColor } from "./utils/treecolors";
-  import Sphere from "./objects/Sphere.svelte";
-  import { simplify } from "./utils/simplifyLine";
-  import PathlineViewport from "./PathlineViewport.svelte";
-  import Spline from "./objects/Spline.svelte";
+
 
   import "@carbon/styles/css/styles.css";
   import "@carbon/charts/styles.css";
-  import { LineChart } from "@carbon/charts-svelte";
 
   export const saveAs = (blob, name) => {
     // Namespace is used to prevent conflict w/ Chrome Poper Blocker extension (Issue https://github.com/eligrey/FileSaver.js/issues/561)
@@ -257,52 +254,9 @@
   let isMulticolored = false;
   //#endregion Configuration
 
-  let lineChartMovementAmount = [];
-  $: if (dataPathlines) {
-    lineChartMovementAmount = dataPathlines.map((p, index) => {
-      let result = 0.0;
-      for (let i = 0; i < p.length - 1; i++) {
-        result += vec3.distance(p[i], p[i + 1]);
-      }
-      return {
-        group: "Value",
-        key: index + 1,
-        value: result,
-      };
-    });
-  }
-
-  let lineChartMovementRadius = [];
-  $: if (dataPathlines) {
-    lineChartMovementRadius = dataPathlines.map((p, index) => {
-      let result = p.reduce((a, b) => Math.max(a, vec3.distance(p[0], b)), 0.0);
-
-      return {
-        group: "Value",
-        key: index + 1,
-        value: result,
-      };
-    });
-  }
-
-  import Graph from "graphology";
-  import forceAtlas2 from "graphology-layout-forceatlas2";
-  import { random } from "graphology-layout";
-  import * as graphologyCanvas from "graphology-canvas";
-  import Sigma from "sigma";
-    import Viewport2D from "./Viewport2D.svelte";
-    import DistanceMap from "./objects/DistanceMap.svelte";
-    import ChromatinViewport from "./ChromatinViewport.svelte";
-    import SignedDistanceGridBlended from "./objects/SignedDistanceGridBlended.svelte";
-
-  function componentToHex(c) {
-    var hex = c.toString(16);
-    return hex.length == 1 ? "0" + hex : hex;
-  }
-
-  function rgbToHex(r, g, b) {
-    return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
-  }
+function dendrogramClick(depth) {
+  console.log(depth);
+}
 
 
   function blobFromPoints(points) {
@@ -327,49 +281,6 @@
       center: vec3.clone(bb.center),
       scale: 0.5 * maxLength,
     };
-  }
-
-  let sigmaContainer: HTMLDivElement;
-  let graph = new Graph();
-  let renderer = null;
-  const namedColors = ["blue", "red", "pink", "cyan", "green", "purple", "navy"];
-  $: if (dataTimesteps && dataClustersGivenK && sigmaContainer) {
-    const averagedPositions: vec3[] = dataClustersGivenK[blobsAmount].map((c) => {
-      const points = dataTimesteps[selectedTimestep].slice(c.from, c.to + 1);
-      const sum = points.reduce((a, b) => vec3.add(vec3.create(), a, b), vec3.create());
-
-      return vec3.scale(sum, sum, points.length);
-    });
-
-    graph = new Graph();
-    for (let i = 0; i < blobsAmount; i++) {
-      const c = dataClustersGivenK[blobsAmount][i].color.rgb;
-      console.log(c);
-      console.log("#" + Math.round(255 * c[0]).toString(16) + Math.round(255 * c[1]).toString(16) + Math.round(255 * c[2]).toString(16));
-      graph.addNode(i, { size: 5, color: rgbToHex(Math.round(255 * c[0]).toString(16), Math.round(255 * c[1]).toString(16), Math.round(255 * c[2]).toString(16)) });
-    }
-
-    for (let i = 0; i < blobsAmount; i++) {
-      for (let j = i + 1; j < blobsAmount; j++) {
-        graph.addEdge(i, j, { weight: vec3.distance(averagedPositions[i], averagedPositions[j]) });
-      }
-    }
-
-    random.assign(graph);
-    forceAtlas2.assign(graph, 200);
-
-    console.log(graph, graph.order, graph.size);
-
-    // graphologyCanvas.render(graph, graphCanvas.getContext("2d"));
-    if (!renderer) {
-      renderer = new Sigma(graph, sigmaContainer);
-    }
-    renderer.setGraph(graph);
-  }
-
-  let visibleClusters: boolean[] = [];
-  $: {
-    visibleClusters = new Array(blobsAmount).fill(true);
   }
 
   let blobsStyle = "arrows-2x2";
@@ -399,49 +310,6 @@
     <Pane>
       <Splitpanes theme="chromoskein" horizontal={false}>
         <Pane size={50}>
-          <!-- <LineChart
-            theme="g90"
-            data={lineChartMovementAmount}
-            options={{
-              title: "Line (time series)",
-              axes: {
-                bottom: {
-                  title: "Bin",
-                  mapsTo: "key",
-                  scaleType: "linear",
-                },
-                left: {
-                  title: "Movement amount",
-                  mapsTo: "value",
-                  scaleType: "linear",
-                },
-              },
-              curve: "curveMonotoneX",
-              height: "400px",
-            }}
-          />
-          <LineChart
-            theme="g90"
-            data={lineChartMovementRadius}
-            options={{
-              title: "Line (time series)",
-              axes: {
-                bottom: {
-                  title: "Bin",
-                  mapsTo: "key",
-                  scaleType: "linear",
-                },
-                left: {
-                  title: "Movement amount",
-                  mapsTo: "value",
-                  scaleType: "linear",
-                },
-              },
-              curve: "curveMonotoneX",
-              height: "400px",
-            }}
-          /> -->
-          <!-- <div bind:this={sigmaContainer} style="width: 400px; height: 400px; display: relative; background: white;" /> -->
           {#if $adapter && $device && $graphicsLibrary && dataTimesteps && dataTimesteps.length > volumeTimeRange[1]}
             <div class="arrows"> 
               <ChromatinViewport
@@ -506,7 +374,7 @@
                     translate={blob.center}
                     scale={blob.scale}
                     radius={blobsRadius}
-                    visible={blobsVisible && visibleClusters[i]}
+                    visible={blobsVisible}
                     color={blobsColored ? dataClustersGivenK[blobsAmount][i].color.rgb : vec3.fromValues(1.0, 1.0, 1.0)}
                   />
                 {/each}
@@ -544,7 +412,7 @@
             <Checkbox labelText="Colored" bind:checked={blobsColored} />
             <Checkbox labelText="Matryoshka" bind:checked={blobMatryoshka} />
 
-            <Slider labelText="Amount" fullWidth min={1} max={16} bind:value={blobsAmount} />
+            <Slider labelText="Amount" fullWidth min={1} max={15} bind:value={blobsAmount} />
             <Slider labelText="Radius" fullWidth min={0.01} max={0.1} step={0.01} bind:value={blobsRadius} />
             <Slider labelText="Alpha" fullWidth min={0.05} max={1.0} step={0.05} bind:value={blobAlpha} />
             <Slider labelText="Depth" fullWidth min={1} max={4} bind:value={depth} />
@@ -562,11 +430,12 @@
             {#if dataClustersGivenK}
               <div class="cluster-dendogram">
                 {#each dataClustersGivenK.slice(1, 15) as clustersAtLevel, clusterLevel}
-                  <div class="cluster-dendogram-row">
+                  <div class="cluster-dendogram-row" on:click={() => dendrogramClick(clusterLevel)} on:keydown={() => { }}>
                     {#each clustersAtLevel as cluster, i}
                       <div
-                        style={`width: ${100.0 * ((cluster.to - cluster.from + 1) / dataPathlines.length)}%;
-                        background-color: rgb(${255 * cluster.color.rgb[0]} ${255 * cluster.color.rgb[1]} ${255 * cluster.color.rgb[2]})
+                        style={`
+                          width: ${100.0 * ((cluster.to - cluster.from + 1) / dataPathlines.length)}%;
+                          background-color: rgb(${255 * cluster.color.rgb[0]} ${255 * cluster.color.rgb[1]} ${255 * cluster.color.rgb[2]})
                         `}
                       />
                     {/each}
@@ -586,6 +455,7 @@
           <!-- <AccordionItem title="Pathlines" /> -->
         </Accordion>
       </div>
+      
     </Pane>
   </Splitpanes>
 </main>
@@ -665,7 +535,7 @@
   }
 
   .cluster-dendogram-row {
-    height: 40px;
+    height: 25px;
     display: flex;
     flex-direction: row;
     border-bottom: 4px solid black;
