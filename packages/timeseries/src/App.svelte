@@ -352,22 +352,22 @@ function dendrogramClick(depth) {
           {#if $adapter && $device && $graphicsLibrary && dataTimesteps && dataTimesteps.length > volumeTimeRange[1]}
             <Viewport3D bind:viewport>
               <TimeVolume
-              visible={volumeVisible}
-              points={dataTimesteps.slice(volumeTimeRange[0], volumeTimeRange[1])}
-              transparency={volumeTransparency}
-              radius={volumeRadius}
-              colormap={volumeColormap}
-              func={volumeFunction}
+                visible={volumeVisible}
+                points={dataTimesteps.slice(volumeTimeRange[0], volumeTimeRange[1])}
+                transparency={volumeTransparency}
+                radius={volumeRadius}
+                colormap={volumeColormap}
+                func={volumeFunction}
             />
             {#if blobMatryoshka && !approximated}
-              <SignedDistanceGridBlended
-                points={matryoshkaBlobPoints}
-                scales={matryoshkaBlobScales}
-                translates={matryoshkaBlobCenters}
-                colors={matryoshkaColors}
-                radius={matryoshkaRadius}
-                alpha={blobAlpha}
-              />
+                <SignedDistanceGridBlended
+                  points={matryoshkaBlobPoints}
+                  scales={matryoshkaBlobScales}
+                  translates={matryoshkaBlobCenters}
+                  colors={matryoshkaColors}
+                  radius={matryoshkaRadius}
+                  alpha={blobAlpha}
+            />
             {/if}
             {#if blobs[selectedTimestep] && !blobMatryoshka && !approximated}
               {#each blobs[selectedTimestep] as blob, i}
