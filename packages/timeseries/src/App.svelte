@@ -27,6 +27,7 @@
   import TimeVolume from "./objects/TimeVolume.svelte";
   import SignedDistanceGrid from "./objects/SignedDistanceGrid.svelte";
   import { treeColor } from "./utils/treecolors";
+  import Sphere from "./objects/Sphere.svelte";
 
 
   import "@carbon/styles/css/styles.css";
@@ -244,6 +245,7 @@
   let blobMatryoshka = false;
   let blobAlpha = 0.4;
   let depth = 2;
+  let approximated = false;
 
   let pathlinesSimplifyFactor = 0.0;
   let pathlinesShowChildren = false;
@@ -357,7 +359,7 @@ function dendrogramClick(depth) {
                 colormap={volumeColormap}
                 func={volumeFunction}
               />
-              {#if blobMatryoshka}
+              {#if blobMatryoshka && !approximated}
                 <SignedDistanceGridBlended
                   points={matryoshkaBlobPoints}
                   scales={matryoshkaBlobScales}
@@ -365,9 +367,9 @@ function dendrogramClick(depth) {
                   colors={matryoshkaColors}
                   radius={matryoshkaRadius}
                   alpha={blobAlpha}
-                />
+              />
               {/if}
-              {#if blobs[selectedTimestep] && !blobMatryoshka}
+              {#if blobs[selectedTimestep] && !blobMatryoshka && !approximated}
                 {#each blobs[selectedTimestep] as blob, i}
                   <SignedDistanceGrid
                     points={blob.normalizedPoints}
@@ -376,6 +378,15 @@ function dendrogramClick(depth) {
                     radius={blobsRadius}
                     visible={blobsVisible}
                     color={blobsColored ? dataClustersGivenK[blobsAmount][i].color.rgb : vec3.fromValues(1.0, 1.0, 1.0)}
+                  />
+                {/each}
+              {/if}
+              {#if blobs[selectedTimestep] && approximated && !blobMatryoshka}
+                {#each blobs[selectedTimestep] as blob, i}
+                  <Sphere
+                  radius={blob.normalizedPoints.length / 1000.0 * 2}
+                  center={blob.center}
+                  color={blobsColored ? [dataClustersGivenK[blobsAmount][i].color.rgb[0], dataClustersGivenK[blobsAmount][i].color.rgb[1], dataClustersGivenK[blobsAmount][i].color.rgb[2], 1.0] : [1.0, 1.0, 1.0, 1.0]} 
                   />
                 {/each}
               {/if}
@@ -411,6 +422,7 @@ function dendrogramClick(depth) {
             <Checkbox labelText="Visible" bind:checked={blobsVisible} />
             <Checkbox labelText="Colored" bind:checked={blobsColored} />
             <Checkbox labelText="Matryoshka" bind:checked={blobMatryoshka} />
+            <Checkbox labelText="Approximated" bind:checked={approximated} />
 
             <Slider labelText="Amount" fullWidth min={1} max={15} bind:value={blobsAmount} />
             <Slider labelText="Radius" fullWidth min={0.01} max={0.1} step={0.01} bind:value={blobsRadius} />
