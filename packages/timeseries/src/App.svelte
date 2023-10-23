@@ -161,7 +161,7 @@
   }
 
 
-  $: if (dataClustersGivenK && dataPathlines && depth) {
+  $: if (dataClustersGivenK && dataPathlines) {
     matryoshkaBlobs = [];
     matryoshkaColors = [];
     matryoshkaRadius = [];
@@ -241,10 +241,8 @@
   let blobsRadius = 0.03;
   let blobsAmount = 1;
   let blobsColored = true;
-  let blobMatryoshka = false;
   let blobAlpha = 0.4;
-  let depth = 2;
-  let approximated = false;
+  let visualizationSelected = "Default"
 
   let pathlinesSimplifyFactor = 0.0;
   let pathlinesShowChildren = false;
@@ -357,7 +355,7 @@
                 colormap={volumeColormap}
                 func={volumeFunction}
               />
-              {#if blobMatryoshka && !approximated}
+              {#if visualizationSelected == "Matryoshka"}
                 <SignedDistanceGridBlended
                   points={matryoshkaBlobPoints}
                   scales={matryoshkaBlobScales}
@@ -368,7 +366,7 @@
                   alpha={blobAlpha}
               />
               {/if}
-              {#if blobs[selectedTimestep] && !blobMatryoshka && !approximated}
+              {#if blobs[selectedTimestep] && visualizationSelected == "Default"}
                 {#each blobs[selectedTimestep] as blob, i}
                   <SignedDistanceGrid
                     points={blob.normalizedPoints}
@@ -380,7 +378,7 @@
                   />
                 {/each}
               {/if}
-              {#if blobs[selectedTimestep] && approximated && !blobMatryoshka}
+              {#if blobs[selectedTimestep] && visualizationSelected == "Approximated"}
                 {#each blobs[selectedTimestep] as blob, i}
                   <Sphere
                   radius={blob.normalizedPoints.length / 1000.0 * 2}
@@ -418,16 +416,24 @@
           </AccordionItem>
 
           <AccordionItem open title="Blobby Clusters">
-            <Checkbox labelText="Visible" bind:checked={blobsVisible} />
+            <Select size="sm" inline labelText="Visualization:" bind:selected={visualizationSelected}>
+              <SelectItem value="None" />
+              <SelectItem value="Default" />
+              <SelectItem value="Matryoshka" />
+              <SelectItem value="Approximated" />
+            </Select>
+
             <Checkbox labelText="Colored" bind:checked={blobsColored} />
-            <Checkbox labelText="Matryoshka" bind:checked={blobMatryoshka} />
-            <Checkbox labelText="Approximated" bind:checked={approximated} />
 
+            {#if visualizationSelected != "Matryoshka"}
             <Slider labelText="Amount" fullWidth min={1} max={15} bind:value={blobsAmount} />
-            <Slider labelText="Radius" fullWidth min={0.01} max={0.1} step={0.01} bind:value={blobsRadius} />
-            <Slider labelText="Alpha" fullWidth min={0.05} max={1.0} step={0.05} bind:value={blobAlpha} />
-            <Slider labelText="Depth" fullWidth min={1} max={4} bind:value={depth} />
-
+            {/if}
+            {#if visualizationSelected != "Approximated"}
+              <Slider labelText="Radius" fullWidth min={0.01} max={0.1} step={0.01} bind:value={blobsRadius} />
+            {/if}
+            {#if visualizationSelected == "Matryoshka"}
+              <Slider labelText="Alpha" fullWidth min={0.05} max={1.0} step={0.05} bind:value={blobAlpha} />
+            {/if}
             <!-- {#each visibleClusters as visibleCluster, i}
               <Checkbox
                 checked={visibleClusters[i]}
