@@ -94,7 +94,7 @@ export const SignedDistanceGridStruct = new r.Struct({
     scale: new r.Array(r.floatle, 4),
 });
 
-export const GridTextureSize: number = 128;
+export const GridTextureSize: number = 64;
 
 export class SignedDistanceGrid extends IParametricObject {
     private _pipelines: Pipelines;
@@ -333,8 +333,12 @@ export class SignedDistanceGrid extends IParametricObject {
     }
 
     static gpuCodeGetBoundingRectangleVertex = /*wgsl*/`
-        let begin = ${this.variableName}[0].modelMatrix * vec4<f32>(-1.0, -1.0, -1.0, 1.0);
-        let end = ${this.variableName}[0].modelMatrix * vec4<f32>(1.0);
+        var begin = ${this.variableName}[0].modelMatrix * vec4<f32>(-1.0, -1.0, -1.0, 1.0);
+        var end = ${this.variableName}[0].modelMatrix * vec4<f32>(1.0);
+        for(var i: u32 = 1; i < arrayLength(&${this.variableName}); i++) {
+            begin = min(${this.variableName}[i].modelMatrix * vec4<f32>(-1.0, -1.0, -1.0, 1.0), begin);
+            end = max(${this.variableName}[i].modelMatrix * vec4<f32>(1.0), end);
+        }
 
         let center = 0.5 * (begin.xyz + end.xyz);
         let radius = distance(center, begin.xyz);
@@ -417,7 +421,7 @@ export class SignedDistanceGrid extends IParametricObject {
                 size: {
                     width: GridTextureSize,
                     height: GridTextureSize,
-                    depthOrArrayLayers: points.length * GridTextureSize,
+                    depthOrArrayLayers: Math.max(points.length * GridTextureSize, 1),
                 },
                 mipLevelCount: 1,
                 dimension: "3d",
@@ -449,7 +453,7 @@ export class SignedDistanceGrid extends IParametricObject {
             offset += points[j].length;
         }
 
-        const pointsBuffer = device.createBuffer({ size: len * 4 * 4, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE });
+        const pointsBuffer = device.createBuffer({ size: Math.max(len * 4 * 4, 1), usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE });
         const delmitersBuffer = device.createBuffer( { size: delimiters.length * 4, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE })
         const bindGroup = device.createBindGroup({
             layout: bgl,

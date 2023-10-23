@@ -98,6 +98,7 @@
     timesteps = await loadTimesteps(filenames);
     // dataTimesteps = normalizePointClouds(timesteps);
     // dataPathlines = timestepsToPathlines(dataTimesteps);
+    // dataClustersGivenK = clusterPathlines(dataPathlines);
 
     // const bytes = new TextEncoder().encode(JSON.stringify(clusterPathlines(dataPathlines)));
     // const blob = new Blob([bytes], {
@@ -146,6 +147,7 @@
   let matryoshkaBlobPoints: vec3[][] = [];
   let matryoshkaBlobCenters: vec3[] = [];
   let matryoshkaBlobScales: number[] = [];
+  let matryoshkaBlobsVisible = [false, true, false, true, false, false, false, false, false, false, false, false, false, false];
 
   $: if (matryoshkaBlobs[selectedTimestep]) {
     matryoshkaBlobPoints.length = 0;
@@ -158,36 +160,33 @@
     }
   }
 
-  $: if (blobsRadius) {
-    let maxRadius = blobsRadius + depth * 0.015;
-    let k = 1;
-
-    matryoshkaRadius.length = 0;
-    // matryoshkaRadius = [];
-    for (let i = 0; i < depth; i++) {
-
-      for (let j = 0; j < k; j++) {
-        matryoshkaRadius.push(maxRadius);
-      }
-      maxRadius -= 0.015;
-      k = k * 2;
-    }
-  }
 
   $: if (dataClustersGivenK && dataPathlines && depth) {
-    matryoshkaBlobs.length = 0;
-    matryoshkaColors.length = 0;
-    let k = 1;
+    matryoshkaBlobs = [];
+    matryoshkaColors = [];
+    matryoshkaRadius = [];
 
+    let depthsVisible = matryoshkaBlobsVisible.filter(x => x).length;
+    let radiusOffset = depthsVisible * 0.015;
+
+    let found = [];
     let clusterPoints = [];
-    for (let i = 0; i < depth; i++) {
-      let clusters = dataClustersGivenK[k];
-
-      for (const [clusterIndex, cluster] of clusters.entries()) {
-        clusterPoints.push(dataPathlines.slice(cluster.from, cluster.to + 1));
-        matryoshkaColors.push(cluster.color.rgb);
+    for (let i = 1; i < 15; i++) {
+      if (!matryoshkaBlobsVisible[i - 1]) {
+        continue;
       }
-      k = k * 2;
+
+      let clusters = dataClustersGivenK[i];
+
+      for (const [_, cluster] of clusters.entries()) {
+        if (found.filter(x => x[0] == cluster.from && x[1] == cluster.to).length == 0) {
+          clusterPoints.push(dataPathlines.slice(cluster.from, cluster.to + 1));
+          matryoshkaColors.push(cluster.color.rgb);
+          found.push([cluster.from, cluster.to]);
+          matryoshkaRadius.push(radiusOffset);
+        }
+      }
+      radiusOffset -= 0.015;
     }
 
     for (let timestep = 0; timestep < dataTimesteps.length; timestep++) {
@@ -256,10 +255,9 @@
   let isMulticolored = false;
   //#endregion Configuration
 
-function dendrogramClick(depth) {
-  console.log(depth);
-}
-
+  function dendrogramClick(depth) {
+    matryoshkaBlobsVisible[depth] = !matryoshkaBlobsVisible[depth];
+  }
 
   function blobFromPoints(points) {
     let bb = Graphics.BoundingBoxFromPoints(points);
@@ -365,7 +363,8 @@ function dendrogramClick(depth) {
                   scales={matryoshkaBlobScales}
                   translates={matryoshkaBlobCenters}
                   colors={matryoshkaColors}
-                  radius={matryoshkaRadius}
+                  radius={blobsRadius}
+                  radiusOffsets={matryoshkaRadius}
                   alpha={blobAlpha}
               />
               {/if}
@@ -447,7 +446,8 @@ function dendrogramClick(depth) {
                       <div
                         style={`
                           width: ${100.0 * ((cluster.to - cluster.from + 1) / dataPathlines.length)}%;
-                          background-color: rgb(${255 * cluster.color.rgb[0]} ${255 * cluster.color.rgb[1]} ${255 * cluster.color.rgb[2]})
+                          background-color: rgb(${255 * cluster.color.rgb[0]} ${255 * cluster.color.rgb[1]} ${255 * cluster.color.rgb[2]});
+                          border: 2px solid ${(matryoshkaBlobsVisible[clusterLevel] ? "white" : "black")}
                         `}
                       />
                     {/each}
@@ -547,10 +547,10 @@ function dendrogramClick(depth) {
   }
 
   .cluster-dendogram-row {
-    height: 25px;
+    height: 20px;
     display: flex;
     flex-direction: row;
-    border-bottom: 4px solid black;
+    border-bottom: 2px solid black;
   }
 
   .cluster-dendogram:last-child {

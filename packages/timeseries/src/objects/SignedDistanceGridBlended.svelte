@@ -7,7 +7,8 @@
     import { vec3, vec4 } from "gl-matrix";
 
     export let visible = true;
-    export let radius: number[] = [];
+    export let radius: number;
+    export let radiusOffsets: number[] = [];
     export let points: vec3[][] = [];
     export let translates: vec3[] = [];
     export let scales: number[] = [];
@@ -47,7 +48,7 @@
         for (let i = 0; i < points.length; i++) {
             pointsArray.push(points[i]);
         }
-        object.fromPoints($device, pointsArray, radius);
+        object.fromPoints($device, pointsArray, radiusOffsets.map(x => x + radius));
     }
     $: if (object) object.visible = visible;
 
