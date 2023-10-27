@@ -28,6 +28,7 @@
   import SignedDistanceGrid from "./objects/SignedDistanceGrid.svelte";
   import { treeColor } from "./utils/treecolors";
   import Sphere from "./objects/Sphere.svelte";
+  import ContinuousTube from "./objects/ContinuousTube.svelte";
 
 
   import "@carbon/styles/css/styles.css";
@@ -295,6 +296,16 @@
   } else {
     blobsStyle = "arrows-2x2";
   }
+
+  let centerPoints: vec3[] = [];
+  $: if (blobs[selectedTimestep] && visualizationSelected == "Approximated") {
+    console.log(blobs[selectedTimestep].length);
+    centerPoints = [];
+    for (let i = 0; i < blobs[selectedTimestep].length; i++) {
+      centerPoints.push(blobs[selectedTimestep][i].center);
+    }
+    console.log(centerPoints);
+  }
 </script>
 
 <main>
@@ -381,9 +392,15 @@
               {#if blobs[selectedTimestep] && visualizationSelected == "Approximated"}
                 {#each blobs[selectedTimestep] as blob, i}
                   <Sphere
-                  radius={blob.normalizedPoints.length / 1000.0 * 2}
-                  center={blob.center}
-                  color={blobsColored ? [dataClustersGivenK[blobsAmount][i].color.rgb[0], dataClustersGivenK[blobsAmount][i].color.rgb[1], dataClustersGivenK[blobsAmount][i].color.rgb[2], 1.0] : [1.0, 1.0, 1.0, 1.0]} 
+                    radius={blob.normalizedPoints.length / 1000.0 * 2}
+                    center={blob.center}
+                    color={blobsColored ? [dataClustersGivenK[blobsAmount][i].color.rgb[0], dataClustersGivenK[blobsAmount][i].color.rgb[1], dataClustersGivenK[blobsAmount][i].color.rgb[2], 1.0] : [1.0, 1.0, 1.0, 1.0]} 
+                  />
+                  <ContinuousTube 
+                    points={centerPoints}
+                    radius={(1.0 / centerPoints.length) / 10.0} 
+                    color={[1.0, 1.0, 1.0]} 
+                    multicolored={false} 
                   />
                 {/each}
               {/if}
