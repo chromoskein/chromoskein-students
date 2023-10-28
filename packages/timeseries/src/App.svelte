@@ -299,12 +299,10 @@
 
   let centerPoints: vec3[] = [];
   $: if (blobs[selectedTimestep] && visualizationSelected == "Approximated") {
-    console.log(blobs[selectedTimestep].length);
     centerPoints = [];
     for (let i = 0; i < blobs[selectedTimestep].length; i++) {
       centerPoints.push(blobs[selectedTimestep][i].center);
     }
-    console.log(centerPoints);
   }
 </script>
 
@@ -399,7 +397,7 @@
                   <ContinuousTube 
                     points={centerPoints}
                     radius={(1.0 / centerPoints.length) / 10.0} 
-                    color={[1.0, 1.0, 1.0]} 
+                    color={[0.9, 0.9, 0.9]} 
                     multicolored={false} 
                   />
                 {/each}
