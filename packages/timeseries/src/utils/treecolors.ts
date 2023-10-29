@@ -94,13 +94,14 @@ export function assignHue(root: ClusterNode[][], node: ClusterNode, range, level
   //4. reduce each ri by keeping its middle fraction ;
   //   In the algorithm described in the paper, we reverse each ri first.
   //   However, now, we reverse them later.
-
+  /*
   r = r.map(function (range) {
     return [
-      range[0] + (range[1] - range[0]) * ((1 - fraction) / 2),
-      range[1] - (range[1] - range[0]) * ((1 - fraction) / 2)
+      range[0] + (range[1] - range[0]) * ((1 - fraction) / 2.0),
+      range[1] - (range[1] - range[0]) * ((1 - fraction) / 2.0)
     ];
   });
+  */
 
   //5. if rev then reverse the even-numbered ri’s;
   if (reverse) {

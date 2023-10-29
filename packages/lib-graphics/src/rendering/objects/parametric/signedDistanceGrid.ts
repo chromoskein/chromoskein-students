@@ -445,7 +445,7 @@ export class SignedDistanceGrid extends IParametricObject {
         
         let offset = 0;
         for (let j = 0; j < points.length; j++) {
-            let writeRadius = radius[j] * (1.0 / this.properties[0].scale[0]);
+            let writeRadius = radius[j] * (1.0 / this.properties[j].scale[0]);
             for(let i = 0; i < points[j].length; i++) {
                 pointsCPUBuffer.set(points[j][i], 4 * i + 4 * offset);
                 pointsCPUBuffer.set([writeRadius], 4 * i + 3 + 4 * offset);

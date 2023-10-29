@@ -13,6 +13,7 @@
     export let translates: vec3[] = [];
     export let scales: number[] = [];
     export let colors: vec3[] = [];
+    export let depths: number[] = [];
     export let alpha = 0.5;
 
     let device: Writable<GPUDevice> = getContext("device");
@@ -39,7 +40,7 @@
     };
     $: if (object) {
         for (let i = 0; i < points.length; i++) {
-            object.properties[i].color = vec4.fromValues(colors[i][0], colors[i][1], colors[i][2], alpha);
+            object.properties[i].color = vec4.fromValues(colors[i][0], colors[i][1], colors[i][2], alpha - Math.max(depths[i] - 1, 0) * 0.15);
         }
         object.setDirtyCPU();
     };

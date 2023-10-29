@@ -136,8 +136,11 @@
     }
   }
 
+  const staticColors: vec3[] = [vec3.fromValues(0.0159, 0.9294, 0), vec3.fromValues(0.9294, 0, 0.0157), vec3.fromValues(0, 0.0157, 0.9294), vec3.fromValues(0.9294, 0.9137, 0), vec3.fromValues(0, 0.9294, 0.9137), vec3.fromValues(0.9137, 0, 0.9294)];
   let matryoshkaColors: vec3[] = [];
+  let matryoshkaExperiemntalColors: vec3[] = [];
   let matryoshkaRadius: number[] = [];
+  let matryoshkaBlobDepth: number[] = [];
   let matryoshkaBlobs: {
     normalizedPoints: vec3[];
     center: vec3;
@@ -166,8 +169,8 @@
     matryoshkaColors = [];
     matryoshkaRadius = [];
 
-    let depthsVisible = matryoshkaBlobsVisible.filter(x => x).length;
-    let radiusOffset = depthsVisible * 0.015;
+    let depth = matryoshkaBlobsVisible.filter(x => x).length;
+    let radiusOffset = depth * 0.015;
 
     let found = [];
     let clusterPoints = [];
@@ -182,10 +185,13 @@
         if (found.filter(x => x[0] == cluster.from && x[1] == cluster.to).length == 0) {
           clusterPoints.push(dataPathlines.slice(cluster.from, cluster.to + 1));
           matryoshkaColors.push(cluster.color.rgb);
+          matryoshkaExperiemntalColors.push(staticColors[cluster.i % staticColors.length])
           found.push([cluster.from, cluster.to]);
           matryoshkaRadius.push(radiusOffset);
+          matryoshkaBlobDepth.push(depth);
         }
       }
+      depth--;
       radiusOffset -= 0.015;
     }
 
@@ -243,6 +249,7 @@
   let blobsColored = true;
   let blobAlpha = 0.4;
   let visualizationSelected = "Default"
+  let experimentalColors = false;
 
   let pathlinesSimplifyFactor = 0.0;
   let pathlinesShowChildren = false;
@@ -360,10 +367,11 @@
                   points={matryoshkaBlobPoints}
                   scales={matryoshkaBlobScales}
                   translates={matryoshkaBlobCenters}
-                  colors={matryoshkaColors}
+                  colors={(!experimentalColors) ? matryoshkaColors : matryoshkaExperiemntalColors}
                   radius={blobsRadius}
                   radiusOffsets={matryoshkaRadius}
                   alpha={blobAlpha}
+                  depths={matryoshkaBlobDepth}
               />
               {/if}
               {#if blobs[selectedTimestep] && visualizationSelected == "Default"}
@@ -424,6 +432,7 @@
             </Select>
 
             <Checkbox labelText="Colored" bind:checked={blobsColored} />
+            <Checkbox labelText="Experimental colors" bind:checked={experimentalColors} />
 
             {#if visualizationSelected != "Matryoshka"}
             <Slider labelText="Amount" fullWidth min={1} max={15} bind:value={blobsAmount} />
@@ -452,7 +461,7 @@
                       <div
                         style={`
                           width: ${100.0 * ((cluster.to - cluster.from + 1) / dataPathlines.length)}%;
-                          background-color: rgb(${255 * cluster.color.rgb[0]} ${255 * cluster.color.rgb[1]} ${255 * cluster.color.rgb[2]});
+                          background-color: rgb(${(!experimentalColors) ? 255 * cluster.color.rgb[0] : 255 * staticColors[i % staticColors.length][0]} ${(!experimentalColors) ? 255 * cluster.color.rgb[1] : 255 * staticColors[i % staticColors.length][1]} ${(!experimentalColors) ? 255 * cluster.color.rgb[2] : 255 * staticColors[i % staticColors.length][2]});
                           border: 2px solid ${(matryoshkaBlobsVisible[clusterLevel] ? "white" : "black")}
                         `}
                       />
