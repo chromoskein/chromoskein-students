@@ -168,6 +168,7 @@
   $: if (dataClustersGivenK && dataPathlines) {
     matryoshkaBlobs = [];
     matryoshkaColors = [];
+    matryoshkaExperiemntalColors = [];
     matryoshkaRadius = [];
 
     let depth = matryoshkaBlobsVisible.filter(x => x).length;
@@ -186,7 +187,7 @@
         if (found.filter(x => x[0] == cluster.from && x[1] == cluster.to).length == 0) {
           clusterPoints.push(dataPathlines.slice(cluster.from, cluster.to + 1));
           matryoshkaColors.push(cluster.color.rgb);
-          matryoshkaExperiemntalColors.push(staticColors[cluster.i % staticColors.length])
+          matryoshkaExperiemntalColors.push(staticColors[cluster.i % staticColors.length]);
           found.push([cluster.from, cluster.to]);
           matryoshkaRadius.push(radiusOffset);
           matryoshkaBlobDepth.push(depth);
