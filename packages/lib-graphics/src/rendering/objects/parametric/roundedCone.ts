@@ -152,14 +152,25 @@ export class RoundedCone extends IParametricObject {
                 normal
             );
         }
+
+        // simplified Phong shading model
+        fn calculateLight(ray: Ray, intersection: Intersection) -> vec4<f32> {
+            var ambient = 0.05;
+            
+            var norm =  -intersection.normal;
+            var lightDir = ray.direction;
+            var diffuse = max(dot(norm, lightDir), 0.0);
+            
+            var result = (ambient + diffuse) * ${this.variableName}.color.rgb;
+
+            return vec4(result, 1.0);
+        }
     `;
 
     static gpuCodeGetOutputValue(variable: 'color' | 'normal' | 'ao'): string {
         switch (variable) {
             case 'color': {
-                return `
-                    let color = ${this.variableName}.color;
-                `;
+                return ``;
             }
             case 'normal': {
                 return `
@@ -173,6 +184,12 @@ export class RoundedCone extends IParametricObject {
             }
         }
     }
+
+    public static gpuCodeGetIntersection(name: string, typeName: string): string {
+        return /* wgsl */`
+        var intersection = ray${typeName}Intersection(ray, ${name});
+        var color = vec4<f32>(calculateLight(ray, intersection));
+        `}
 
     static gpuCodeGetBoundingRectangleVertex = `
         let center: vec3<f32> = 0.5 * (${this.variableName}.start.xyz + ${this.variableName}.end.xyz);
