@@ -29,6 +29,7 @@
   import { treeColor } from "./utils/treecolors";
   import Sphere from "./objects/Sphere.svelte";
   import ContinuousTube from "./objects/ContinuousTube.svelte";
+  import Cone from "./objects/Cone.svelte";
 
 
   import "@carbon/styles/css/styles.css";
@@ -307,7 +308,7 @@
   }
 
   let centerPoints: vec3[] = [];
-  $: if (blobs[selectedTimestep] && visualizationSelected == "Approximated") {
+  $: if (blobs[selectedTimestep] && (visualizationSelected == "Spheres"  || visualizationSelected == "Cones")) {
     centerPoints = [];
     for (let i = 0; i < blobs[selectedTimestep].length; i++) {
       centerPoints.push(blobs[selectedTimestep][i].center);
@@ -420,7 +421,7 @@
                   />
                 {/each}
               {/if}
-              {#if blobs[selectedTimestep] && visualizationSelected == "Approximated"}
+              {#if blobs[selectedTimestep] && visualizationSelected == "Spheres"}
                 {#each blobs[selectedTimestep] as blob, i}
                   <Sphere
                     radius={blob.normalizedPoints.length / 1000.0 * 2}
@@ -434,6 +435,32 @@
                     multicolored={false} 
                   />
                 {/each}
+              {/if}
+              {#if blobs[selectedTimestep] && visualizationSelected == "Cones"}
+                {#each blobs[selectedTimestep] as blob, i}
+                  <Cone
+                    startRadius={0.1}
+                    center={blob.center}
+                    height={0.1}
+                    orientation={vec3.fromValues(0.1, 0.2, 0.1)}
+                    color={blobsColored ? [dataClustersGivenK[blobsAmount][i].color.rgb[0], dataClustersGivenK[blobsAmount][i].color.rgb[1], dataClustersGivenK[blobsAmount][i].color.rgb[2]] : [1.0, 1.0, 1.0]}
+                    up={true}
+                  />
+                  <Cone
+                    startRadius={0.1}
+                    center={blob.center}
+                    height={0.1}
+                    orientation={vec3.fromValues(0.1, 0.2, 0.1)}
+                    color={blobsColored ? [dataClustersGivenK[blobsAmount][i].color.rgb[0], dataClustersGivenK[blobsAmount][i].color.rgb[1], dataClustersGivenK[blobsAmount][i].color.rgb[2]] : [1.0, 1.0, 1.0]}
+                    up={false}
+                  />
+                  <ContinuousTube 
+                    points={centerPoints}
+                    radius={(1.0 / centerPoints.length) / 20.0} 
+                    color={[0.9, 0.9, 0.9]} 
+                    multicolored={false} 
+                  />
+                {/each}                
               {/if}
             </Viewport3D>
           {/if}
@@ -470,7 +497,8 @@
               <SelectItem value="None" />
               <SelectItem value="Default" />
               <SelectItem value="Matryoshka" />
-              <SelectItem value="Approximated" />
+              <SelectItem value="Spheres" />
+              <SelectItem value="Cones" />
             </Select>
 
             <Checkbox labelText="Colored" bind:checked={blobsColored} />
@@ -479,7 +507,7 @@
             {#if visualizationSelected != "Matryoshka"}
             <Slider labelText="Amount" fullWidth min={1} max={15} bind:value={blobsAmount} />
             {/if}
-            {#if visualizationSelected != "Approximated"}
+            {#if visualizationSelected != "Spheres" && visualizationSelected != "Cones"}
               <Slider labelText="Radius" fullWidth min={0.01} max={0.1} step={0.01} bind:value={blobsRadius} />
             {/if}
             {#if visualizationSelected == "Matryoshka"}
