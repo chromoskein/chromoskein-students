@@ -45,11 +45,17 @@ struct GlobalsStruct {
         let invFactor = 1.0 - factor;
 
         var sdf = 1.0;
-        for(var i: u32 = step * globals.sizeOfStep; i < step * globals.sizeOfStep + globals.sizeOfStep - 1; i++) {
-            let p1 = points[i].xyz;
-            let p2 = points[i + 1].xyz;
-    
-            let sdf2 = sdCapsule(p, p1, p2, globals.radius);
+        if (globals.sizeOfStep > 1) {
+            for(var i: u32 = step * globals.sizeOfStep; i < step * globals.sizeOfStep + globals.sizeOfStep - 1; i++) {
+                let p1 = points[i].xyz;
+                let p2 = points[i + 1].xyz;
+        
+                let sdf2 = sdCapsule(p, p1, p2, globals.radius);
+                sdf = opSmoothUnion(sdf, sdf2, 0.1);
+            }
+        } else {
+            let p1 = points[step].xyz;
+            let sdf2 = sdSphere(p, p1, globals.radius);
             sdf = opSmoothUnion(sdf, sdf2, 0.1);
         }
 

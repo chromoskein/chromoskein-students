@@ -237,6 +237,7 @@
 
   //#region Configuration
   // Volume
+  let blobsTimeVolumeVisible = false;
   let volumeVisible = false;
   let volumeTransparency = 0.15;
   let volumeRadius = 0.03;
@@ -364,14 +365,37 @@
         <Pane size={50}>
           {#if $adapter && $device && $graphicsLibrary && dataTimesteps && dataTimesteps.length > volumeTimeRange[1]}
             <Viewport3D bind:viewport>
-              <TimeVolume
-                visible={volumeVisible}
-                points={dataTimesteps.slice(volumeTimeRange[0], volumeTimeRange[1])}
-                transparency={volumeTransparency}
-                radius={volumeRadius}
-                colormap={volumeColormap}
-                func={volumeFunction}
+              <!--
+                "Empty" Sphere is put here because there must be at least one object in scene else undefined behavior starts 
+                for reasons completely unknown to me
+              -->
+              <Sphere
+                radius={0}
+                center={[0.0, 0.0, 0.0]}
+                color={[0.0, 0.0, 0.0, 0.0]} 
               />
+              {#if volumeVisible}
+                <TimeVolume
+                  visible={volumeVisible}
+                  points={dataTimesteps.slice(volumeTimeRange[0], volumeTimeRange[1])}
+                  transparency={volumeTransparency}
+                  radius={volumeRadius}
+                  colormap={volumeColormap}
+                  func={volumeFunction}
+                />
+              {/if}
+              {#if blobsTimeVolumeVisible && blobs && blobs[0]}
+                {#each blobs[0] as blob, i}
+                <TimeVolume
+                  visible={true}
+                  points={blobs.map(p => [p[i].center])}
+                  transparency={volumeTransparency}
+                  radius={volumeRadius}
+                  colormap={volumeColormap}
+                  func={volumeFunction}
+                />
+                {/each}
+              {/if}
               {#if visualizationSelected == "Matryoshka"}
                 <SignedDistanceGridBlended
                   points={matryoshkaBlobPoints}
@@ -421,9 +445,11 @@
         <Accordion>
           <AccordionItem title="Volume">
             <Checkbox labelText="Visible" bind:checked={volumeVisible} />
+            <Checkbox labelText="Approximation blob volumes" bind:checked={blobsTimeVolumeVisible} />
+
             <Slider labelText="Transparency" fullWidth min={0.0} max={1.0} step={0.01} bind:value={volumeTransparency} />
             <Slider labelText="Radius" fullWidth min={0.0} max={0.1} step={0.01} bind:value={volumeRadius} />
-            <RangeSlider id={"rangeSlider"} bind:values={volumeTimeRange} min={0} max={599} range={true} />
+            <!--<RangeSlider id={"rangeSlider"} bind:values={volumeTimeRange} min={0} max={599} range={true} />-->
 
             <Select labelText="Colormap" bind:selected={volumeColormapChoice}>
               <SelectItem value="White to Black" />

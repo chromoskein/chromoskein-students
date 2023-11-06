@@ -331,7 +331,10 @@ export class Volume extends IParametricObject {
                         }                        
                     }                    
 
-                    // color = vec4(0.0);
+                    // Temporary solution to a larger problem
+                    if (color.a < 0.25) {
+                        discard;
+                    }
                     // if (depth < previousDepth) {
                     //     color = vec4(1.0, 1.0 - color.a, 0.0, 1.0 - color.a);
                     // } else {
