@@ -54,11 +54,12 @@
   //#region Data
   const filenames: string[] = new Array(600).fill(null).map((v, i) => "./timeseries/timestep_" + (i + 1).toString() + ".XYZ");
 
-  let timesteps: vec3[][] = null;
+  //let timesteps: vec3[][] = null;
+  let dataTimesteps: vec3[][] = null;
 
   // Load base timestep data and transform them into pathlines (really just a transpose of data)
   // [timestep][bin]
-  $: dataTimesteps = timesteps && normalizePointClouds(timesteps);
+  // $: dataTimesteps = timesteps && normalizePointClouds(timesteps);
 
   // [pathline][timestep]
   $: dataPathlines = dataTimesteps && timestepsToPathlines(dataTimesteps);
@@ -96,8 +97,9 @@
 
   onMount(async () => {
     await getGPU();
-
-    timesteps = await loadTimesteps(filenames);
+    //normalizePointClouds(timesteps)
+    let timesteps = await loadTimesteps(filenames);
+    dataTimesteps = normalizePointClouds(timesteps);
     // dataTimesteps = normalizePointClouds(timesteps);
     // dataPathlines = timestepsToPathlines(dataTimesteps);
     // dataClustersGivenK = clusterPathlines(dataPathlines);
@@ -595,6 +597,7 @@
     flex-direction: row;
   }
 
+  /*
   .arrows-2x2 {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -623,6 +626,7 @@
     grid-template-columns: 1fr 1fr 1fr 1fr;
     grid-template-rows: 1fr 1fr 1fr 1fr;
   }
+  */
 
   .cluster-dendogram {
     width: 100%;
