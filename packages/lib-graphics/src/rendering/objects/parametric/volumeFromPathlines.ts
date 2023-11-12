@@ -1,3 +1,5 @@
+import { VolumeTextureSize } from "./volume";
+
 export const volumeFromPathlines = () => {
     return /* wgsl */`
 
@@ -24,23 +26,24 @@ fn sdSphere(p: vec3<f32>, c: vec3<f32>, s: f32 ) -> f32
 
 struct GlobalsStruct {
     radius: f32,
-    //steps: u32, // Amount of timesteps
-    //sizeOfStep: u32, // Amount of points inside a timestep
 };
 
 @group(0) @binding(0) var<uniform> globals: GlobalsStruct;
 @group(0) @binding(1) var<storage, read> points: array<vec4<f32>>;
 @group(0) @binding(2) var<storage, read> delimiters: array<u32>;
-@group(0) @binding(3) var<storage, read> timestepCounts: array<u32>;
-@group(0) @binding(4) var<storage, read> pointCounts: array<u32>;
+@group(0) @binding(3) var<storage, read> timestep_counts: array<u32>; // Amount of timesteps
+@group(0) @binding(4) var<storage, read> point_counts: array<u32>; // Amount of points inside a timestep
 @group(0) @binding(5) var grid: texture_storage_3d<rgba8unorm, write>;
 
 @compute @workgroup_size(4, 4, 4) fn main(@builtin(global_invocation_id) GlobalInvocationID: vec3<u32>) {
-    let positionNDC = (1.0 / 64.0) * vec3<f32>(GlobalInvocationID.xyz) + vec3<f32>(1.0 / 128.0);
+    let positionNDC = (1.0 / ${VolumeTextureSize}) * vec3<f32>(GlobalInvocationID.xyz % ${VolumeTextureSize}) + vec3<f32>(1.0 / ${2 * VolumeTextureSize});
+
     let p = 2.0 * (positionNDC - vec3<f32>(0.5)); // [-1, 1]
 
-    let timestepCount = timestepCounts[0];
-    let pointCount = pointCounts[0];
+    let objectId = GlobalInvocationID.z / ${VolumeTextureSize};
+
+    let timestepCount = timestep_counts[objectId];
+    let pointCount = point_counts[objectId];
 
     var finalValue = 0.0;
     var lastTimestep: u32 = 0;
@@ -55,14 +58,14 @@ struct GlobalsStruct {
         if (pointCount > 1) {
             // Repeat for every point pair inside timestep
             for(var i: u32 = step * pointCount; i < step * pointCount + pointCount - 1; i++) {
-                let p1 = points[i].xyz;
-                let p2 = points[i + 1].xyz;
+                let p1 = points[delimiters[objectId] + i].xyz;
+                let p2 = points[delimiters[objectId] + i + 1].xyz;
         
                 let sdf2 = sdCapsule(p, p1, p2, globals.radius);
                 sdf = opSmoothUnion(sdf, sdf2, 0.1);
             }
         } else {
-            let p1 = points[step].xyz;
+            let p1 = points[delimiters[objectId] + step].xyz;
             let sdf2 = sdSphere(p, p1, globals.radius);
             sdf = opSmoothUnion(sdf, sdf2, 0.1);
         }

@@ -119,6 +119,8 @@ export const VolumeStruct = new r.Struct({
     frameID: r.uint32le,
 });
 
+export const VolumeTextureSize: number = 64;
+
 export class Volume extends IParametricObject {
     private _pipelines: Pipelines;
 
@@ -288,7 +290,7 @@ export class Volume extends IParametricObject {
                     let previousDepth: f32 = textureLoad(depthTexture, vec2<u32>(vertexOuput.Position.xy), 0);
 
                     // Step 3: Compute the step size to march through the volume grid
-                    let dt_vec = 1.0 / (vec3(64.0) * abs(rayDirectionLocalSpace));
+                    let dt_vec = 1.0 / (vec3(${VolumeTextureSize}) * abs(rayDirectionLocalSpace));
                     let dt = min(dt_vec.x, min(dt_vec.y, dt_vec.z));
 
                     // Step 4: Starting from the entry point, march the ray through the volume
@@ -393,7 +395,7 @@ export class Volume extends IParametricObject {
         return [];
     }
 
-    private _textureSize: number = 64;
+    private _textureSize: number = VolumeTextureSize;
     private _texture: GPUTexture | null = null;
     private _colorMap: GPUTexture | null = null;
 
@@ -474,7 +476,7 @@ export class Volume extends IParametricObject {
 
         if (!pipeline || !bgl) return;
 
-        this._textureSize = 64;
+        this._textureSize = VolumeTextureSize;
 
         this._texture = this._graphicsLibrary.device.createTexture({
             size: {
@@ -488,15 +490,14 @@ export class Volume extends IParametricObject {
             usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
         });
 
-        const delimitersCPUBuffer = new Uint32Array(points.length + 1);
+        const delimitersCPUBuffer = new Uint32Array(points.length);
         const timestepCountCPUBuffer = new Uint32Array(points.length);
         const pointsCountCPUBuffer = new Uint32Array(points.length);
 
         let totalPoints = 0;
-        delimitersCPUBuffer.set([0], 0);
         for(let i = 0; i < points.length; i++) {
+            delimitersCPUBuffer.set([totalPoints], i);
             totalPoints += points[i].length * points[i][0].length;
-            delimitersCPUBuffer.set([totalPoints], i + 1);
             timestepCountCPUBuffer.set([points[i].length], i);
             pointsCountCPUBuffer.set([points[i][0].length], i);
         }
@@ -516,7 +517,7 @@ export class Volume extends IParametricObject {
 
         const globalsBuffer = device.createBuffer({ size: 64, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM });
         const pointsBuffer = device.createBuffer({ size: pointsFlat.length * 4 * 4, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE });
-        const delimitersBuffer = device.createBuffer({ size: (points.length + 1) * 4, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE });
+        const delimitersBuffer = device.createBuffer({ size: points.length * 4, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE });
         const timestepCountsBuffer = device.createBuffer({ size: points.length * 4, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE });
         const pointsCountBuffer = device.createBuffer({ size: points.length * 4, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE });
         const bindGroup = device.createBindGroup({
