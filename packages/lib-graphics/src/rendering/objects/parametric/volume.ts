@@ -36,8 +36,24 @@ class Pipelines {
                 binding: 1,
                 visibility: GPUShaderStage.COMPUTE,
                 buffer: { type: 'read-only-storage' },
-            }, {
+            },
+            {
                 binding: 2,
+                visibility: GPUShaderStage.COMPUTE,
+                buffer: { type: 'read-only-storage' },
+            },
+            {
+                binding: 3,
+                visibility: GPUShaderStage.COMPUTE,
+                buffer: { type: 'read-only-storage' },
+            },
+            {
+                binding: 4,
+                visibility: GPUShaderStage.COMPUTE,
+                buffer: { type: 'read-only-storage' },
+            },
+            {
+                binding: 5,
                 visibility: GPUShaderStage.COMPUTE,
                 storageTexture: {
                     format: 'rgba8unorm',
@@ -435,7 +451,7 @@ export class Volume extends IParametricObject {
         this.onAllocationMoved();
     }
 
-    public fromPoints(device: GPUDevice, points: vec3[][], radius: number = 0.05) {
+    public fromPointArrays(device: GPUDevice, points: vec3[][][], radius: number = 0.05) {
         const pipeline = this._pipelines.computePipelines.get('volumeFromPathlines');
         const bgl = this._pipelines.bindGroupLayouts.get('volumeFromPathlines');
 
@@ -447,7 +463,7 @@ export class Volume extends IParametricObject {
             size: {
                 width: this._textureSize,
                 height: this._textureSize,
-                depthOrArrayLayers: this._textureSize,
+                depthOrArrayLayers: this._textureSize * points.length,
             },
             mipLevelCount: 1,
             dimension: "3d",
@@ -455,21 +471,37 @@ export class Volume extends IParametricObject {
             usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
         });
 
-        const pointsFlat = points.flat();
+        const delimitersCPUBuffer = new Uint32Array(points.length + 1);
+        const timestepCountCPUBuffer = new Uint32Array(points.length);
+        const pointsCountCPUBuffer = new Uint32Array(points.length);
+
+        let totalPoints = 0;
+        delimitersCPUBuffer.set([0], 0);
+        for(let i = 0; i < points.length; i++) {
+            totalPoints += points[i].length * points[i][0].length;
+            delimitersCPUBuffer.set([totalPoints], i + 1);
+            timestepCountCPUBuffer.set([points[i].length], i);
+            pointsCountCPUBuffer.set([points[i][0].length], i);
+        }
+        
+        let pointsFlat = points.flat().flat();
         const pointsCPUBuffer = new Float32Array(pointsFlat.length * 4);
         for (let i = 0; i < pointsFlat.length; i++) {
             pointsCPUBuffer.set(pointsFlat[i], 4 * i);
         }
-        const globalsCPUBuffer = new ArrayBuffer(256);
+
+        const globalsCPUBuffer = new ArrayBuffer(64);
         const globalsCPUBufferF32 = new Float32Array(globalsCPUBuffer);
-        const globalsCPUBufferU32 = new Uint32Array(globalsCPUBuffer);
-
+        //const globalsCPUBufferU32 = new Uint32Array(globalsCPUBuffer);
         globalsCPUBufferF32[0] = radius;
-        globalsCPUBufferU32[1] = points.length;
-        globalsCPUBufferU32[2] = points[0].length;
+        //globalsCPUBufferU32[1] = points.length;
+        //globalsCPUBufferU32[2] = points[0].length;
 
-        const globalsBuffer = device.createBuffer({ size: 256, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM });
+        const globalsBuffer = device.createBuffer({ size: 64, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM });
         const pointsBuffer = device.createBuffer({ size: pointsFlat.length * 4 * 4, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE });
+        const delimitersBuffer = device.createBuffer({ size: (points.length + 1) * 4, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE });
+        const timestepCountsBuffer = device.createBuffer({ size: points.length * 4, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE });
+        const pointsCountBuffer = device.createBuffer({ size: points.length * 4, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE });
         const bindGroup = device.createBindGroup({
             layout: bgl,
             entries: [{
@@ -478,24 +510,40 @@ export class Volume extends IParametricObject {
             }, {
                 binding: 1,
                 resource: { buffer: pointsBuffer }
-            }, {
+            },  {
                 binding: 2,
+                resource: { buffer: delimitersBuffer }
+            }, {
+                binding: 3,
+                resource: { buffer: timestepCountsBuffer }
+            }, {
+                binding: 4,
+                resource: { buffer: pointsCountBuffer }
+            }, {
+                binding: 5,
                 resource: this._texture.createView()
             }]
         });
 
-        device.queue.writeBuffer(pointsBuffer, 0, pointsCPUBuffer, 0);
         device.queue.writeBuffer(globalsBuffer, 0, globalsCPUBuffer, 0);
+        device.queue.writeBuffer(pointsBuffer, 0, pointsCPUBuffer, 0);
+        device.queue.writeBuffer(delimitersBuffer, 0, delimitersCPUBuffer, 0);
+        device.queue.writeBuffer(timestepCountsBuffer, 0, timestepCountCPUBuffer, 0);
+        device.queue.writeBuffer(pointsCountBuffer, 0, pointsCountCPUBuffer, 0);
         const commandEncoder = device.createCommandEncoder();
         const computePass = commandEncoder.beginComputePass();
         computePass.setPipeline(pipeline);
         computePass.setBindGroup(0, bindGroup);
-        computePass.dispatchWorkgroups(16, 16, 16);
+        computePass.dispatchWorkgroups(16, 16, 16 * points.length);
         computePass.end();
 
         device.queue.submit([commandEncoder.finish()]);
 
         this.onAllocationMoved();
+    }
+
+    public fromPoints(device: GPUDevice, points: vec3[][], radius: number = 0.05) {
+        this.fromPointArrays(device, [points], radius);
     }
 
     public async setColorMapFromBitmap(bitmap: ImageBitmap) {
