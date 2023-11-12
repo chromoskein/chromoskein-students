@@ -275,8 +275,11 @@ export class Volume extends IParametricObject {
                 return /* wgsl */`
                     var color = vec4<f32>(0.0);
 
-                    let rayOriginLocalSpace = (${this.variableName}[0].modelMatrixInverse * vec4<f32>(ray.origin, 1.0)).xyz;
-                    let rayDirectionLocalSpace = normalize(${this.variableName}[0].modelMatrixInverse * vec4<f32>(ray.direction, 0.0)).xyz;
+                    //let rayOriginLocalSpace = (${this.variableName}[0].modelMatrixInverse * vec4<f32>(ray.origin, 1.0)).xyz;
+                    //let rayDirectionLocalSpace = normalize(${this.variableName}[0].modelMatrixInverse * vec4<f32>(ray.direction, 0.0)).xyz;
+                    // The volume object is normalized and situated at origin so no need to transform ray
+                    let rayOriginLocalSpace = (vec4<f32>(ray.origin, 1.0)).xyz;
+                    let rayDirectionLocalSpace = normalize(vec4<f32>(ray.direction, 0.0)).xyz;
 
                     let rayLocalSpace = Ray(rayOriginLocalSpace, rayDirectionLocalSpace);
 
@@ -304,12 +307,18 @@ export class Volume extends IParametricObject {
                         // Note that here we don't use the opacity from the transfer function,
                         // and just use the sample value as the opacity
                         let p = rayOriginLocalSpace + t * rayDirectionLocalSpace;
+                        var p_tex = 0.5 * p + vec3(0.5);
+                        p_tex.z = p_tex.z / f32(arrayLength(&${this.variableName}));
 
                         var value = 0.0;
-                        if (${this.variableName}[0].func == 0) {
-                            value = textureSampleLevel(${this.variableName}Texture, linearSampler, 0.5 * p + vec3(0.5), 0.0).g;
-                        } else {
-                            value = textureSampleLevel(${this.variableName}Texture, linearSampler, 0.5 * p + vec3(0.5), 0.0).b;
+                        for(var i: u32 = 0; i < arrayLength(&${this.variableName}); i++) {
+                            var texValue = 0.0;
+                            if (${this.variableName}[0].func == 0) {
+                                texValue = textureSampleLevel(${this.variableName}Texture, linearSampler, p_tex + vec3<f32>(0.0, 0.0, f32(i) / f32(arrayLength(&${this.variableName}))), 0.0).g;
+                            } else {
+                                texValue = textureSampleLevel(${this.variableName}Texture, linearSampler, p_tex + vec3<f32>(0.0, 0.0, f32(i) / f32(arrayLength(&${this.variableName}))), 0.0).b;
+                            }
+                            value = max(value, texValue);
                         }
                         // let value = textureSampleLevel(${this.variableName}Texture, linearSampler, 0.5 * p + vec3(0.5), 0.0).r;
                         // let lastTimestep = textureSampleLevel(${this.variableName}Texture, linearSampler, 0.5 * p + vec3(0.5), 0.0).g;
