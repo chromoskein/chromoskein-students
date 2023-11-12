@@ -31,6 +31,7 @@
   import ContinuousTube from "./objects/ContinuousTube.svelte";
   import Cone from "./objects/Cone.svelte";
 
+  import PCA from 'pca-js';
 
   import "@carbon/styles/css/styles.css";
   import "@carbon/charts/styles.css";
@@ -271,6 +272,8 @@
   let selectedTimestep = 0; 
   
   let isMulticolored = false;
+
+  let pcaVis = "First PC";
   //#endregion Configuration
 
   function dendrogramClick(depth) {
@@ -321,6 +324,22 @@
     centerPoints = [];
     for (let i = 0; i < blobs[selectedTimestep].length; i++) {
       centerPoints.push(blobs[selectedTimestep][i].center);
+    }
+  }
+
+  let firstPC: vec3[] = [];
+  let secondPC: vec3[] = [];
+  $: if (blobs[selectedTimestep] && (visualizationSelected == "Cones")) {
+    firstPC = [];
+    secondPC = [];
+
+    for (let i = 0; i < blobs[selectedTimestep].length; i++) {
+      let data = blobs[selectedTimestep][i].normalizedPoints;
+      let vectors = PCA.getEigenVectors(data);
+      //console.log("first: " + vectors[0].vector);
+      //console.log("second: " + vectors[1].vector);
+      firstPC.push(vectors[0].vector);
+      secondPC.push(vectors[1].vector);
     }
   }
 </script>
@@ -443,21 +462,47 @@
                   />
                 {/each}
               {/if}
-              {#if blobs[selectedTimestep] && visualizationSelected == "Cones"}
+              {#if blobs[selectedTimestep] && visualizationSelected == "Cones" && pcaVis == "First PC"}
                 {#each blobs[selectedTimestep] as blob, i}
                   <Cone
                     startRadius={0.1}
                     center={blob.center}
-                    height={0.1}
-                    orientation={vec3.fromValues(0.1, 0.2, 0.1)}
+                    height={0.0}
+                    orientation={vec3.fromValues(0.5 * firstPC[i][0], 0.5 * firstPC[i][1], 0.5 * firstPC[i][2])}
                     color={blobsColored ? [dataClustersGivenK[blobsAmount][i].color.rgb[0], dataClustersGivenK[blobsAmount][i].color.rgb[1], dataClustersGivenK[blobsAmount][i].color.rgb[2]] : [1.0, 1.0, 1.0]}
                     up={true}
                   />
                   <Cone
                     startRadius={0.1}
                     center={blob.center}
-                    height={0.1}
-                    orientation={vec3.fromValues(0.1, 0.2, 0.1)}
+                    height={0.0}
+                    orientation={vec3.fromValues(0.5 * firstPC[i][0], 0.5 * firstPC[i][1], 0.5 * firstPC[i][2])}
+                    color={blobsColored ? [dataClustersGivenK[blobsAmount][i].color.rgb[0], dataClustersGivenK[blobsAmount][i].color.rgb[1], dataClustersGivenK[blobsAmount][i].color.rgb[2]] : [1.0, 1.0, 1.0]}
+                    up={false}
+                  />
+                  <ContinuousTube 
+                    points={centerPoints}
+                    radius={(1.0 / centerPoints.length) / 20.0} 
+                    color={[0.9, 0.9, 0.9]} 
+                    multicolored={false} 
+                  />
+                {/each}                
+              {/if}
+              {#if blobs[selectedTimestep] && visualizationSelected == "Cones" && pcaVis == "First and second PC"}
+                {#each blobs[selectedTimestep] as blob, i}
+                  <Cone
+                    startRadius={0.1}
+                    center={blob.center}
+                    height={0.0}
+                    orientation={vec3.fromValues(0.5 * firstPC[i][0], 0.5 * firstPC[i][1], 0.5 * firstPC[i][2])}
+                    color={blobsColored ? [dataClustersGivenK[blobsAmount][i].color.rgb[0], dataClustersGivenK[blobsAmount][i].color.rgb[1], dataClustersGivenK[blobsAmount][i].color.rgb[2]] : [1.0, 1.0, 1.0]}
+                    up={true}
+                  />
+                  <Cone
+                    startRadius={0.1}
+                    center={blob.center}
+                    height={0.0}
+                    orientation={vec3.fromValues(0.3 * secondPC[i][0], 0.3 * secondPC[i][1], 0.3 * secondPC[i][2])}
                     color={blobsColored ? [dataClustersGivenK[blobsAmount][i].color.rgb[0], dataClustersGivenK[blobsAmount][i].color.rgb[1], dataClustersGivenK[blobsAmount][i].color.rgb[2]] : [1.0, 1.0, 1.0]}
                     up={false}
                   />
@@ -548,6 +593,13 @@
               </div>
             {/if}
           </AccordionItem>
+
+          {#if visualizationSelected == "Cones"}
+            <Select labelText="Principal components" bind:selected={pcaVis}>
+              <SelectItem value="First PC" />
+              <SelectItem value="First and second PC" />
+            </Select>            
+          {/if}
 
           <AccordionItem open title="Average pathline">
             <Slider labelText="Simplify " fullWidth min={0.0} max={0.5} step={0.01} bind:value={pathlinesSimplifyFactor} />
