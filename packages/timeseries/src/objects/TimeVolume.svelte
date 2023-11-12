@@ -45,7 +45,7 @@
     }
 
     $: if (object && transparency) {
-        object.properties.transparency = transparency;
+        object.transparency = transparency;
         object.setDirtyCPU();
     }
 

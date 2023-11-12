@@ -62,7 +62,7 @@ fn main_fragment(vertexOuput: VertexOutput) -> FragmentOutput {
     ${getObject}
 
     // 3. Intersect (given function)
-    var intersection = ray${typeName}Intersection(ray, ${name});
+    // var intersection = ray${typeName}Intersection(ray, ${name});
 
     // if (intersection.t < 0.0) {
     //     discard;

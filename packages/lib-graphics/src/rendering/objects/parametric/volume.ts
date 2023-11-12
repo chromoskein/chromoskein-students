@@ -106,6 +106,8 @@ export interface VolumeProperties {
     frameID: number,
 }
 
+const VolumeUniformSize = 188;
+
 export const VolumeStruct = new r.Struct({
     modelMatrix: new r.Array(r.floatle, 16),
     modelMatrixInverse: new r.Array(r.floatle, 16),
@@ -133,7 +135,7 @@ export class Volume extends IParametricObject {
             entries: [{
                 binding: 0,
                 visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-                buffer: { type: 'uniform' },
+                buffer: { type: 'read-only-storage' },
             }, {
                 binding: 1,
                 visibility: GPUShaderStage.FRAGMENT,
@@ -183,7 +185,7 @@ export class Volume extends IParametricObject {
 
     static accumulationTextures: [GPUTexture, GPUTexture] | null = null;
 
-    public properties: VolumeProperties;
+    public properties: VolumeProperties[];
 
     //#region GPU Code
     public static gpuCodeGlobals = /* wgsl */`
@@ -198,7 +200,7 @@ export class Volume extends IParametricObject {
             frameID: u32,
         };
         
-        @group(1) @binding(0) var<uniform> ${this.variableName}: ${this.typeName};
+        @group(1) @binding(0) var<storage, read> ${this.variableName}: array<${this.typeName}>;
         @group(1) @binding(1) var ${this.variableName}Texture: texture_3d<f32>;
         @group(1) @binding(2) var linearSampler: sampler;
         @group(1) @binding(3) var colormap: texture_2d<f32>;
@@ -271,8 +273,8 @@ export class Volume extends IParametricObject {
                 return /* wgsl */`
                     var color = vec4<f32>(0.0);
 
-                    let rayOriginLocalSpace = (${this.variableName}.modelMatrixInverse * vec4<f32>(ray.origin, 1.0)).xyz;
-                    let rayDirectionLocalSpace = normalize(${this.variableName}.modelMatrixInverse * vec4<f32>(ray.direction, 0.0)).xyz;
+                    let rayOriginLocalSpace = (${this.variableName}[0].modelMatrixInverse * vec4<f32>(ray.origin, 1.0)).xyz;
+                    let rayDirectionLocalSpace = normalize(${this.variableName}[0].modelMatrixInverse * vec4<f32>(ray.direction, 0.0)).xyz;
 
                     let rayLocalSpace = Ray(rayOriginLocalSpace, rayDirectionLocalSpace);
 
@@ -302,7 +304,7 @@ export class Volume extends IParametricObject {
                         let p = rayOriginLocalSpace + t * rayDirectionLocalSpace;
 
                         var value = 0.0;
-                        if (${this.variableName}.func == 0) {
+                        if (${this.variableName}[0].func == 0) {
                             value = textureSampleLevel(${this.variableName}Texture, linearSampler, 0.5 * p + vec3(0.5), 0.0).g;
                         } else {
                             value = textureSampleLevel(${this.variableName}Texture, linearSampler, 0.5 * p + vec3(0.5), 0.0).b;
@@ -313,7 +315,7 @@ export class Volume extends IParametricObject {
 
                         // Version simple based on last timestep
                         let tf = textureSampleLevel(colormap, linearSampler, vec2<f32>(value, 0.5), 0.0).rgb;
-                        let val_color = vec4(tf, ${this.variableName}.transparency * value);
+                        let val_color = vec4(tf, ${this.variableName}[0].transparency * value);
 
                         // Version Threshold
                         // let tf = textureSampleLevel(colormap, linearSampler, vec2<f32>(lastTimestep, 0.5), 0.0).rgb;
@@ -335,8 +337,8 @@ export class Volume extends IParametricObject {
                         color.b += (1.0 - color.a) * val_color.a * val_color.b;
                         color.a += (1.0 - color.a) * val_color.a;
 
-                        intersection.t = t;
-                        intersectionWorldSpace = camera.position.xyz + intersection.t * ray.direction.xyz;
+                        //intersection.t = t;
+                        intersectionWorldSpace = camera.position.xyz + t * ray.direction.xyz;
                         var depthVec = camera.projectionView * vec4<f32>(intersectionWorldSpace.xyz, 1.0);
                         depthVec = depthVec * (1.0 / depthVec.w);
                         depth = depthVec.z;
@@ -373,8 +375,8 @@ export class Volume extends IParametricObject {
     }
 
     static gpuCodeGetBoundingRectangleVertex = `
-        let begin = ${this.variableName}.modelMatrix * vec4<f32>(-1.0, -1.0, -1.0, 1.0);
-        let end = ${this.variableName}.modelMatrix * vec4<f32>(1.0);
+        let begin = ${this.variableName}[0].modelMatrix * vec4<f32>(-1.0, -1.0, -1.0, 1.0);
+        let end = ${this.variableName}[0].modelMatrix * vec4<f32>(1.0);
 
         let center = 0.5 * (begin.xyz + end.xyz);
         let radius = distance(center, begin.xyz);
@@ -395,13 +397,14 @@ export class Volume extends IParametricObject {
     private _texture: GPUTexture | null = null;
     private _colorMap: GPUTexture | null = null;
 
-    constructor(id: number, graphicsLibrary: GraphicsLibrary, allocator: Allocator) {
+    constructor(id: number, graphicsLibrary: GraphicsLibrary, allocator: Allocator, instances: number = 1) {
         super(id, graphicsLibrary, allocator);
 
         this._pipelines = Pipelines.getInstance(graphicsLibrary);
 
-        this._allocation = allocator.allocate(256);
-        this.properties = VolumeStruct.fromBuffer(new Uint8Array(256));
+        this._allocation = allocator.allocate(VolumeUniformSize * instances);
+        /*
+        this.properties = VolumeStruct.fromBuffer(new Uint8Array(VolumeUniformSize));
         this.properties.modelMatrix = mat4.create();
         this.properties.modelMatrixInverse = mat4.invert(mat4.create(), this.properties.modelMatrix);
         this.properties.color = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
@@ -410,6 +413,20 @@ export class Volume extends IParametricObject {
         this.properties.func = 0;
         this.properties.transparency = 1.0;
 
+        this.onAllocationMoved();
+        */
+
+        this.properties = new r.Array(VolumeUniformSize, instances);
+        for (let i = 0; i < instances; i++){
+            this.properties[i] = VolumeStruct.fromBuffer(new Uint8Array(VolumeUniformSize));
+            this.properties[i].modelMatrix = mat4.create();
+            this.properties[i].modelMatrixInverse = mat4.invert(mat4.create(), this.properties[i].modelMatrix);
+            this.properties[i].color = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
+            this.properties[i].translate = vec4.fromValues(0.0, 0.0, 0.0, 0.0);
+            this.properties[i].scale = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
+            this.properties[i].func = 0;
+            this.properties[i].transparency = 1.0;
+        }
         this.onAllocationMoved();
     }
 
@@ -564,33 +581,51 @@ export class Volume extends IParametricObject {
         this.onAllocationMoved();
     }
 
+    public set transparency(a: number) {
+        this.transparencyIndex(a, 0);
+    }
+
+
+    public transparencyIndex(a: number, index: number) {
+        this.properties[index].transparency = a;
+    }
+
+
     public set translate(t: vec3) {
-        this.properties.translate = [t[0], t[1], t[2], 1.0];
-        this.properties.modelMatrix = mat4.create();
+        this.translateIndex(t, 0);
+    }
 
-        mat4.scale(this.properties.modelMatrix, this.properties.modelMatrix, vec3.fromValues(this.properties.scale[0], this.properties.scale[1], this.properties.scale[2]));
+    public translateIndex(t: vec3, index: number) {
+        this.properties[index].translate = [t[0], t[1], t[2], 1.0];
+        this.properties[index].modelMatrix = mat4.create();
 
-        this.properties.modelMatrix[12] = this.properties.translate[0];
-        this.properties.modelMatrix[13] = this.properties.translate[1];
-        this.properties.modelMatrix[14] = this.properties.translate[2];
-        this.properties.modelMatrix[15] = 1.0;
+        mat4.scale(this.properties[index].modelMatrix, this.properties[index].modelMatrix, vec3.fromValues(this.properties[index].scale[0], this.properties[index].scale[1], this.properties[index].scale[2]));
 
-        this.properties.modelMatrixInverse = mat4.invert(mat4.create(), this.properties.modelMatrix);
+        this.properties[index].modelMatrix[12] = this.properties[index].translate[0];
+        this.properties[index].modelMatrix[13] = this.properties[index].translate[1];
+        this.properties[index].modelMatrix[14] = this.properties[index].translate[2];
+        this.properties[index].modelMatrix[15] = 1.0;
+
+        this.properties[index].modelMatrixInverse = mat4.invert(mat4.create(), this.properties[index].modelMatrix);
 
         this._dirtyCPU = true;
         this._dirtyGPU = true;
     }
 
     public set scale(s: number) {
-        this.properties.scale = [s, s, s, 1.0];
-        this.properties.modelMatrix = mat4.create();
-        mat4.scale(this.properties.modelMatrix, this.properties.modelMatrix, vec3.fromValues(s, s, s));
+        this.scaleIndex(s, 0);
+    }
 
-        this.properties.modelMatrix[12] = this.properties.translate[0];
-        this.properties.modelMatrix[13] = this.properties.translate[1];
-        this.properties.modelMatrix[14] = this.properties.translate[2];
-        this.properties.modelMatrix[15] = 1.0;
-        this.properties.modelMatrixInverse = mat4.invert(mat4.create(), this.properties.modelMatrix);
+    public scaleIndex(s: number, index: number) {
+        this.properties[index].scale = [s, s, s, 1.0];
+        this.properties[index].modelMatrix = mat4.create();
+        mat4.scale(this.properties[index].modelMatrix, this.properties[index].modelMatrix, vec3.fromValues(s, s, s));
+
+        this.properties[index].modelMatrix[12] = this.properties[index].translate[0];
+        this.properties[index].modelMatrix[13] = this.properties[index].translate[1];
+        this.properties[index].modelMatrix[14] = this.properties[index].translate[2];
+        this.properties[index].modelMatrix[15] = 1.0;
+        this.properties[index].modelMatrixInverse = mat4.invert(mat4.create(), this.properties[index].modelMatrix);
 
         this._dirtyCPU = true;
         this._dirtyGPU = true;
@@ -650,7 +685,9 @@ export class Volume extends IParametricObject {
             return;
         }
 
-        this.properties.frameID = frameID;
+        for (let i = 0; i < this.properties.length; i++) {
+            this.properties[i].frameID = frameID;
+        }
         this._dirtyCPU = true;
 
         const bindGroup = this._graphicsLibrary.device.createBindGroup({
@@ -690,6 +727,8 @@ export class Volume extends IParametricObject {
 
     public toBuffer(buffer: ArrayBuffer, offset: number): void {
         const u8View = new Uint8Array(buffer, offset);
-        u8View.set(VolumeStruct.toBuffer(this.properties), 0);
+        for (let i = 0; i < this.properties.length; i++) {
+            u8View.set(VolumeStruct.toBuffer(this.properties[i]), i * VolumeStruct);
+        }
     }
 }
