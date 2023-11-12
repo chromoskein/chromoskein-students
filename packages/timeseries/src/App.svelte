@@ -167,6 +167,12 @@
     }
   }
 
+  $: if (blobs && blobs[0]) {
+    blobVolumes = [];
+    for (let i = 0; i < blobs[0].length; i++) {
+      blobVolumes.push(blobs.map(p => [p[i].center]));
+    }
+  }
 
   $: if (dataClustersGivenK && dataPathlines) {
     matryoshkaBlobs = [];
@@ -248,6 +254,7 @@
   let volumeColormap: ImageBitmap | null = null;
   let volumeFunction = 0;
   let volumeTimeRange = [0, 599];
+  let blobVolumes: vec3[][][] = [];
 
   let blobsVisible = true;
   let blobsRadius = 0.03;
@@ -380,7 +387,7 @@
               {#if volumeVisible}
                 <TimeVolume
                   visible={volumeVisible}
-                  points={dataTimesteps.slice(volumeTimeRange[0], volumeTimeRange[1])}
+                  points={[dataTimesteps.slice(volumeTimeRange[0], volumeTimeRange[1])]}
                   transparency={volumeTransparency}
                   radius={volumeRadius}
                   colormap={volumeColormap}
@@ -388,16 +395,14 @@
                 />
               {/if}
               {#if blobsTimeVolumeVisible && blobs && blobs[0]}
-                {#each blobs[0] as blob, i}
                 <TimeVolume
                   visible={true}
-                  points={blobs.map(p => [p[i].center])}
+                  points={blobVolumes}
                   transparency={volumeTransparency}
                   radius={volumeRadius}
                   colormap={volumeColormap}
                   func={volumeFunction}
-                />
-                {/each}
+                 />
               {/if}
               {#if visualizationSelected == "Matryoshka"}
                 <SignedDistanceGridBlended

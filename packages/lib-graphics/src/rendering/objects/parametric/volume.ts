@@ -308,18 +308,25 @@ export class Volume extends IParametricObject {
                         // and just use the sample value as the opacity
                         let p = rayOriginLocalSpace + t * rayDirectionLocalSpace;
                         var p_tex = 0.5 * p + vec3(0.5);
+                        //var p_tex = vec3<u32>(floor((0.5 * p + vec3(0.5)) * ${VolumeTextureSize}));
+                        //var pp_tex = 0.5 * p + vec3(0.5);
+
                         p_tex.z = p_tex.z / f32(arrayLength(&${this.variableName}));
 
                         var value = 0.0;
                         for(var i: u32 = 0; i < arrayLength(&${this.variableName}); i++) {
                             var texValue = 0.0;
                             if (${this.variableName}[0].func == 0) {
+                                //texValue = textureLoad(${this.variableName}Texture, p_tex + vec3<u32>(0, 0, i * ${VolumeTextureSize}), 0).g;
                                 texValue = textureSampleLevel(${this.variableName}Texture, linearSampler, p_tex + vec3<f32>(0.0, 0.0, f32(i) / f32(arrayLength(&${this.variableName}))), 0.0).g;
                             } else {
+                                //texValue = textureLoad(${this.variableName}Texture, p_tex + vec3<u32>(0, 0, i * ${VolumeTextureSize}), 0).b;
                                 texValue = textureSampleLevel(${this.variableName}Texture, linearSampler, p_tex + vec3<f32>(0.0, 0.0, f32(i) / f32(arrayLength(&${this.variableName}))), 0.0).b;
                             }
-                            value = max(value, texValue);
+                            value += texValue;
                         }
+
+                        //value = textureSampleLevel(${this.variableName}Texture, linearSampler, pp_tex, 0.0).g;
                         // let value = textureSampleLevel(${this.variableName}Texture, linearSampler, 0.5 * p + vec3(0.5), 0.0).r;
                         // let lastTimestep = textureSampleLevel(${this.variableName}Texture, linearSampler, 0.5 * p + vec3(0.5), 0.0).g;
                         // let stepsCount = textureSampleLevel(${this.variableName}Texture, linearSampler, 0.5 * p + vec3(0.5), 0.0).b;
@@ -361,7 +368,7 @@ export class Volume extends IParametricObject {
                     }                    
 
                     // Temporary solution to a larger problem
-                    if (color.a < 0.25) {
+                    if (color.a < 0.05) {
                         discard;
                     }
                     // if (depth < previousDepth) {
@@ -414,18 +421,6 @@ export class Volume extends IParametricObject {
         this._pipelines = Pipelines.getInstance(graphicsLibrary);
 
         this._allocation = allocator.allocate(VolumeUniformSize * instances);
-        /*
-        this.properties = VolumeStruct.fromBuffer(new Uint8Array(VolumeUniformSize));
-        this.properties.modelMatrix = mat4.create();
-        this.properties.modelMatrixInverse = mat4.invert(mat4.create(), this.properties.modelMatrix);
-        this.properties.color = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
-        this.properties.translate = vec4.fromValues(0.0, 0.0, 0.0, 0.0);
-        this.properties.scale = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
-        this.properties.func = 0;
-        this.properties.transparency = 1.0;
-
-        this.onAllocationMoved();
-        */
 
         this.properties = new r.Array(VolumeUniformSize, instances);
         for (let i = 0; i < instances; i++){
@@ -592,14 +587,16 @@ export class Volume extends IParametricObject {
     }
 
     public set transparency(a: number) {
-        this.transparencyIndex(a, 0);
+        for (let i = 0; i < this.properties.length; i++) {
+            this.properties[i].transparency = a;
+        }
     }
 
-
-    public transparencyIndex(a: number, index: number) {
-        this.properties[index].transparency = a;
+    public set func(f: number) {
+        for (let i = 0; i < this.properties.length; i++) {
+            this.properties[i].func = f;
+        }
     }
-
 
     public set translate(t: vec3) {
         this.translateIndex(t, 0);

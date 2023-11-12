@@ -9,7 +9,7 @@
 
     export let visible = true;
     export let radius = 0.05;
-    export let points: vec3[][] | null = null;
+    export let points: vec3[][][] | null = null;
     export let transparency: number = 1.0;
     export let colormap: ImageBitmap | null = null;
     export let func: number = 0;
@@ -25,7 +25,7 @@
             $viewport.scene.removeObjectByID(objectID);
         }
 
-        [object, objectID] = $viewport.scene.addVolume(Volume);
+        [object, objectID] = $viewport.scene.addObjectInstanced(Volume, points.length);
         object.setDirtyCPU();
     }
 
@@ -35,7 +35,7 @@
     }
 
     $: if (object && points) {
-        object.fromPoints($device, points, radius);
+        object.fromPointArrays($device, points, radius);
         object.setDirtyCPU();
     }
 
@@ -50,7 +50,7 @@
     }
 
     $: if (object) {
-        object.properties.func = func;
+        object.func = func;
         object.setDirtyCPU();
     }
 
