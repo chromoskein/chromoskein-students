@@ -6,6 +6,7 @@
 
 <script lang="ts">
   // @hmr:keep-all
+  // comment
 
   import { onMount, setContext } from "svelte";
   import { writable, type Writable } from "svelte/store";
