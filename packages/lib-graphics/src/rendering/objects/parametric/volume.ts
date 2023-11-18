@@ -55,6 +55,11 @@ class Pipelines {
             {
                 binding: 5,
                 visibility: GPUShaderStage.COMPUTE,
+                buffer: { type: 'read-only-storage' },
+            },
+            {
+                binding: 6,
+                visibility: GPUShaderStage.COMPUTE,
                 storageTexture: {
                     format: 'rgba8unorm',
                     access: 'write-only',
@@ -474,7 +479,7 @@ export class Volume extends IParametricObject {
         this.onAllocationMoved();
     }
 
-    public fromPointArrays(device: GPUDevice, points: vec3[][][], radius: number = 0.05) {
+    public fromPointArrays(device: GPUDevice, points: vec3[][][], radius: number[]) {
         const pipeline = this._pipelines.computePipelines.get('volumeFromPathlines');
         const bgl = this._pipelines.bindGroupLayouts.get('volumeFromPathlines');
 
@@ -497,10 +502,12 @@ export class Volume extends IParametricObject {
         const delimitersCPUBuffer = new Uint32Array(points.length);
         const timestepCountCPUBuffer = new Uint32Array(points.length);
         const pointsCountCPUBuffer = new Uint32Array(points.length);
+        const radiiCPUBuffer = new Float32Array(points.length);
 
         let totalPoints = 0;
         for(let i = 0; i < points.length; i++) {
             delimitersCPUBuffer.set([totalPoints], i);
+            radiiCPUBuffer.set([radius[i]], i);
             totalPoints += points[i].length * points[i][0].length;
             timestepCountCPUBuffer.set([points[i].length], i);
             pointsCountCPUBuffer.set([points[i][0].length], i);
@@ -515,7 +522,7 @@ export class Volume extends IParametricObject {
         const globalsCPUBuffer = new ArrayBuffer(64);
         const globalsCPUBufferF32 = new Float32Array(globalsCPUBuffer);
         //const globalsCPUBufferU32 = new Uint32Array(globalsCPUBuffer);
-        globalsCPUBufferF32[0] = radius;
+        globalsCPUBufferF32[0] = radius[0];
         //globalsCPUBufferU32[1] = points.length;
         //globalsCPUBufferU32[2] = points[0].length;
 
@@ -524,6 +531,8 @@ export class Volume extends IParametricObject {
         const delimitersBuffer = device.createBuffer({ size: points.length * 4, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE });
         const timestepCountsBuffer = device.createBuffer({ size: points.length * 4, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE });
         const pointsCountBuffer = device.createBuffer({ size: points.length * 4, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE });
+        const radiiBuffer = device.createBuffer({ size: points.length * 4, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE });
+
         const bindGroup = device.createBindGroup({
             layout: bgl,
             entries: [{
@@ -543,6 +552,9 @@ export class Volume extends IParametricObject {
                 resource: { buffer: pointsCountBuffer }
             }, {
                 binding: 5,
+                resource: { buffer: radiiBuffer }
+            }, {
+                binding: 6,
                 resource: this._texture.createView()
             }]
         });
@@ -552,6 +564,7 @@ export class Volume extends IParametricObject {
         device.queue.writeBuffer(delimitersBuffer, 0, delimitersCPUBuffer, 0);
         device.queue.writeBuffer(timestepCountsBuffer, 0, timestepCountCPUBuffer, 0);
         device.queue.writeBuffer(pointsCountBuffer, 0, pointsCountCPUBuffer, 0);
+        device.queue.writeBuffer(radiiBuffer, 0, radiiCPUBuffer, 0);
         const commandEncoder = device.createCommandEncoder();
         const computePass = commandEncoder.beginComputePass();
         computePass.setPipeline(pipeline);
@@ -565,7 +578,7 @@ export class Volume extends IParametricObject {
     }
 
     public fromPoints(device: GPUDevice, points: vec3[][], radius: number = 0.05) {
-        this.fromPointArrays(device, [points], radius);
+        this.fromPointArrays(device, [points], [radius]);
     }
 
     public async setColorMapFromBitmap(bitmap: ImageBitmap) {
