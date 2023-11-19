@@ -176,6 +176,13 @@
     }
   }
 
+  $: if (blobs && blobs[0]) {
+    blobRadii = [];
+    for (let i = 0; i < blobs[0].length; i++) {
+      blobRadii.push(blobs[selectedTimestep][i].normalizedPoints.length / 1000.0 * 2 + volumeRadius / 2.0)
+    }
+  }
+
   $: if (dataClustersGivenK && dataPathlines) {
     matryoshkaBlobs = [];
     matryoshkaColors = [];
@@ -256,7 +263,10 @@
   let volumeColormap: ImageBitmap | null = null;
   let volumeFunction = 0;
   let volumeTimeRange = [0, 599];
+
+
   let blobVolumes: vec3[][][] = [];
+  let blobRadii: number[] = []
 
   let blobsVisible = true;
   let blobsRadius = 0.03;
@@ -409,7 +419,7 @@
                   visible={volumeVisible}
                   points={[dataTimesteps.slice(volumeTimeRange[0], volumeTimeRange[1])]}
                   transparency={volumeTransparency}
-                  radius={volumeRadius}
+                  radii={[volumeRadius]}
                   colormap={volumeColormap}
                   func={volumeFunction}
                 />
@@ -419,7 +429,7 @@
                   visible={true}
                   points={blobVolumes}
                   transparency={volumeTransparency}
-                  radius={volumeRadius}
+                  radii={blobRadii}
                   colormap={volumeColormap}
                   func={volumeFunction}
                  />

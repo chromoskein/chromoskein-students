@@ -8,7 +8,7 @@
     import type { vec3 } from "gl-matrix";
 
     export let visible = true;
-    export let radius = 0.05;
+    export let radii: number[] = [];
     export let points: vec3[][][] | null = null;
     export let transparency: number = 1.0;
     export let colormap: ImageBitmap | null = null;
@@ -35,7 +35,7 @@
     }
 
     $: if (object && points) {
-        object.fromPointArrays($device, points, radius);
+        object.fromPointArrays($device, points, radii);
         object.setDirtyCPU();
     }
 

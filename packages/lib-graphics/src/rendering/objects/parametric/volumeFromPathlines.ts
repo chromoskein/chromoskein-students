@@ -33,7 +33,8 @@ struct GlobalsStruct {
 @group(0) @binding(2) var<storage, read> delimiters: array<u32>;
 @group(0) @binding(3) var<storage, read> timestep_counts: array<u32>; // Amount of timesteps
 @group(0) @binding(4) var<storage, read> point_counts: array<u32>; // Amount of points inside a timestep
-@group(0) @binding(5) var grid: texture_storage_3d<rgba8unorm, write>;
+@group(0) @binding(5) var<storage, read> radii: array<f32>; // Amount of points inside a timestep
+@group(0) @binding(6) var grid: texture_storage_3d<rgba8unorm, write>;
 
 @compute @workgroup_size(4, 4, 4) fn main(@builtin(global_invocation_id) GlobalInvocationID: vec3<u32>) {
     let positionNDC = (1.0 / ${VolumeTextureSize}) * vec3<f32>(GlobalInvocationID.xyz % ${VolumeTextureSize}) + vec3<f32>(1.0 / ${2 * VolumeTextureSize});
@@ -44,6 +45,7 @@ struct GlobalsStruct {
 
     let timestepCount = timestep_counts[objectId];
     let pointCount = point_counts[objectId];
+    let radius = radii[objectId];
 
     var finalValue = 0.0;
     var lastTimestep: u32 = 0;
@@ -61,12 +63,12 @@ struct GlobalsStruct {
                 let p1 = points[delimiters[objectId] + i].xyz;
                 let p2 = points[delimiters[objectId] + i + 1].xyz;
         
-                let sdf2 = sdCapsule(p, p1, p2, globals.radius);
+                let sdf2 = sdCapsule(p, p1, p2, radius);
                 sdf = opSmoothUnion(sdf, sdf2, 0.1);
             }
         } else {
             let p1 = points[delimiters[objectId] + step].xyz;
-            let sdf2 = sdSphere(p, p1, globals.radius);
+            let sdf2 = sdSphere(p, p1, radius);
             sdf = opSmoothUnion(sdf, sdf2, 0.1);
         }
 
