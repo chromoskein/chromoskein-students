@@ -178,7 +178,11 @@
   $: if (blobs && blobs[0]) {
     blobColors = [];
     for (let i = 0; i < blobs[0].length; i++) {
-      blobColors.push(blobsColored ? [dataClustersGivenK[blobsAmount][i].color.rgb[0], dataClustersGivenK[blobsAmount][i].color.rgb[1], dataClustersGivenK[blobsAmount][i].color.rgb[2], 1.0] : [1.0, 1.0, 1.0, 0.0])
+      if (blobsColored) {
+        blobColors.push([dataClustersGivenK[blobsAmount][i].color.rgb[0], dataClustersGivenK[blobsAmount][i].color.rgb[1], dataClustersGivenK[blobsAmount][i].color.rgb[2], 1.0]);
+      } else {  
+        blobColors.push([1.0, 1.0, 1.0, 0.0]);
+      }
     }
   }
 
@@ -487,7 +491,7 @@
                 center={blob.center}
                 height={0.0}
                 orientation={vec3.fromValues(0.5 * firstPC[i][0], 0.5 * firstPC[i][1], 0.5 * firstPC[i][2])}
-                color={blobsColored ? [dataClustersGivenK[blobsAmount][i].color.rgb[0], dataClustersGivenK[blobsAmount][i].color.rgb[1], dataClustersGivenK[blobsAmount][i].color.rgb[2]] : [1.0, 1.0, 1.0]}
+                color={[blobColors[i][0], blobColors[i][1], blobColors[i][2]]}
                 up={true}
               />
               <Cone
@@ -495,7 +499,7 @@
                 center={blob.center}
                 height={0.0}
                 orientation={vec3.fromValues(0.5 * firstPC[i][0], 0.5 * firstPC[i][1], 0.5 * firstPC[i][2])}
-                color={blobsColored ? [dataClustersGivenK[blobsAmount][i].color.rgb[0], dataClustersGivenK[blobsAmount][i].color.rgb[1], dataClustersGivenK[blobsAmount][i].color.rgb[2]] : [1.0, 1.0, 1.0]}
+                color={[blobColors[i][0], blobColors[i][1], blobColors[i][2]]}
                 up={false}
               />
               <ContinuousTube 
@@ -513,7 +517,7 @@
                 center={blob.center}
                 height={0.0}
                 orientation={vec3.fromValues(0.5 * firstPC[i][0], 0.5 * firstPC[i][1], 0.5 * firstPC[i][2])}
-                color={blobsColored ? [dataClustersGivenK[blobsAmount][i].color.rgb[0], dataClustersGivenK[blobsAmount][i].color.rgb[1], dataClustersGivenK[blobsAmount][i].color.rgb[2]] : [1.0, 1.0, 1.0]}
+                color={[blobColors[i][0], blobColors[i][1], blobColors[i][2]]}
                 up={true}
               />
               <Cone
@@ -521,7 +525,7 @@
                 center={blob.center}
                 height={0.0}
                 orientation={vec3.fromValues(0.3 * secondPC[i][0], 0.3 * secondPC[i][1], 0.3 * secondPC[i][2])}
-                color={blobsColored ? [dataClustersGivenK[blobsAmount][i].color.rgb[0], dataClustersGivenK[blobsAmount][i].color.rgb[1], dataClustersGivenK[blobsAmount][i].color.rgb[2]] : [1.0, 1.0, 1.0]}
+                color={[blobColors[i][0], blobColors[i][1], blobColors[i][2]]}
                 up={false}
               />
               <ContinuousTube 
