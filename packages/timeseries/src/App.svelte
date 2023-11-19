@@ -6,7 +6,6 @@
 
 <script lang="ts">
   // @hmr:keep-all
-  // comment
 
   import { onMount, setContext } from "svelte";
   import { writable, type Writable } from "svelte/store";
@@ -16,7 +15,7 @@
   import "./styles/splitpanes.css";
   import { Pane, Splitpanes } from "svelte-splitpanes";
 
-  import { loadTimesteps, normalizePointClouds, timestepsToPathlines, loadBitmap, clusterPathlines, centroid } from "./utils/main";
+  import { loadTimesteps, normalizePointClouds, timestepsToPathlines, loadBitmap, clusterPathlines, centroid, loadBEDfile } from "./utils/main";
   import type { ClusterNode } from "./utils/main";
 
   import ChromatinViewport from "./ChromatinViewport.svelte";
@@ -31,6 +30,7 @@
   import Sphere from "./objects/Sphere.svelte";
   import ContinuousTube from "./objects/ContinuousTube.svelte";
   import Cone from "./objects/Cone.svelte";
+  import {DSVDelimiter, parseBEDString} from "./utils/data-parser";
 
   import PCA from 'pca-js';
 
@@ -347,7 +347,6 @@
     let max = Math.max.apply(Math, values);
     for (let i = 0; i < values.length; i++) {
       values[i] = (values[i] - min) / (max - min);
-      //values[i] = 0.5;
     }
     return values;
   }
@@ -365,8 +364,6 @@
     for (let i = 0; i < blobs[selectedTimestep].length; i++) {
       let data = blobs[selectedTimestep][i].normalizedPoints;
       let vectors = PCA.getEigenVectors(data);
-      //console.log("first: " + vectors[0].vector);
-      //console.log("second: " + vectors[1].vector);
       firstPCVec.push(vectors[0].vector);
       secondPCVec.push(vectors[1].vector);
       firstPCVal.push(vectors[0].eigenvalue);
@@ -379,7 +376,16 @@
     secondPCVal = transformValues(secondPCVal);
     console.log("after " + firstPCVal);
   }
+
+  // fixed for now
+  let filename = "./timeseries/tmpfile.bed";
+  let result = loadBEDfile(filename);
+  result.then((res) => {
+    let data = parseBEDString(res, DSVDelimiter.Tab);
+    // TODO
+    });
 </script>
+
 
 <main>
   <div class="ui">
