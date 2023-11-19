@@ -611,7 +611,6 @@ export class Volume extends IParametricObject {
 
     public setColor(color: vec4, index: number) {
         this.properties[index].color = [color[0], color[1], color[2], color[3]];
-        console.log(index + " colored " + this.properties[index].color);
         this._dirtyCPU = true;
         this._dirtyGPU = true;
     }

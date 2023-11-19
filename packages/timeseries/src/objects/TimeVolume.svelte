@@ -43,7 +43,6 @@
     $: if (object && colors) {
         for (let i = 0; i < colors.length; i++) {
             object.setColor(colors[i], i);
-            console.log("Blob " + i + ": " +colors[i]);
         }
         object.setDirtyCPU();
     }
