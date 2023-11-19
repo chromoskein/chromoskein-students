@@ -5,11 +5,12 @@
     import type { Writable } from "svelte/store";
     import type { Viewport3D } from "lib-graphics";
     import { Volume } from "lib-graphics";
-    import type { vec3 } from "gl-matrix";
+    import type { vec3, vec4 } from "gl-matrix";
 
     export let visible = true;
     export let radii: number[] = [];
     export let points: vec3[][][] | null = null;
+    export let colors: vec4[];
     export let transparency: number = 1.0;
     export let colormap: ImageBitmap | null = null;
     export let func: number = 0;
@@ -36,6 +37,14 @@
 
     $: if (object && points) {
         object.fromPointArrays($device, points, radii);
+        object.setDirtyCPU();
+    }
+
+    $: if (object && colors) {
+        for (let i = 0; i < colors.length; i++) {
+            object.setColor(colors[i], i);
+            console.log("Blob " + i + ": " +colors[i]);
+        }
         object.setDirtyCPU();
     }
 

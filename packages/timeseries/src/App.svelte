@@ -176,9 +176,16 @@
   }
 
   $: if (blobs && blobs[0]) {
+    blobColors = [];
+    for (let i = 0; i < blobs[0].length; i++) {
+      blobColors.push(blobsColored ? [dataClustersGivenK[blobsAmount][i].color.rgb[0], dataClustersGivenK[blobsAmount][i].color.rgb[1], dataClustersGivenK[blobsAmount][i].color.rgb[2], 1.0] : [1.0, 1.0, 1.0, 0.0])
+    }
+  }
+
+  $: if (blobs && blobs[0]) {
     blobRadii = [];
     for (let i = 0; i < blobs[0].length; i++) {
-      blobRadii.push(blobs[selectedTimestep][i].normalizedPoints.length / 1000.0 * 2 + volumeRadius / 2.0)
+      blobRadii.push(blobs[selectedTimestep][i].normalizedPoints.length / 1000.0 * 2 + volumeRadius / 2.0);
     }
   }
 
@@ -265,7 +272,8 @@
 
 
   let blobVolumes: vec3[][][] = [];
-  let blobRadii: number[] = []
+  let blobRadii: number[] = [];
+  let blobColors: vec4[] = [];
 
   let blobsVisible = true;
   let blobsRadius = 0.03;
@@ -421,6 +429,7 @@
                   radii={[volumeRadius]}
                   colormap={volumeColormap}
                   func={volumeFunction}
+                  colors={[[1.0, 1.0, 1.0, 0.0]]}
                 />
               {/if}
               {#if blobsTimeVolumeVisible && blobs && blobs[0]}
@@ -431,6 +440,7 @@
                   radii={blobRadii}
                   colormap={volumeColormap}
                   func={volumeFunction}
+                  colors={blobColors}
                  />
               {/if}
               {#if visualizationSelected == "Matryoshka"}
@@ -462,7 +472,7 @@
                   <Sphere
                     radius={blob.normalizedPoints.length / 1000.0 * 2}
                     center={blob.center}
-                    color={blobsColored ? [dataClustersGivenK[blobsAmount][i].color.rgb[0], dataClustersGivenK[blobsAmount][i].color.rgb[1], dataClustersGivenK[blobsAmount][i].color.rgb[2], 1.0] : [1.0, 1.0, 1.0, 1.0]} 
+                    color={[blobColors[i][0], blobColors[i][1], blobColors[i][2], blobColors[i][3]]} 
                   />
                   <ContinuousTube 
                     points={centerPoints}
