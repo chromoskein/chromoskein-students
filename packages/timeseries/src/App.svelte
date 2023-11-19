@@ -508,7 +508,7 @@
               {#if blobs[selectedTimestep] && visualizationSelected == "Cones"}
                 {#each blobs[selectedTimestep] as blob, i}
                   <Cone
-                    startRadius={0.1}
+                    startRadius={secondPCVal[i] / 10.0 + 0.05}
                     center={blob.center}
                     height={firstPCVal[i] * 0.2}
                     orientation={vec3.fromValues(0.5 * firstPCVec[i][0], 0.5 * firstPCVec[i][1], 0.5 * firstPCVec[i][2])}
@@ -516,7 +516,7 @@
                     up={true}
                   />
                   <Cone
-                    startRadius={0.1}
+                    startRadius={secondPCVal[i] / 10.0 + 0.05}
                     center={blob.center}
                     height={firstPCVal[i] * 0.2}
                     orientation={vec3.fromValues(0.5 * firstPCVec[i][0], 0.5 * firstPCVec[i][1], 0.5 * firstPCVec[i][2])}
