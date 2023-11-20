@@ -332,6 +332,49 @@ export function clusterPathlines(pathlines: vec3[][]): ClusterNode[][] {
     return kClustersRanges;
 }
 
+export function clusterTimestep(timestep: vec3[]): ClusterNode[][] {
+    const distFunc = (a: vec3, b: vec3): number => {
+        return vec3.distance(a, b);
+    };
+
+    const { clusters, distances, order, clustersGivenK } = clusterData({ data: timestep, distance: distFunc, onProgress: (a) => {} });
+
+    const kClustersRanges: ClusterNode[][] = new Array(clustersGivenK.length);
+    for (const [k, kClusters] of clustersGivenK.entries()) {
+        kClustersRanges[k] = [];
+        if (k < 12) {
+            console.log(k + ": ------------------------------------------")
+        }
+        for (let i = 0; i < kClusters.length; i++) {
+
+            if (k < 12) {
+                console.log("Min idx: " + Math.min(...kClusters[i]));
+                console.log("Max idx: " + Math.max(...kClusters[i]));
+            }
+            kClustersRanges[k][i] = {
+                k, i,
+                from: Math.min(...kClusters[i]),
+                to: Math.max(...kClusters[i]),
+                color: {
+                    h: 0.0, c: 0.0, l: 0.0,
+                    rgb: [0.0, 0.0, 0.0]
+                },
+                children: [],
+            };
+        }
+        kClustersRanges[k].sort((a, b) => a.from - b.from);
+        kClustersRanges[k].forEach((c, i) => c.i = i);
+    }
+
+    for (const [k, kClusters] of kClustersRanges.entries()) {
+        if (k >= kClustersRanges.length - 1) break;
+        for (const [i, cluster] of kClusters.entries()) {
+            cluster.children = kClustersRanges[k + 1].filter(r => cluster.from <= r.from && r.to <= cluster.to).map(c => c.i);
+        }
+    }
+
+    return kClustersRanges;
+}
 
     // const bytes = new TextEncoder().encode(JSON.stringify(clustersGivenK));
     // const blob = new Blob([bytes], {

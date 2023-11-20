@@ -15,7 +15,7 @@
   import "./styles/splitpanes.css";
   import { Pane, Splitpanes } from "svelte-splitpanes";
 
-  import { loadTimesteps, normalizePointClouds, timestepsToPathlines, loadBitmap, clusterPathlines, centroid, loadBEDfile } from "./utils/main";
+  import { loadTimesteps, normalizePointClouds, timestepsToPathlines, loadBitmap, clusterTimestep, clusterPathlines, centroid, loadBEDfile } from "./utils/main";
   import type { ClusterNode } from "./utils/main";
 
   import ChromatinViewport from "./ChromatinViewport.svelte";
@@ -54,7 +54,6 @@ import {DSVDelimiter, parseBEDString} from "./utils/data-parser";
   let viewport: Graphics.Viewport3D | null = null;
 
   //#region Data
-  const filenames: string[] = new Array(600).fill(null).map((v, i) => "./timeseries/timestep_" + (i + 1).toString() + ".XYZ");
 
   //let timesteps: vec3[][] = null;
   let dataTimesteps: vec3[][] = null;
@@ -62,6 +61,33 @@ import {DSVDelimiter, parseBEDString} from "./utils/data-parser";
   // Load base timestep data and transform them into pathlines (really just a transpose of data)
   // [timestep][bin]
   // $: dataTimesteps = timesteps && normalizePointClouds(timesteps);
+  
+  
+  let dataClustersByTimestep: ClusterNode[][] | null = null;
+
+  $: if (visualizationSelected == "Clustering" && selectedTimestep && dataTimesteps) {
+    dataClustersByTimestep = clusterTimestep(dataTimesteps[selectedTimestep]).slice(0, 16);
+    treeColor(dataClustersByTimestep);
+  }
+
+  let dataClusteredTimestep: {
+    normalizedPoints: vec3[];
+    center: vec3;
+    scale: number;
+  }[] = [];
+
+  $: if (dataClustersByTimestep && dataClustersByTimestep[blobsAmount] && dataTimesteps) {
+
+    dataClusteredTimestep = [];
+    console.log("----------------------------------------------------------\n");
+    for (const [clusterIndex, cluster] of dataClustersByTimestep[blobsAmount].entries()) {
+      console.log(cluster);
+      dataClusteredTimestep[clusterIndex] = blobFromPoints(dataTimesteps[selectedTimestep].slice(cluster.from, cluster.to + 1));
+      console.log(dataClusteredTimestep[clusterIndex]);
+    }
+
+  }
+
 
   // [pathline][timestep]
   $: dataPathlines = dataTimesteps && timestepsToPathlines(dataTimesteps);
@@ -100,11 +126,12 @@ import {DSVDelimiter, parseBEDString} from "./utils/data-parser";
   onMount(async () => {
     await getGPU();
     //normalizePointClouds(timesteps)
-    let timesteps = await loadTimesteps(filenames);
+    const filenames: string[] = new Array(600).fill(null).map((v, i) => "./timeseries/timestep_" + (i + 1).toString() + ".XYZ");
+    const timesteps = await loadTimesteps(filenames);
     dataTimesteps = normalizePointClouds(timesteps);
     // dataTimesteps = normalizePointClouds(timesteps);
     // dataPathlines = timestepsToPathlines(dataTimesteps);
-    // dataClustersGivenK = clusterPathlines(dataPathlines);
+    //dataClustersGivenK = await clusterPathlines(dataPathlines);
 
     // const bytes = new TextEncoder().encode(JSON.stringify(clusterPathlines(dataPathlines)));
     // const blob = new Blob([bytes], {
@@ -502,6 +529,18 @@ let firstPCVal: number[] = [];
               />
             {/each}
           {/if}
+          {#if dataClusteredTimestep && visualizationSelected == "Clustering"}
+            {#each dataClusteredTimestep as blob, i}
+              <SignedDistanceGrid
+                points={blob.normalizedPoints}
+                translate={blob.center}
+                scale={blob.scale}
+                radius={blobsRadius}
+                visible={blobsVisible}
+                color={blobsColored ? dataClustersByTimestep[blobsAmount][i].color.rgb : vec3.fromValues(1.0, 1.0, 1.0)}
+              />
+            {/each}
+          {/if}
           {#if blobs[selectedTimestep] && visualizationSelected == "Spheres"}
             {#each blobs[selectedTimestep] as blob, i}
               <Sphere
@@ -635,6 +674,7 @@ let firstPCVal: number[] = [];
             <Select size="sm" inline labelText="Visualization:" bind:selected={visualizationSelected}>
               <SelectItem value="None" />
               <SelectItem value="Default" />
+              <SelectItem value="Clustering" />
               <SelectItem value="Matryoshka" />
               <SelectItem value="Spheres" />
               <SelectItem value="Cones" />
@@ -662,7 +702,7 @@ let firstPCVal: number[] = [];
                 }}
               />
             {/each} -->
-            {#if dataClustersGivenK}
+            {#if dataClustersGivenK && visualizationSelected != "Clustering"}
               <div class="cluster-dendogram">
                 {#each dataClustersGivenK.slice(1, 15) as clustersAtLevel, clusterLevel}
                   <div class="cluster-dendogram-row" on:click={() => dendrogramClick(clusterLevel)} on:keydown={() => { }}>
@@ -679,6 +719,24 @@ let firstPCVal: number[] = [];
                 {/each}
               </div>
             {/if}
+            {#if dataClustersGivenK && visualizationSelected == "Clustering"}
+              <div class="cluster-dendogram">
+                {#each dataClustersByTimestep.slice(1, 15) as clustersAtLevel, clusterLevel}
+                  <div class="cluster-dendogram-row" on:click={() => dendrogramClick(clusterLevel)} on:keydown={() => { }}>
+                    {#each clustersAtLevel as cluster, i}
+                      <div
+                        style={`
+                          width: ${100.0 * ((cluster.to - cluster.from + 1) / dataPathlines.length)}%;
+                          background-color: rgb(${(!experimentalColors) ? 255 * cluster.color.rgb[0] : 255 * staticColors[i % staticColors.length][0]} ${(!experimentalColors) ? 255 * cluster.color.rgb[1] : 255 * staticColors[i % staticColors.length][1]} ${(!experimentalColors) ? 255 * cluster.color.rgb[2] : 255 * staticColors[i % staticColors.length][2]});
+                          border: 2px solid ${(matryoshkaBlobsVisible[clusterLevel] ? "white" : "black")}
+                        `}
+                      />
+                    {/each}
+                  </div>
+                {/each}
+              </div>
+            {/if}
+
           </AccordionItem>
 
           <AccordionItem open title="Average pathline">
