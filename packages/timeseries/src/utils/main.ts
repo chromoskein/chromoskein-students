@@ -137,6 +137,11 @@ export async function loadTimesteps(filenames: string[]): Promise<vec3[][]> {
     return result;
 }
 
+export async function loadBEDfile(filename: string): Promise<string> {
+    const result = await ((await (fetch(filename))).text());
+    return result;
+}
+
 export function normalizePointClouds(pointClouds: vec3[][]): vec3[][] {
     const result: vec3[][] = new Array(pointClouds.length);
 

@@ -15,7 +15,7 @@
   import "./styles/splitpanes.css";
   import { Pane, Splitpanes } from "svelte-splitpanes";
 
-  import { loadTimesteps, normalizePointClouds, timestepsToPathlines, loadBitmap, clusterPathlines, centroid } from "./utils/main";
+  import { loadTimesteps, normalizePointClouds, timestepsToPathlines, loadBitmap, clusterPathlines, centroid, loadBEDfile } from "./utils/main";
   import type { ClusterNode } from "./utils/main";
 
   import ChromatinViewport from "./ChromatinViewport.svelte";
@@ -30,6 +30,7 @@
   import Sphere from "./objects/Sphere.svelte";
   import ContinuousTube from "./objects/ContinuousTube.svelte";
   import Cone from "./objects/Cone.svelte";
+  import {DSVDelimiter, parseBEDString} from "./utils/data-parser";
 
   import PCA from 'pca-js';
 
@@ -349,22 +350,54 @@
     }
   }
 
-  let firstPC: vec3[] = [];
-  let secondPC: vec3[] = [];
+  function transformValues(values) {
+    if (values.length == 1) {
+      return [1.0];
+    }
+
+    let min = Math.min.apply(Math, values);
+    let max = Math.max.apply(Math, values);
+    for (let i = 0; i < values.length; i++) {
+      values[i] = (values[i] - min) / (max - min);
+    }
+    return values;
+  }
+
+  let firstPCVec: vec3[] = [];
+  let secondPCVec: vec3[] = [];
+  let firstPCVal: number[] = [];
+  let secondPCVal: number[] = [];
   $: if (blobs[selectedTimestep] && (visualizationSelected == "Cones")) {
-    firstPC = [];
-    secondPC = [];
+    firstPCVec = [];
+    secondPCVec = [];
+    firstPCVal = [];
+    secondPCVal = [];
 
     for (let i = 0; i < blobs[selectedTimestep].length; i++) {
       let data = blobs[selectedTimestep][i].normalizedPoints;
       let vectors = PCA.getEigenVectors(data);
-      //console.log("first: " + vectors[0].vector);
-      //console.log("second: " + vectors[1].vector);
-      firstPC.push(vectors[0].vector);
-      secondPC.push(vectors[1].vector);
+      firstPCVec.push(vectors[0].vector);
+      secondPCVec.push(vectors[1].vector);
+      firstPCVal.push(vectors[0].eigenvalue);
+      secondPCVal.push(vectors[1].eigenvalue);
     }
+
+    // transform to [0,1] range
+    console.log("before "  + firstPCVal);
+    firstPCVal = transformValues(firstPCVal);
+    secondPCVal = transformValues(secondPCVal);
+    console.log("after " + firstPCVal);
   }
+
+  // fixed for now
+  let filename = "./timeseries/tmpfile.bed";
+  let result = loadBEDfile(filename);
+  result.then((res) => {
+    let data = parseBEDString(res, DSVDelimiter.Tab);
+    // TODO
+    });
 </script>
+
 
 <main>
   <div class="ui">
@@ -482,6 +515,35 @@
                 color={[0.9, 0.9, 0.9]} 
                 multicolored={false} 
               />
+              {/if}
+              {#if blobs[selectedTimestep] && visualizationSelected == "Cones"}
+                {#each blobs[selectedTimestep] as blob, i}
+                  <Cone
+                    startRadius={secondPCVal[i] / 10.0 + 0.05}
+                    center={blob.center}
+                    height={firstPCVal[i] * 0.2}
+                    orientation={vec3.fromValues(0.5 * firstPCVec[i][0], 0.5 * firstPCVec[i][1], 0.5 * firstPCVec[i][2])}
+                    color={blobsColored ? [dataClustersGivenK[blobsAmount][i].color.rgb[0], dataClustersGivenK[blobsAmount][i].color.rgb[1], dataClustersGivenK[blobsAmount][i].color.rgb[2]] : [1.0, 1.0, 1.0]}
+                    up={true}
+                  />
+                  <Cone
+                    startRadius={secondPCVal[i] / 10.0 + 0.05}
+                    center={blob.center}
+                    height={firstPCVal[i] * 0.2}
+                    orientation={vec3.fromValues(0.5 * firstPCVec[i][0], 0.5 * firstPCVec[i][1], 0.5 * firstPCVec[i][2])}
+                    color={blobsColored ? [dataClustersGivenK[blobsAmount][i].color.rgb[0], dataClustersGivenK[blobsAmount][i].color.rgb[1], dataClustersGivenK[blobsAmount][i].color.rgb[2]] : [1.0, 1.0, 1.0]}
+                    up={false}
+                  />
+                  <ContinuousTube 
+                    points={centerPoints}
+                    radius={(1.0 / centerPoints.length) / 20.0} 
+                    color={[0.9, 0.9, 0.9]} 
+                    multicolored={false} 
+                  />
+                {/each}                
+              {/if}
+          <!--
+            </Viewport3D>
             {/each}
           {/if}
           {#if blobs[selectedTimestep] && visualizationSelected == "Cones" && pcaVis == "First PC"}
@@ -536,6 +598,7 @@
               />
             {/each}                
           {/if}
+      -->
         </Viewport3D>
       {/if}
     </Pane>
@@ -616,13 +679,6 @@
               </div>
             {/if}
           </AccordionItem>
-
-          {#if visualizationSelected == "Cones"}
-            <Select labelText="Principal components" bind:selected={pcaVis}>
-              <SelectItem value="First PC" />
-              <SelectItem value="First and second PC" />
-            </Select>            
-          {/if}
 
           <AccordionItem open title="Average pathline">
             <Slider labelText="Simplify " fullWidth min={0.0} max={0.5} step={0.01} bind:value={pathlinesSimplifyFactor} />
