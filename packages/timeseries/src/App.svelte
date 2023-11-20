@@ -30,7 +30,7 @@
   import Sphere from "./objects/Sphere.svelte";
   import ContinuousTube from "./objects/ContinuousTube.svelte";
   import Cone from "./objects/Cone.svelte";
-  import {DSVDelimiter, parseBEDString} from "./utils/data-parser";
+import {DSVDelimiter, parseBEDString} from "./utils/data-parser";
 
   import PCA from 'pca-js';
 
@@ -365,7 +365,7 @@
 
   let firstPCVec: vec3[] = [];
   let secondPCVec: vec3[] = [];
-  let firstPCVal: number[] = [];
+let firstPCVal: number[] = [];
   let secondPCVal: number[] = [];
   $: if (blobs[selectedTimestep] && (visualizationSelected == "Cones")) {
     firstPCVec = [];
@@ -515,37 +515,38 @@
                 color={[0.9, 0.9, 0.9]} 
                 multicolored={false} 
               />
-              {/if}
-              {#if blobs[selectedTimestep] && visualizationSelected == "Cones"}
-                {#each blobs[selectedTimestep] as blob, i}
-                  <Cone
-                    startRadius={secondPCVal[i] / 10.0 + 0.05}
-                    center={blob.center}
-                    height={firstPCVal[i] * 0.2}
-                    orientation={vec3.fromValues(0.5 * firstPCVec[i][0], 0.5 * firstPCVec[i][1], 0.5 * firstPCVec[i][2])}
-                    color={blobsColored ? [dataClustersGivenK[blobsAmount][i].color.rgb[0], dataClustersGivenK[blobsAmount][i].color.rgb[1], dataClustersGivenK[blobsAmount][i].color.rgb[2]] : [1.0, 1.0, 1.0]}
-                    up={true}
-                  />
-                  <Cone
-                    startRadius={secondPCVal[i] / 10.0 + 0.05}
-                    center={blob.center}
-                    height={firstPCVal[i] * 0.2}
-                    orientation={vec3.fromValues(0.5 * firstPCVec[i][0], 0.5 * firstPCVec[i][1], 0.5 * firstPCVec[i][2])}
-                    color={blobsColored ? [dataClustersGivenK[blobsAmount][i].color.rgb[0], dataClustersGivenK[blobsAmount][i].color.rgb[1], dataClustersGivenK[blobsAmount][i].color.rgb[2]] : [1.0, 1.0, 1.0]}
-                    up={false}
-                  />
-                  <ContinuousTube 
-                    points={centerPoints}
-                    radius={(1.0 / centerPoints.length) / 20.0} 
-                    color={[0.9, 0.9, 0.9]} 
-                    multicolored={false} 
-                  />
-                {/each}                
-              {/if}
-          <!--
-            </Viewport3D>
             {/each}
           {/if}
+          {#if blobs[selectedTimestep] && visualizationSelected == "Cones"}
+            {#each blobs[selectedTimestep] as blob, i}
+              <Cone
+                startRadius={secondPCVal[i] / 10.0 + 0.05}
+                center={blob.center}
+                height={firstPCVal[i] * 0.2}
+                orientation={vec3.fromValues(0.5 * firstPCVec[i][0], 0.5 * firstPCVec[i][1], 0.5 * firstPCVec[i][2])}
+                color={blobsColored ? [dataClustersGivenK[blobsAmount][i].color.rgb[0], dataClustersGivenK[blobsAmount][i].color.rgb[1], dataClustersGivenK[blobsAmount][i].color.rgb[2]] : [1.0, 1.0, 1.0]}
+                up={true}
+              />
+              <Cone
+                startRadius={secondPCVal[i] / 10.0 + 0.05}
+                center={blob.center}
+                height={firstPCVal[i] * 0.2}
+                orientation={vec3.fromValues(0.5 * firstPCVec[i][0], 0.5 * firstPCVec[i][1], 0.5 * firstPCVec[i][2])}
+                color={blobsColored ? [dataClustersGivenK[blobsAmount][i].color.rgb[0], dataClustersGivenK[blobsAmount][i].color.rgb[1], dataClustersGivenK[blobsAmount][i].color.rgb[2]] : [1.0, 1.0, 1.0]}
+                up={false}
+              />
+              <ContinuousTube 
+                points={centerPoints}
+                radius={(1.0 / centerPoints.length) / 20.0} 
+                color={[0.9, 0.9, 0.9]} 
+                multicolored={false} 
+              />
+            {/each}                
+          {/if}
+                  <!--
+</Viewport3D>
+            {/each}
+          {/if}       
           {#if blobs[selectedTimestep] && visualizationSelected == "Cones" && pcaVis == "First PC"}
             {#each blobs[selectedTimestep] as blob, i}
               <Cone
@@ -598,7 +599,7 @@
               />
             {/each}                
           {/if}
-      -->
+-->
         </Viewport3D>
       {/if}
     </Pane>
