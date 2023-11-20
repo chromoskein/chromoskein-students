@@ -108,10 +108,11 @@ export interface VolumeProperties {
     scale: vec4,
     transparency: number,
     func: number,
-    frameID: number,
+    //frameID: number,
 }
 
-const VolumeUniformSize = 188;
+// The "number" types are actually 8 bytes and not 4 bytes, so size must be bigger
+const VolumeUniformSize = 192;
 
 export const VolumeStruct = new r.Struct({
     modelMatrix: new r.Array(r.floatle, 16),
@@ -121,7 +122,7 @@ export const VolumeStruct = new r.Struct({
     scale: new r.Array(r.floatle, 4),
     transparency: r.floatle,
     func: r.uint32le,
-    frameID: r.uint32le,
+    //frameID: r.uint32le,
 });
 
 export const VolumeTextureSize: number = 64;
@@ -204,7 +205,7 @@ export class Volume extends IParametricObject {
             scale: vec4<f32>,
             transparency: f32,
             func: u32,
-            frameID: u32,
+            //frameID: u32,
         };
         
         @group(1) @binding(0) var<storage, read> ${this.variableName}: array<${this.typeName}>;
@@ -312,23 +313,29 @@ export class Volume extends IParametricObject {
                         // Note that here we don't use the opacity from the transfer function,
                         // and just use the sample value as the opacity
                         let p = rayOriginLocalSpace + t * rayDirectionLocalSpace;
-                        var p_tex = 0.5 * p + vec3(0.5);
-                        //var p_tex = vec3<u32>(floor((0.5 * p + vec3(0.5)) * ${VolumeTextureSize}));
-                        //var pp_tex = 0.5 * p + vec3(0.5);
-
+                        let tex_coord = 0.5 * p + vec3(0.5);
+                        
+                        let pp_tex = vec3<u32>(floor(${VolumeTextureSize} * tex_coord));     
+                        
+                        var p_tex = tex_coord;
                         p_tex.z = p_tex.z / f32(arrayLength(&${this.variableName}));
 
+                        var val_color = vec4(0.0, 0.0, 0.0, 0.0);
                         var value = 0.0;
                         for(var i: u32 = 0; i < arrayLength(&${this.variableName}); i++) {
                             var texValue = 0.0;
                             if (${this.variableName}[0].func == 0) {
-                                //texValue = textureLoad(${this.variableName}Texture, p_tex + vec3<u32>(0, 0, i * ${VolumeTextureSize}), 0).g;
+                                //texValue = textureLoad(${this.variableName}Texture, pp_tex + vec3<u32>(0, 0, i * ${VolumeTextureSize}), 0).g;
                                 texValue = textureSampleLevel(${this.variableName}Texture, linearSampler, p_tex + vec3<f32>(0.0, 0.0, f32(i) / f32(arrayLength(&${this.variableName}))), 0.0).g;
                             } else {
-                                //texValue = textureLoad(${this.variableName}Texture, p_tex + vec3<u32>(0, 0, i * ${VolumeTextureSize}), 0).b;
+                                //texValue = textureLoad(${this.variableName}Texture, pp_tex + vec3<u32>(0, 0, i * ${VolumeTextureSize}), 0).b;
                                 texValue = textureSampleLevel(${this.variableName}Texture, linearSampler, p_tex + vec3<f32>(0.0, 0.0, f32(i) / f32(arrayLength(&${this.variableName}))), 0.0).b;
                             }
+
                             value += texValue;
+                            if (${this.variableName}[i].color.w == 1.0) {
+                                val_color += vec4(${this.variableName}[i].color.rgb * texValue, 0.0);
+                            }
                         }
 
                         //value = textureSampleLevel(${this.variableName}Texture, linearSampler, pp_tex, 0.0).g;
@@ -337,8 +344,11 @@ export class Volume extends IParametricObject {
                         // let stepsCount = textureSampleLevel(${this.variableName}Texture, linearSampler, 0.5 * p + vec3(0.5), 0.0).b;
 
                         // Version simple based on last timestep
-                        let tf = textureSampleLevel(colormap, linearSampler, vec2<f32>(value, 0.5), 0.0).rgb;
-                        let val_color = vec4(tf, ${this.variableName}[0].transparency * value);
+                        if (${this.variableName}[0].color.w == 0.0) {
+                            let tf = textureSampleLevel(colormap, linearSampler, vec2<f32>(value, 0.5), 0.0).rgb;
+                            val_color = vec4(tf, 0);
+                        }
+                        val_color.w = ${this.variableName}[0].transparency * value;
 
                         // Version Threshold
                         // let tf = textureSampleLevel(colormap, linearSampler, vec2<f32>(lastTimestep, 0.5), 0.0).rgb;
@@ -432,7 +442,7 @@ export class Volume extends IParametricObject {
             this.properties[i] = VolumeStruct.fromBuffer(new Uint8Array(VolumeUniformSize));
             this.properties[i].modelMatrix = mat4.create();
             this.properties[i].modelMatrixInverse = mat4.invert(mat4.create(), this.properties[i].modelMatrix);
-            this.properties[i].color = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
+            this.properties[i].color = vec4.fromValues(0.0, 0.0, 0.0, 0.0);
             this.properties[i].translate = vec4.fromValues(0.0, 0.0, 0.0, 0.0);
             this.properties[i].scale = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
             this.properties[i].func = 0;
@@ -599,6 +609,12 @@ export class Volume extends IParametricObject {
         this.onAllocationMoved();
     }
 
+    public setColor(color: vec4, index: number) {
+        this.properties[index].color = [color[0], color[1], color[2], color[3]];
+        this._dirtyCPU = true;
+        this._dirtyGPU = true;
+    }
+
     public set transparency(a: number) {
         for (let i = 0; i < this.properties.length; i++) {
             this.properties[i].transparency = a;
@@ -706,9 +722,9 @@ export class Volume extends IParametricObject {
         }
 
         for (let i = 0; i < this.properties.length; i++) {
-            this.properties[i].frameID = frameID;
+            //this.properties[i].frameID = frameID;
         }
-        this._dirtyCPU = true;
+        //this._dirtyCPU = true;
 
         const bindGroup = this._graphicsLibrary.device.createBindGroup({
             layout: Volume.bindGroupLayouts[0],
@@ -748,7 +764,7 @@ export class Volume extends IParametricObject {
     public toBuffer(buffer: ArrayBuffer, offset: number): void {
         const u8View = new Uint8Array(buffer, offset);
         for (let i = 0; i < this.properties.length; i++) {
-            u8View.set(VolumeStruct.toBuffer(this.properties[i]), i * VolumeStruct);
+            u8View.set(VolumeStruct.toBuffer(this.properties[i]), i * VolumeUniformSize);
         }
     }
 }

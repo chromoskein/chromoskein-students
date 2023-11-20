@@ -177,9 +177,20 @@
   }
 
   $: if (blobs && blobs[0]) {
+    blobColors = [];
+    for (let i = 0; i < blobs[0].length; i++) {
+      if (blobsColored) {
+        blobColors.push([dataClustersGivenK[blobsAmount][i].color.rgb[0], dataClustersGivenK[blobsAmount][i].color.rgb[1], dataClustersGivenK[blobsAmount][i].color.rgb[2], 1.0]);
+      } else {  
+        blobColors.push([1.0, 1.0, 1.0, 0.0]);
+      }
+    }
+  }
+
+  $: if (blobs && blobs[0]) {
     blobRadii = [];
     for (let i = 0; i < blobs[0].length; i++) {
-      blobRadii.push(blobs[selectedTimestep][i].normalizedPoints.length / 1000.0 * 2 + volumeRadius / 2.0)
+      blobRadii.push(blobs[selectedTimestep][i].normalizedPoints.length / 1000.0 * 2 + volumeRadius / 2.0);
     }
   }
 
@@ -266,7 +277,8 @@
 
 
   let blobVolumes: vec3[][][] = [];
-  let blobRadii: number[] = []
+  let blobRadii: number[] = [];
+  let blobColors: vec4[] = [];
 
   let blobsVisible = true;
   let blobsRadius = 0.03;
@@ -395,6 +407,7 @@
   </div>
 
   <Splitpanes theme="chromoskein" horizontal={false}>
+    <!--
     <Pane>
       <Splitpanes theme="chromoskein" horizontal={false}>
         <Pane size={50}>
@@ -407,14 +420,11 @@
                 multicolored={isMulticolored}
               />
             </div>
-          <!--
             <Viewport2D> 
               <DistanceMap
                 points={dataTimesteps[selectedTimestep]}
               />
             </Viewport2D>
-          -->
-          <!--
             <div class={`arrows ${blobsStyle}`}>
               {#if dataClustersGivenK && dataPathlines}
                 {#each Array(blobsAmount) as _, index (index)}
@@ -431,79 +441,80 @@
                 {/each}
               {/if}
             </div>
-          -->
           {/if}
         </Pane>
-        <Pane size={50}>
-          {#if $adapter && $device && $graphicsLibrary && dataTimesteps && dataTimesteps.length > volumeTimeRange[1]}
-            <Viewport3D bind:viewport>
-              <!--
-                "Empty" Sphere is put here because there must be at least one object in scene else undefined behavior starts 
-                for reasons completely unknown to me
-              -->
+      -->
+    <Pane size={75}>
+      {#if $adapter && $device && $graphicsLibrary && dataTimesteps && dataTimesteps.length > volumeTimeRange[1]}
+        <Viewport3D bind:viewport>
+          <!--
+            "Empty" Sphere is put here because there must be at least one object in scene else undefined behavior starts 
+            for reasons completely unknown to me
+          -->
+          <Sphere
+            radius={0}
+            center={[0.0, 0.0, 0.0]}
+            color={[0.0, 0.0, 0.0, 0.0]} 
+          />
+          {#if volumeVisible}
+            <TimeVolume
+              visible={volumeVisible}
+              points={[dataTimesteps.slice(volumeTimeRange[0], volumeTimeRange[1])]}
+              transparency={volumeTransparency}
+              radii={[volumeRadius]}
+              colormap={volumeColormap}
+              func={volumeFunction}
+              colors={[[1.0, 1.0, 1.0, 0.0]]}
+            />
+          {/if}
+          {#if blobsTimeVolumeVisible && blobs && blobs[0]}
+            <TimeVolume
+              visible={true}
+              points={blobVolumes}
+              transparency={volumeTransparency}
+              radii={blobRadii}
+              colormap={volumeColormap}
+              func={volumeFunction}
+              colors={blobColors}
+              />
+          {/if}
+          {#if visualizationSelected == "Matryoshka"}
+            <SignedDistanceGridBlended
+              points={matryoshkaBlobPoints}
+              scales={matryoshkaBlobScales}
+              translates={matryoshkaBlobCenters}
+              colors={(!experimentalColors) ? matryoshkaColors : matryoshkaExperiemntalColors}
+              radius={blobsRadius}
+              radiusOffsets={matryoshkaRadius}
+              alpha={blobAlpha}
+              depths={matryoshkaBlobDepth}
+          />
+          {/if}
+          {#if blobs[selectedTimestep] && visualizationSelected == "Default"}
+            {#each blobs[selectedTimestep] as blob, i}
+              <SignedDistanceGrid
+                points={blob.normalizedPoints}
+                translate={blob.center}
+                scale={blob.scale}
+                radius={blobsRadius}
+                visible={blobsVisible}
+                color={blobsColored ? dataClustersGivenK[blobsAmount][i].color.rgb : vec3.fromValues(1.0, 1.0, 1.0)}
+              />
+            {/each}
+          {/if}
+          {#if blobs[selectedTimestep] && visualizationSelected == "Spheres"}
+            {#each blobs[selectedTimestep] as blob, i}
               <Sphere
-                radius={0}
-                center={[0.0, 0.0, 0.0]}
-                color={[0.0, 0.0, 0.0, 0.0]} 
+                radius={blob.normalizedPoints.length / 1000.0 * 2}
+                center={blob.center}
+                color={[blobColors[i][0], blobColors[i][1], blobColors[i][2], blobColors[i][3]]} 
               />
-              {#if volumeVisible}
-                <TimeVolume
-                  visible={volumeVisible}
-                  points={[dataTimesteps.slice(volumeTimeRange[0], volumeTimeRange[1])]}
-                  transparency={volumeTransparency}
-                  radii={[volumeRadius]}
-                  colormap={volumeColormap}
-                  func={volumeFunction}
-                />
-              {/if}
-              {#if blobsTimeVolumeVisible && blobs && blobs[0]}
-                <TimeVolume
-                  visible={true}
-                  points={blobVolumes}
-                  transparency={volumeTransparency}
-                  radii={blobRadii}
-                  colormap={volumeColormap}
-                  func={volumeFunction}
-                 />
-              {/if}
-              {#if visualizationSelected == "Matryoshka"}
-                <SignedDistanceGridBlended
-                  points={matryoshkaBlobPoints}
-                  scales={matryoshkaBlobScales}
-                  translates={matryoshkaBlobCenters}
-                  colors={(!experimentalColors) ? matryoshkaColors : matryoshkaExperiemntalColors}
-                  radius={blobsRadius}
-                  radiusOffsets={matryoshkaRadius}
-                  alpha={blobAlpha}
-                  depths={matryoshkaBlobDepth}
+              <ContinuousTube 
+                points={centerPoints}
+                radius={(1.0 / centerPoints.length) / 10.0} 
+                color={[0.9, 0.9, 0.9]} 
+                multicolored={false} 
               />
-              {/if}
-              {#if blobs[selectedTimestep] && visualizationSelected == "Default"}
-                {#each blobs[selectedTimestep] as blob, i}
-                  <SignedDistanceGrid
-                    points={blob.normalizedPoints}
-                    translate={blob.center}
-                    scale={blob.scale}
-                    radius={blobsRadius}
-                    visible={blobsVisible}
-                    color={blobsColored ? dataClustersGivenK[blobsAmount][i].color.rgb : vec3.fromValues(1.0, 1.0, 1.0)}
-                  />
-                {/each}
-              {/if}
-              {#if blobs[selectedTimestep] && visualizationSelected == "Spheres"}
-                {#each blobs[selectedTimestep] as blob, i}
-                  <Sphere
-                    radius={blob.normalizedPoints.length / 1000.0 * 2}
-                    center={blob.center}
-                    color={blobsColored ? [dataClustersGivenK[blobsAmount][i].color.rgb[0], dataClustersGivenK[blobsAmount][i].color.rgb[1], dataClustersGivenK[blobsAmount][i].color.rgb[2], 1.0] : [1.0, 1.0, 1.0, 1.0]} 
-                  />
-                  <ContinuousTube 
-                    points={centerPoints}
-                    radius={(1.0 / centerPoints.length) / 10.0} 
-                    color={[0.9, 0.9, 0.9]} 
-                    multicolored={false} 
-                  />
-                {/each}
               {/if}
               {#if blobs[selectedTimestep] && visualizationSelected == "Cones"}
                 {#each blobs[selectedTimestep] as blob, i}
@@ -531,12 +542,70 @@
                   />
                 {/each}                
               {/if}
+          <!--
             </Viewport3D>
+            {/each}
           {/if}
-        </Pane>
-      </Splitpanes>
+          {#if blobs[selectedTimestep] && visualizationSelected == "Cones" && pcaVis == "First PC"}
+            {#each blobs[selectedTimestep] as blob, i}
+              <Cone
+                startRadius={0.1}
+                center={blob.center}
+                height={0.0}
+                orientation={vec3.fromValues(0.5 * firstPC[i][0], 0.5 * firstPC[i][1], 0.5 * firstPC[i][2])}
+                color={[blobColors[i][0], blobColors[i][1], blobColors[i][2]]}
+                up={true}
+              />
+              <Cone
+                startRadius={0.1}
+                center={blob.center}
+                height={0.0}
+                orientation={vec3.fromValues(0.5 * firstPC[i][0], 0.5 * firstPC[i][1], 0.5 * firstPC[i][2])}
+                color={[blobColors[i][0], blobColors[i][1], blobColors[i][2]]}
+                up={false}
+              />
+              <ContinuousTube 
+                points={centerPoints}
+                radius={(1.0 / centerPoints.length) / 20.0} 
+                color={[0.9, 0.9, 0.9]} 
+                multicolored={false} 
+              />
+            {/each}                
+          {/if}
+          {#if blobs[selectedTimestep] && visualizationSelected == "Cones" && pcaVis == "First and second PC"}
+            {#each blobs[selectedTimestep] as blob, i}
+              <Cone
+                startRadius={0.1}
+                center={blob.center}
+                height={0.0}
+                orientation={vec3.fromValues(0.5 * firstPC[i][0], 0.5 * firstPC[i][1], 0.5 * firstPC[i][2])}
+                color={[blobColors[i][0], blobColors[i][1], blobColors[i][2]]}
+                up={true}
+              />
+              <Cone
+                startRadius={0.1}
+                center={blob.center}
+                height={0.0}
+                orientation={vec3.fromValues(0.3 * secondPC[i][0], 0.3 * secondPC[i][1], 0.3 * secondPC[i][2])}
+                color={[blobColors[i][0], blobColors[i][1], blobColors[i][2]]}
+                up={false}
+              />
+              <ContinuousTube 
+                points={centerPoints}
+                radius={(1.0 / centerPoints.length) / 20.0} 
+                color={[0.9, 0.9, 0.9]} 
+                multicolored={false} 
+              />
+            {/each}                
+          {/if}
+      -->
+        </Viewport3D>
+      {/if}
     </Pane>
-    <Pane size={20}>
+        <!--
+      </Splitpanes>
+    </Pane> -->
+    <Pane size={25}>
       <div style="padding: 8px; color:white">
         <Accordion>
           <AccordionItem title="Volume">
