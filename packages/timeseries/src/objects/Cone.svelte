@@ -7,9 +7,9 @@
   
     let viewport: Writable<Viewport3D | null> = getContext("viewport");
   
-    export let startRadius = 0.6;
+    export let startRadius = 0.0;
     export let center: vec3 = vec3.fromValues(0.0, 0.0, 0.0);
-    export let height = 0.2;
+    export let height = 0.0;
     export let orientation: vec3 = vec3.fromValues(0.1, 0.2, 0.1);
     export let color: vec3 = vec3.fromValues(1.0, 1.0, 1.0);
     export let up: boolean = true;
@@ -30,15 +30,15 @@
       object.properties.start = [center[0], center[1], center[2]]
       if (up) {
         object.properties.end = [
-            center[0] + height + orientation[0],
-            center[1] + height + orientation[1],
-            center[2] + height + orientation[2],
+            center[0] + height * orientation[0],
+            center[1] + height * orientation[1],
+            center[2] + height * orientation[2],
             ];
       } else {
         object.properties.end = [
-            center[0] - height - orientation[0],
-            center[1] - height - orientation[1],
-            center[2] - height - orientation[2],
+            center[0] - height * orientation[0],
+            center[1] - height * orientation[1],
+            center[2] - height * orientation[2],
             ];
       }
       

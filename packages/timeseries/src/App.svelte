@@ -36,6 +36,7 @@ import {DSVDelimiter, parseBEDString} from "./utils/data-parser";
 
   import "@carbon/styles/css/styles.css";
   import "@carbon/charts/styles.css";
+    import { loop_guard } from "svelte/internal";
 
   export const saveAs = (blob, name) => {
     // Namespace is used to prevent conflict w/ Chrome Poper Blocker extension (Issue https://github.com/eligrey/FileSaver.js/issues/561)
@@ -410,10 +411,9 @@ let firstPCVal: number[] = [];
     }
 
     // transform to [0,1] range
-    console.log("before "  + firstPCVal);
     firstPCVal = transformValues(firstPCVal);
     secondPCVal = transformValues(secondPCVal);
-    console.log("after " + firstPCVal);
+    //console.log("val " + firstPCVal);
   }
 
   // fixed for now
@@ -559,18 +559,18 @@ let firstPCVal: number[] = [];
           {#if blobs[selectedTimestep] && visualizationSelected == "Cones"}
             {#each blobs[selectedTimestep] as blob, i}
               <Cone
-                startRadius={secondPCVal[i] / 10.0 + 0.05}
+                startRadius={secondPCVal[i] / 20.0 + 0.05}
                 center={blob.center}
-                height={firstPCVal[i] * 0.2}
-                orientation={vec3.fromValues(0.5 * firstPCVec[i][0], 0.5 * firstPCVec[i][1], 0.5 * firstPCVec[i][2])}
+                height={firstPCVal[i] / 2.0 + 0.3}
+                orientation={vec3.fromValues(firstPCVec[i][0], firstPCVec[i][1], firstPCVec[i][2])}
                 color={blobsColored ? [dataClustersGivenK[blobsAmount][i].color.rgb[0], dataClustersGivenK[blobsAmount][i].color.rgb[1], dataClustersGivenK[blobsAmount][i].color.rgb[2]] : [1.0, 1.0, 1.0]}
                 up={true}
               />
               <Cone
-                startRadius={secondPCVal[i] / 10.0 + 0.05}
+                startRadius={secondPCVal[i] / 20.0 + 0.05}
                 center={blob.center}
-                height={firstPCVal[i] * 0.2}
-                orientation={vec3.fromValues(0.5 * firstPCVec[i][0], 0.5 * firstPCVec[i][1], 0.5 * firstPCVec[i][2])}
+                height={firstPCVal[i] / 2.0 + 0.3}
+                orientation={vec3.fromValues(firstPCVec[i][0], firstPCVec[i][1], firstPCVec[i][2])}
                 color={blobsColored ? [dataClustersGivenK[blobsAmount][i].color.rgb[0], dataClustersGivenK[blobsAmount][i].color.rgb[1], dataClustersGivenK[blobsAmount][i].color.rgb[2]] : [1.0, 1.0, 1.0]}
                 up={false}
               />
