@@ -280,6 +280,7 @@ export type ClusterNode = {
 
     from: number;    
     to: number;
+    indexes: number[];
 
     color: {
         h: number;
@@ -307,15 +308,19 @@ export function clusterPathlines(pathlines: vec3[][]): ClusterNode[][] {
     for (const [k, kClusters] of clustersGivenK.entries()) {
         kClustersRanges[k] = [];
         for (let i = 0; i < kClusters.length; i++) {
+            let min = Math.min(...kClusters[i]);
+            let max = Math.max(...kClusters[i])
+
             kClustersRanges[k][i] = {
                 k, i,
-                from: Math.min(...kClusters[i]),
-                to: Math.max(...kClusters[i]),
+                from: min,
+                to: max,
                 color: {
                     h: 0.0, c: 0.0, l: 0.0,
                     rgb: [0.0, 0.0, 0.0]
                 },
                 children: [],
+                indexes: []
             };
         }
         kClustersRanges[k].sort((a, b) => a.from - b.from);
@@ -342,24 +347,33 @@ export function clusterTimestep(timestep: vec3[]): ClusterNode[][] {
     const kClustersRanges: ClusterNode[][] = new Array(clustersGivenK.length);
     for (const [k, kClusters] of clustersGivenK.entries()) {
         kClustersRanges[k] = [];
-        if (k < 12) {
-            console.log(k + ": ------------------------------------------")
-        }
-        for (let i = 0; i < kClusters.length; i++) {
 
-            if (k < 12) {
-                console.log("Min idx: " + Math.min(...kClusters[i]));
-                console.log("Max idx: " + Math.max(...kClusters[i]));
+        for (let i = 0; i < kClusters.length; i++) {
+            let min = Math.min(...kClusters[i]);
+            let max = Math.max(...kClusters[i])
+            let indexes = new Array(timestep.length);
+
+            let sorted = kClusters[i].sort((a, b) => a - b);
+            let temp = 0;
+            for (let i = 0; i < timestep.length; i++) {
+                if (sorted[temp] == i) {
+                    indexes[i] = true;
+                    temp++;                    
+                } else {
+                    indexes[i] = false;
+                }
             }
+
             kClustersRanges[k][i] = {
                 k, i,
-                from: Math.min(...kClusters[i]),
-                to: Math.max(...kClusters[i]),
+                from: min,
+                to: max,
                 color: {
                     h: 0.0, c: 0.0, l: 0.0,
                     rgb: [0.0, 0.0, 0.0]
                 },
                 children: [],
+                indexes: indexes
             };
         }
         kClustersRanges[k].sort((a, b) => a.from - b.from);

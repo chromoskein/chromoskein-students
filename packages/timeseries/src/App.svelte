@@ -79,11 +79,9 @@
   $: if (dataClustersByTimestep && dataClustersByTimestep[blobsAmount] && dataTimesteps) {
 
     dataClusteredTimestep = [];
-    console.log("----------------------------------------------------------\n");
     for (const [clusterIndex, cluster] of dataClustersByTimestep[blobsAmount].entries()) {
-      console.log(cluster);
-      dataClusteredTimestep[clusterIndex] = blobFromPoints(dataTimesteps[selectedTimestep].slice(cluster.from, cluster.to + 1));
-      console.log(dataClusteredTimestep[clusterIndex]);
+      //dataTimesteps[selectedTimestep].filter((val, idx) => cluster.indexes[idx]);
+      dataClusteredTimestep[clusterIndex] = blobFromPoints(dataTimesteps[selectedTimestep].filter((val, idx) => cluster.indexes[idx]));
     }
 
   }
