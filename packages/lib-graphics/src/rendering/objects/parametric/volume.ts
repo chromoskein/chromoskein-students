@@ -319,23 +319,33 @@ export class Volume extends IParametricObject {
                         
                         var p_tex = tex_coord;
                         p_tex.z = p_tex.z / f32(arrayLength(&${this.variableName}));
+                        var p_tex_ofset = 1.0 / f32(arrayLength(&${this.variableName}));
 
                         var val_color = vec4(0.0, 0.0, 0.0, 0.0);
                         var value = 0.0;
+
+                        var j = 0.0;
                         for(var i: u32 = 0; i < arrayLength(&${this.variableName}); i++) {
                             var texValue = 0.0;
-                            if (${this.variableName}[0].func == 0) {
-                                //texValue = textureLoad(${this.variableName}Texture, pp_tex + vec3<u32>(0, 0, i * ${VolumeTextureSize}), 0).g;
-                                texValue = textureSampleLevel(${this.variableName}Texture, linearSampler, p_tex + vec3<f32>(0.0, 0.0, f32(i) / f32(arrayLength(&${this.variableName}))), 0.0).g;
+                            if (${this.variableName}[0].func == 0) { 
+                                if (${this.variableName}[0].transparency > 0.3) {
+                                    texValue = textureLoad(${this.variableName}Texture, pp_tex + vec3<u32>(0, 0, i * ${VolumeTextureSize}), 0).g;
+                                } else {
+                                    texValue = textureSampleLevel(${this.variableName}Texture, linearSampler, p_tex + vec3<f32>(0.0, 0.0, j * p_tex_ofset), 0.0).g;
+                                }
                             } else {
-                                //texValue = textureLoad(${this.variableName}Texture, pp_tex + vec3<u32>(0, 0, i * ${VolumeTextureSize}), 0).b;
-                                texValue = textureSampleLevel(${this.variableName}Texture, linearSampler, p_tex + vec3<f32>(0.0, 0.0, f32(i) / f32(arrayLength(&${this.variableName}))), 0.0).b;
+                                if (${this.variableName}[0].transparency > 0.3) {
+                                    texValue = textureLoad(${this.variableName}Texture, pp_tex + vec3<u32>(0, 0, i * ${VolumeTextureSize}), 0).b;
+                                } else {
+                                    texValue = textureSampleLevel(${this.variableName}Texture, linearSampler, p_tex + vec3<f32>(0.0, 0.0, j * p_tex_ofset), 0.0).b;
+                                }
                             }
 
                             value += texValue;
-                            if (${this.variableName}[i].color.w == 1.0) {
-                                val_color += vec4(${this.variableName}[i].color.rgb * texValue, 0.0);
+                            if (${this.variableName}[i].color.w == 1.0 && texValue > 0.01) {
+                                val_color += vec4(mix(${this.variableName}[i].color.rgb * 1.2, ${this.variableName}[i].color.rgb * 0.6, 1.0 - texValue), ${this.variableName}[i].transparency * texValue);
                             }
+                            j = j + 1.0;
                         }
 
                         //value = textureSampleLevel(${this.variableName}Texture, linearSampler, pp_tex, 0.0).g;
@@ -344,11 +354,12 @@ export class Volume extends IParametricObject {
                         // let stepsCount = textureSampleLevel(${this.variableName}Texture, linearSampler, 0.5 * p + vec3(0.5), 0.0).b;
 
                         // Version simple based on last timestep
+                        
                         if (${this.variableName}[0].color.w == 0.0) {
                             let tf = textureSampleLevel(colormap, linearSampler, vec2<f32>(value, 0.5), 0.0).rgb;
                             val_color = vec4(tf, 0);
+                            val_color.w = ${this.variableName}[0].transparency * value;
                         }
-                        val_color.w = ${this.variableName}[0].transparency * value;
 
                         // Version Threshold
                         // let tf = textureSampleLevel(colormap, linearSampler, vec2<f32>(lastTimestep, 0.5), 0.0).rgb;
