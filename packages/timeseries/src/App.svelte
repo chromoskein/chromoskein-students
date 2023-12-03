@@ -18,11 +18,8 @@
   import { loadTimesteps, normalizePointClouds, timestepsToPathlines, loadBitmap, clusterTimestep, clusterPathlines, loadBEDfile, blobFromPoints } from "./utils/main";
   import type { ClusterBlob, ClusterNode } from "./utils/main";
 
-  import ChromatinViewport from "./ChromatinViewport.svelte";
-  import SignedDistanceGridBlended from "./objects/SignedDistanceGridBlended.svelte";
   import "carbon-components-svelte/css/g100.css";
   import { Header, SkipToContent, Checkbox, Accordion, AccordionItem, Select, SelectItem } from "carbon-components-svelte";
-  import RangeSlider from "svelte-range-slider-pips";
   import { Slider } from "carbon-components-svelte";
   import TimeVolume from "./objects/TimeVolume.svelte";
   import SignedDistanceGrid from "./objects/SignedDistanceGrid.svelte";
@@ -33,7 +30,6 @@
 
   import "@carbon/styles/css/styles.css";
   import "@carbon/charts/styles.css";
-  import { loop_guard } from "svelte/internal";
   import ConnectedCones from "./objects/ConnectedCones.svelte";
   import ConnectedSpheres from "./objects/ConnectedSpheres.svelte";
   import BlobVolumes from "./objects/BlobVolumes.svelte";
@@ -57,15 +53,8 @@
 
   //#region Data
 
-  //let timesteps: vec3[][] = null;
-  let dataTimesteps: vec3[][] = null;
-
-  // Load base timestep data and transform them into pathlines (really just a transpose of data)
-  // [timestep][bin]
-  // $: dataTimesteps = timesteps && normalizePointClouds(timesteps);
-  
-  
-  let dataClustersByTimestep: ClusterNode[][] | null = null;
+  let dataTimesteps: vec3[][] = null;  
+  let dataClustersByTimestep: ClusterNode[][] = [];
 
   $: if (visualizationSelected == "Clustering" && selectedTimestep && dataTimesteps) {
     dataClustersByTimestep = clusterTimestep(dataTimesteps[selectedTimestep]).slice(0, 16);
@@ -136,6 +125,8 @@
     // saveAs(blob, `clusters.json`);
 
     dataClustersGivenK = await (await fetch("./clusters.json")).json();
+    dataClustersByTimestep = clusterTimestep(dataTimesteps[selectedTimestep]).slice(0, 16);
+    treeColor(dataClustersByTimestep);
   });
   //#endregion Init
 
@@ -160,8 +151,6 @@
       blobs.push(blobsPointsAtTimestep);
     }
   }
-
-  let matryoshkaBlobsVisible = [false, true, false, true, false, false, false, false, false, false, false, false, false, false];
 
   $: (async () => {
     let path;
@@ -196,7 +185,14 @@
   let volumeFunction = 0;
   let volumeTimeRange = [0, 599];
 
+  // Blobs
+  let blobsVisible = true;
+  let blobsRadius = 0.03;
+  let blobsAmount = 1;
+  let blobsColored = true;
+  let blobAlpha = 0.4;
   let blobColors: vec4[] = [];
+  let experimentalColors = false;
 
   $: if (blobs && blobs[0] && dataClustersGivenK) {
     blobColors = [];
@@ -209,40 +205,13 @@
     }
   }
 
-  let blobsVisible = true;
-  let blobsRadius = 0.03;
-  let blobsAmount = 1;
-  let blobsColored = true;
-  let blobAlpha = 0.4;
+
   let visualizationSelected = "Default"
-  let experimentalColors = false;
-
-  let pathlinesSimplifyFactor = 0.0;
-  let pathlinesShowChildren = false;
-  let pathlinesApproximate = false;
-
   let selectedTimestep = 0; 
-  
-  let isMulticolored = false;
-  //#endregion Configuration
 
+  let matryoshkaBlobsVisible = [false, true, false, true, false, false, false, false, false, false, false, false, false, false];
   function dendrogramClick(depth) {
     matryoshkaBlobsVisible[depth] = !matryoshkaBlobsVisible[depth];
-  }
-
-  let blobsStyle = "arrows-2x2";
-  $: if (blobsAmount < 4) {
-    blobsStyle = "";
-  } else if (blobsAmount == 5 || blobsAmount == 6) {
-    blobsStyle = "arrows-3x2";
-  } else if (blobsAmount >= 7 && blobsAmount <= 9) {
-    blobsStyle = "arrows-3x3";
-  } else if (blobsAmount > 9 && blobsAmount <= 12) {
-    blobsStyle = "arrows-4x3";
-  } else if (blobsAmount > 12 && blobsAmount <= 16) {
-    blobsStyle = "arrows-4x4";
-  } else {
-    blobsStyle = "arrows-2x2";
   }
 
   let centerPoints: vec3[] = [];
@@ -268,7 +237,9 @@
   result.then((res) => {
     let data = parseBEDString(res, DSVDelimiter.Tab);
     // TODO
-    });
+  });
+
+  //#endregion Configuration
 </script>
 
 
@@ -280,43 +251,6 @@
   </div>
 
   <Splitpanes theme="chromoskein" horizontal={false}>
-    <!--
-    <Pane>
-      <Splitpanes theme="chromoskein" horizontal={false}>
-        <Pane size={50}>
-          {#if $adapter && $device && $graphicsLibrary && dataTimesteps && dataTimesteps.length > volumeTimeRange[1]}
-            <div class="arrows"> 
-              <ChromatinViewport
-                chromatinParts={[dataTimesteps[selectedTimestep]]}
-                approximateCurve={pathlinesApproximate}
-                radius={blobsRadius}
-                multicolored={isMulticolored}
-              />
-            </div>
-            <Viewport2D> 
-              <DistanceMap
-                points={dataTimesteps[selectedTimestep]}
-              />
-            </Viewport2D>
-            <div class={`arrows ${blobsStyle}`}>
-              {#if dataClustersGivenK && dataPathlines}
-                {#each Array(blobsAmount) as _, index (index)}
-                  <PathlineViewport
-                    {dataClustersGivenK}
-                    {dataPathlines}
-                    t={selectedTimestep / (dataTimesteps.length - 1)}
-                    currentLevel={blobsAmount}
-                    clusterIndex={index}
-                    simplifyFactor={pathlinesSimplifyFactor}
-                    showChildren={pathlinesShowChildren}
-                    approximateCurve={pathlinesApproximate}
-                  />
-                {/each}
-              {/if}
-            </div>
-          {/if}
-        </Pane>
-      -->
     <Pane size={75}>
       {#if $adapter && $device && $graphicsLibrary && dataTimesteps && dataTimesteps.length > volumeTimeRange[1]}
         <Viewport3D bind:viewport>
@@ -429,7 +363,6 @@
 
             <Slider labelText="Transparency" fullWidth min={0.0} max={1.0} step={0.01} bind:value={volumeTransparency} />
             <Slider labelText="Radius" fullWidth min={0.0} max={0.1} step={0.01} bind:value={volumeRadius} />
-            <!--<RangeSlider id={"rangeSlider"} bind:values={volumeTimeRange} min={0} max={599} range={true} />-->
 
             <Select labelText="Colormap" bind:selected={volumeColormapChoice}>
               <SelectItem value="White to Black" />
@@ -467,16 +400,6 @@
             {#if visualizationSelected == "Matryoshka"}
               <Slider labelText="Alpha" fullWidth min={0.05} max={1.0} step={0.05} bind:value={blobAlpha} />
             {/if}
-            <!-- {#each visibleClusters as visibleCluster, i}
-              <Checkbox
-                checked={visibleClusters[i]}
-                on:change={() => {
-                  visibleClusters[i] = !visibleClusters[i];
-                  visibleClusters = visibleClusters;
-                  console.log(visibleClusters[i]);
-                }}
-              />
-            {/each} -->
             {#if dataClustersGivenK && visualizationSelected != "Clustering"}
               <div class="cluster-dendogram">
                 {#each dataClustersGivenK.slice(1, 15) as clustersAtLevel, clusterLevel}
@@ -514,13 +437,6 @@
 
           </AccordionItem>
 
-          <AccordionItem open title="Average pathline">
-            <Slider labelText="Simplify " fullWidth min={0.0} max={0.5} step={0.01} bind:value={pathlinesSimplifyFactor} />
-            <Checkbox labelText="Show direct children pathlines" bind:checked={pathlinesShowChildren} />
-            <Checkbox labelText="Show curve approximation" bind:checked={pathlinesApproximate} />
-            <Checkbox labelText="Multicolored" bind:checked={isMulticolored} />
-          </AccordionItem>
-
           <!-- <AccordionItem title="Pathlines" /> -->
         </Accordion>
       </div>
@@ -535,9 +451,6 @@
   </svelte:fragment>
 </Header>
 
-<!-- <Content>
-  hello
-</Content> -->
 <style>
   main {
     height: calc(100vh);
@@ -558,45 +471,6 @@
 
     padding: 8px;
   }
-
-  .arrows {
-    width: 100%;
-    height: 100%;
-    position: relative;
-    display: flex;
-    flex-direction: row;
-  }
-
-  /*
-  .arrows-2x2 {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: 1fr 1fr;
-  }
-
-  .arrows-3x3 {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    grid-template-rows: 1fr 1fr 1fr;
-  }
-
-  .arrows-3x2 {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-  }
-
-  .arrows-4x3 {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr 1fr;
-    grid-template-rows: 1fr 1fr 1fr;
-  }
-
-  .arrows-4x4 {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr 1fr;
-    grid-template-rows: 1fr 1fr 1fr 1fr;
-  }
-  */
 
   .cluster-dendogram {
     width: 100%;
