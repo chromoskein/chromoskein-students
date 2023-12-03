@@ -10,7 +10,7 @@
   import { onMount, setContext } from "svelte";
   import { writable, type Writable } from "svelte/store";
   import * as Graphics from "lib-graphics";
-  import Viewport3D from "./Viewport3D.svelte";
+  import Viewport3D from "./viewports/Viewport3D.svelte";
   import { vec3, type vec4 } from "gl-matrix";
   import "./styles/splitpanes.css";
   import { Pane, Splitpanes } from "svelte-splitpanes";
@@ -32,8 +32,8 @@
   import "@carbon/charts/styles.css";
   import ConnectedCones from "./objects/ConnectedCones.svelte";
   import ConnectedSpheres from "./objects/ConnectedSpheres.svelte";
-  import BlobVolumes from "./objects/BlobVolumes.svelte";
-    import MatryoshkaClusters from "./objects/MatryoshkaClusters.svelte";
+  import BlobVolumes from "./visalizations/BlobVolumes.svelte";
+  import MatryoshkaClusters from "./visalizations/MatryoshkaClusters.svelte";
 
   export const saveAs = (blob, name) => {
     // Namespace is used to prevent conflict w/ Chrome Poper Blocker extension (Issue https://github.com/eligrey/FileSaver.js/issues/561)
