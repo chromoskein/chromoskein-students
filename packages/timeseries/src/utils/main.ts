@@ -3,8 +3,8 @@ import { marchingCubes } from 'marching-cubes-fast';
 import { deindexTriangles_meshView } from 'triangles-index';
 
 import { CsvDelimiter, parseXyz } from "lib-dataloader";
-import type * as Graphics from "lib-graphics";
 import { clusterData } from "./hclust";
+import * as Graphics from "lib-graphics";
 
 export const clamp = (num: number, min: number, max: number) => Math.min(Math.max(num, min), max);
 export const mix = (start: number, end: number, amt: number) => (1 - amt) * start + amt * end;
@@ -277,20 +277,21 @@ export async function loadBitmap(source: string): Promise<ImageBitmap> {
 export type ClusterNode = {
     k: number;
     i: number;
-
+    
     from: number;    
     to: number;
-    indexes: number[];
-
+    points: vec3[];
+    
     color: {
         h: number;
         c: number;
         l: number;
         rgb: vec3;
     }
-
+    
     children: number[];
 }
+
 
 export function clusterPathlines(pathlines: vec3[][]): ClusterNode[][] {
     const distFunc = (a: vec3[], b: vec3[]): number => {
@@ -298,19 +299,19 @@ export function clusterPathlines(pathlines: vec3[][]): ClusterNode[][] {
         for (let i = 0; i < distances.length; i++) {
             distances[i] = vec3.distance(a[i], b[i]);
         }
-
+        
         return distances.reduce((a, b) => a + b, 0);
     };
-
+    
     const { clusters, distances, order, clustersGivenK } = clusterData({ data: pathlines, distance: distFunc });
-
+    
     const kClustersRanges: ClusterNode[][] = new Array(clustersGivenK.length);
     for (const [k, kClusters] of clustersGivenK.entries()) {
         kClustersRanges[k] = [];
         for (let i = 0; i < kClusters.length; i++) {
             let min = Math.min(...kClusters[i]);
             let max = Math.max(...kClusters[i])
-
+            
             kClustersRanges[k][i] = {
                 k, i,
                 from: min,
@@ -320,20 +321,20 @@ export function clusterPathlines(pathlines: vec3[][]): ClusterNode[][] {
                     rgb: [0.0, 0.0, 0.0]
                 },
                 children: [],
-                indexes: []
+                points: [],
             };
         }
         kClustersRanges[k].sort((a, b) => a.from - b.from);
         kClustersRanges[k].forEach((c, i) => c.i = i);
     }
-
+    
     for (const [k, kClusters] of kClustersRanges.entries()) {
         if (k >= kClustersRanges.length - 1) break;
         for (const [i, cluster] of kClusters.entries()) {
             cluster.children = kClustersRanges[k + 1].filter(r => cluster.from <= r.from && r.to <= cluster.to).map(c => c.i);
         }
     }
-
+    
     return kClustersRanges;
 }
 
@@ -341,29 +342,27 @@ export function clusterTimestep(timestep: vec3[]): ClusterNode[][] {
     const distFunc = (a: vec3, b: vec3): number => {
         return vec3.distance(a, b);
     };
-
+    
     const { clusters, distances, order, clustersGivenK } = clusterData({ data: timestep, distance: distFunc, onProgress: (a) => {} });
-
+    
     const kClustersRanges: ClusterNode[][] = new Array(clustersGivenK.length);
     for (const [k, kClusters] of clustersGivenK.entries()) {
         kClustersRanges[k] = [];
-
+        
         for (let i = 0; i < kClusters.length; i++) {
             let min = Math.min(...kClusters[i]);
             let max = Math.max(...kClusters[i])
-            let indexes = new Array(timestep.length);
-
+            let points = [];
+            
             let sorted = kClusters[i].sort((a, b) => a - b);
             let temp = 0;
             for (let i = 0; i < timestep.length; i++) {
                 if (sorted[temp] == i) {
-                    indexes[i] = true;
+                    points.push(timestep[i]);
                     temp++;                    
-                } else {
-                    indexes[i] = false;
                 }
             }
-
+            
             kClustersRanges[k][i] = {
                 k, i,
                 from: min,
@@ -373,23 +372,52 @@ export function clusterTimestep(timestep: vec3[]): ClusterNode[][] {
                     rgb: [0.0, 0.0, 0.0]
                 },
                 children: [],
-                indexes: indexes
+                points: points,
             };
         }
         kClustersRanges[k].sort((a, b) => a.from - b.from);
         kClustersRanges[k].forEach((c, i) => c.i = i);
     }
-
+    
     for (const [k, kClusters] of kClustersRanges.entries()) {
         if (k >= kClustersRanges.length - 1) break;
         for (const [i, cluster] of kClusters.entries()) {
             cluster.children = kClustersRanges[k + 1].filter(r => cluster.from <= r.from && r.to <= cluster.to).map(c => c.i);
         }
     }
-
+    
     return kClustersRanges;
 }
 
+export type ClusterBlob = {
+    normalizedPoints: vec3[];
+    center: vec3;
+    scale: number;   
+}
+
+export function blobFromPoints(points: vec3[]) {
+    let bb = Graphics.BoundingBoxFromPoints(points);
+    Graphics.BoundingBoxCalculateCenter(bb);
+    
+    let bbSizeLengthsVec3 = vec3.sub(vec3.create(), bb.max, bb.min);
+    let bbSizeLengths = [Math.abs(bbSizeLengthsVec3[0]), Math.abs(bbSizeLengthsVec3[1]), Math.abs(bbSizeLengthsVec3[2])];
+    let maxLength = Math.max(...bbSizeLengths) * 0.25;
+    
+    bb.min = vec3.add(vec3.create(), bb.min, vec3.fromValues(-maxLength, -maxLength, -maxLength));
+    bb.max = vec3.add(vec3.create(), bb.max, vec3.fromValues(maxLength, maxLength, maxLength));
+    
+    const normalizedPoints: Array<vec3> = Graphics.normalizePointsByBoundingBox(bb, points);
+    
+    bbSizeLengthsVec3 = vec3.sub(vec3.create(), bb.max, bb.min);
+    bbSizeLengths = [Math.abs(bbSizeLengthsVec3[0]), Math.abs(bbSizeLengthsVec3[1]), Math.abs(bbSizeLengthsVec3[2])];
+    maxLength = Math.max(...bbSizeLengths);
+    
+    return {
+        normalizedPoints,
+        center: vec3.clone(bb.center),
+        scale: 0.5 * maxLength,
+    };
+}
     // const bytes = new TextEncoder().encode(JSON.stringify(clustersGivenK));
     // const blob = new Blob([bytes], {
     //   type: "application/json;charset=utf-8",

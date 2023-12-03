@@ -2,6 +2,8 @@ import chroma from "chroma-js";
 import { vec3 } from "gl-matrix";
 import type { ClusterNode } from "./main";
 
+export const staticColors: vec3[] = [vec3.fromValues(0.0159, 0.9294, 0), vec3.fromValues(0.9294, 0, 0.0157), vec3.fromValues(0, 0.0157, 0.9294), vec3.fromValues(0.9294, 0.9137, 0), vec3.fromValues(0, 0.9294, 0.9137), vec3.fromValues(0.9137, 0, 0.9294)];
+
 const ep: number = 1e-15;
 
 let children = 'children',

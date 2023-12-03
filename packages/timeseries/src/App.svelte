@@ -15,8 +15,8 @@
   import "./styles/splitpanes.css";
   import { Pane, Splitpanes } from "svelte-splitpanes";
 
-  import { loadTimesteps, normalizePointClouds, timestepsToPathlines, loadBitmap, clusterTimestep, clusterPathlines, centroid, loadBEDfile } from "./utils/main";
-  import type { ClusterNode } from "./utils/main";
+  import { loadTimesteps, normalizePointClouds, timestepsToPathlines, loadBitmap, clusterTimestep, clusterPathlines, loadBEDfile, blobFromPoints } from "./utils/main";
+  import type { ClusterBlob, ClusterNode } from "./utils/main";
 
   import ChromatinViewport from "./ChromatinViewport.svelte";
   import SignedDistanceGridBlended from "./objects/SignedDistanceGridBlended.svelte";
@@ -26,7 +26,7 @@
   import { Slider } from "carbon-components-svelte";
   import TimeVolume from "./objects/TimeVolume.svelte";
   import SignedDistanceGrid from "./objects/SignedDistanceGrid.svelte";
-  import { treeColor } from "./utils/treecolors";
+  import { treeColor, staticColors } from "./utils/treecolors";
   import Sphere from "./objects/Sphere.svelte";
   import {DSVDelimiter, parseBEDString} from "./utils/data-parser";
   import {computePCA, getCenterPoints} from "./utils/abstractClustersUtils";
@@ -36,6 +36,8 @@
   import { loop_guard } from "svelte/internal";
   import ConnectedCones from "./objects/ConnectedCones.svelte";
   import ConnectedSpheres from "./objects/ConnectedSpheres.svelte";
+  import BlobVolumes from "./objects/BlobVolumes.svelte";
+    import MatryoshkaClusters from "./objects/MatryoshkaClusters.svelte";
 
   export const saveAs = (blob, name) => {
     // Namespace is used to prevent conflict w/ Chrome Poper Blocker extension (Issue https://github.com/eligrey/FileSaver.js/issues/561)
@@ -70,22 +72,18 @@
     treeColor(dataClustersByTimestep);
   }
 
-  let dataClusteredTimestep: {
-    normalizedPoints: vec3[];
-    center: vec3;
-    scale: number;
-  }[] = [];
+  let dataClusteredTimestep: ClusterBlob[] = [];
 
   $: if (dataClustersByTimestep && dataClustersByTimestep[blobsAmount] && dataTimesteps) {
 
     dataClusteredTimestep = [];
     for (const [clusterIndex, cluster] of dataClustersByTimestep[blobsAmount].entries()) {
       //dataTimesteps[selectedTimestep].filter((val, idx) => cluster.indexes[idx]);
-      dataClusteredTimestep[clusterIndex] = blobFromPoints(dataTimesteps[selectedTimestep].filter((val, idx) => cluster.indexes[idx]));
+      //dataClusteredTimestep[clusterIndex] = blobFromPoints(dataTimesteps[selectedTimestep].filter((val, idx) => cluster.indexes[idx]));
+      dataClusteredTimestep[clusterIndex] = blobFromPoints(cluster.points);
     }
 
   }
-
 
   // [pathline][timestep]
   $: dataPathlines = dataTimesteps && timestepsToPathlines(dataTimesteps);
@@ -142,11 +140,7 @@
   //#endregion Init
 
   // [timestep][blob]
-  let blobs: {
-    normalizedPoints: vec3[];
-    center: vec3;
-    scale: number;
-  }[][] = [];
+  let blobs: ClusterBlob[][] = [];
 
   $: if (dataClusteredPathlines && blobsAmount) {
     // Allocate new ones
@@ -167,105 +161,7 @@
     }
   }
 
-  const staticColors: vec3[] = [vec3.fromValues(0.0159, 0.9294, 0), vec3.fromValues(0.9294, 0, 0.0157), vec3.fromValues(0, 0.0157, 0.9294), vec3.fromValues(0.9294, 0.9137, 0), vec3.fromValues(0, 0.9294, 0.9137), vec3.fromValues(0.9137, 0, 0.9294)];
-  let matryoshkaColors: vec3[] = [];
-  let matryoshkaExperiemntalColors: vec3[] = [];
-  let matryoshkaRadius: number[] = [];
-  let matryoshkaBlobDepth: number[] = [];
-  let matryoshkaBlobs: {
-    normalizedPoints: vec3[];
-    center: vec3;
-    scale: number;
-  }[][] = [];
-
-  let matryoshkaBlobPoints: vec3[][] = [];
-  let matryoshkaBlobCenters: vec3[] = [];
-  let matryoshkaBlobScales: number[] = [];
   let matryoshkaBlobsVisible = [false, true, false, true, false, false, false, false, false, false, false, false, false, false];
-
-  $: if (matryoshkaBlobs[selectedTimestep]) {
-    matryoshkaBlobPoints.length = 0;
-    matryoshkaBlobCenters.length = 0;
-    matryoshkaBlobScales.length = 0;
-    for (let i = 0; i < matryoshkaBlobs[selectedTimestep].length; i++) {
-      matryoshkaBlobPoints.push(matryoshkaBlobs[selectedTimestep][i].normalizedPoints);
-      matryoshkaBlobCenters.push(matryoshkaBlobs[selectedTimestep][i].center);
-      matryoshkaBlobScales.push(matryoshkaBlobs[selectedTimestep][i].scale);
-    }
-  }
-
-  $: if (blobs && blobs[0]) {
-    blobVolumes = [];
-    for (let i = 0; i < blobs[0].length; i++) {
-      blobVolumes.push(blobs.map(p => [p[i].center]));
-    }
-  }
-
-  $: if (blobs && blobs[0]) {
-    blobColors = [];
-    for (let i = 0; i < blobs[0].length; i++) {
-      if (blobsColored) {
-        blobColors.push([dataClustersGivenK[blobsAmount][i].color.rgb[0], dataClustersGivenK[blobsAmount][i].color.rgb[1], dataClustersGivenK[blobsAmount][i].color.rgb[2], 1.0]);
-      } else {  
-        blobColors.push([1.0, 1.0, 1.0, 0.0]);
-      }
-    }
-  }
-
-  $: if (blobs && blobs[0]) {
-    blobRadii = [];
-    for (let i = 0; i < blobs[0].length; i++) {
-      blobRadii.push(blobs[selectedTimestep][i].normalizedPoints.length / 1000.0 * 2 + volumeRadius / 2.0);
-    }
-  }
-
-  $: if (dataClustersGivenK && dataPathlines) {
-    matryoshkaBlobs = [];
-    matryoshkaColors = [];
-    matryoshkaExperiemntalColors = [];
-    matryoshkaRadius = [];
-
-    let depth = matryoshkaBlobsVisible.filter(x => x).length;
-    let radiusOffset = depth * 0.015;
-
-    let found = [];
-    let clusterPoints = [];
-    for (let i = 1; i < 15; i++) {
-      if (!matryoshkaBlobsVisible[i - 1]) {
-        continue;
-      }
-
-      let clusters = dataClustersGivenK[i];
-
-      for (const [_, cluster] of clusters.entries()) {
-        if (found.filter(x => x[0] == cluster.from && x[1] == cluster.to).length == 0) {
-          clusterPoints.push(dataPathlines.slice(cluster.from, cluster.to + 1));
-          matryoshkaColors.push(cluster.color.rgb);
-          matryoshkaExperiemntalColors.push(staticColors[cluster.i % staticColors.length]);
-          found.push([cluster.from, cluster.to]);
-          matryoshkaRadius.push(radiusOffset);
-          matryoshkaBlobDepth.push(depth);
-        }
-      }
-      depth--;
-      radiusOffset -= 0.015;
-    }
-
-    for (let timestep = 0; timestep < dataTimesteps.length; timestep++) {
-      let blobsPointsAtTimestep: {
-        normalizedPoints: vec3[];
-        center: vec3;
-        scale: number;
-      }[] = [];
-      for (const [index, clusteredPathline] of clusterPoints.entries()) {
-        const points = clusteredPathline.map((pathline) => pathline[timestep]);
-
-        blobsPointsAtTimestep.push(blobFromPoints(points));
-      }
-
-      matryoshkaBlobs.push(blobsPointsAtTimestep);
-    }
-  }
 
   $: (async () => {
     let path;
@@ -300,10 +196,18 @@
   let volumeFunction = 0;
   let volumeTimeRange = [0, 599];
 
-
-  let blobVolumes: vec3[][][] = [];
-  let blobRadii: number[] = [];
   let blobColors: vec4[] = [];
+
+  $: if (blobs && blobs[0] && dataClustersGivenK) {
+    blobColors = [];
+    for (let i = 0; i < blobs[0].length; i++) {
+        if (blobsColored) {
+            blobColors.push([dataClustersGivenK[blobsAmount][i].color.rgb[0], dataClustersGivenK[blobsAmount][i].color.rgb[1], dataClustersGivenK[blobsAmount][i].color.rgb[2], 1.0]);
+        } else {  
+            blobColors.push([1.0, 1.0, 1.0, 0.0]);
+        }
+    }
+  }
 
   let blobsVisible = true;
   let blobsRadius = 0.03;
@@ -324,30 +228,6 @@
 
   function dendrogramClick(depth) {
     matryoshkaBlobsVisible[depth] = !matryoshkaBlobsVisible[depth];
-  }
-
-  function blobFromPoints(points) {
-    let bb = Graphics.BoundingBoxFromPoints(points);
-    Graphics.BoundingBoxCalculateCenter(bb);
-
-    let bbSizeLengthsVec3 = vec3.sub(vec3.create(), bb.max, bb.min);
-    let bbSizeLengths = [Math.abs(bbSizeLengthsVec3[0]), Math.abs(bbSizeLengthsVec3[1]), Math.abs(bbSizeLengthsVec3[2])];
-    let maxLength = Math.max(...bbSizeLengths) * 0.25;
-
-    bb.min = vec3.add(vec3.create(), bb.min, vec3.fromValues(-maxLength, -maxLength, -maxLength));
-    bb.max = vec3.add(vec3.create(), bb.max, vec3.fromValues(maxLength, maxLength, maxLength));
-
-    const normalizedPoints: Array<vec3> = Graphics.normalizePointsByBoundingBox(bb, points);
-
-    bbSizeLengthsVec3 = vec3.sub(vec3.create(), bb.max, bb.min);
-    bbSizeLengths = [Math.abs(bbSizeLengthsVec3[0]), Math.abs(bbSizeLengthsVec3[1]), Math.abs(bbSizeLengthsVec3[2])];
-    maxLength = Math.max(...bbSizeLengths);
-
-    return {
-      normalizedPoints,
-      center: vec3.clone(bb.center),
-      scale: 0.5 * maxLength,
-    };
   }
 
   let blobsStyle = "arrows-2x2";
@@ -461,27 +341,27 @@
             />
           {/if}
           {#if blobsTimeVolumeVisible && blobs && blobs[0]}
-            <TimeVolume
-              visible={true}
-              points={blobVolumes}
+            <BlobVolumes
+              blobs={blobs}
+              blobColors={blobColors}
+              volumeRadius={volumeRadius}
+              selectedTimestep={selectedTimestep}
               transparency={volumeTransparency}
-              radii={blobRadii}
-              colormap={volumeColormap}
               func={volumeFunction}
-              colors={blobColors}
-              />
+              colormap={volumeColormap}
+            />
           {/if}
           {#if visualizationSelected == "Matryoshka"}
-            <SignedDistanceGridBlended
-              points={matryoshkaBlobPoints}
-              scales={matryoshkaBlobScales}
-              translates={matryoshkaBlobCenters}
-              colors={(!experimentalColors) ? matryoshkaColors : matryoshkaExperiemntalColors}
-              radius={blobsRadius}
-              radiusOffsets={matryoshkaRadius}
-              alpha={blobAlpha}
-              depths={matryoshkaBlobDepth}
-          />
+              <MatryoshkaClusters
+              selectedTimestep={selectedTimestep}
+              dataClustersGivenK={dataClustersGivenK}
+              dataTimesteps={dataTimesteps}
+              dataPathlines={dataPathlines}
+              blobAlpha={blobAlpha}
+              blobsRadius={blobsRadius}
+              experimentalColors={experimentalColors}
+              matryoshkaBlobsVisible={matryoshkaBlobsVisible} 
+            />
           {/if}
           {#if blobs[selectedTimestep] && visualizationSelected == "Default"}
             {#each blobs[selectedTimestep] as blob, i}
@@ -621,7 +501,7 @@
                     {#each clustersAtLevel as cluster, i}
                       <div
                         style={`
-                          width: ${100.0 * ((cluster.to - cluster.from + 1) / dataPathlines.length)}%;
+                          width: ${100.0 * (cluster.points.length / dataPathlines.length)}%;
                           background-color: rgb(${(!experimentalColors) ? 255 * cluster.color.rgb[0] : 255 * staticColors[i % staticColors.length][0]} ${(!experimentalColors) ? 255 * cluster.color.rgb[1] : 255 * staticColors[i % staticColors.length][1]} ${(!experimentalColors) ? 255 * cluster.color.rgb[2] : 255 * staticColors[i % staticColors.length][2]});
                           border: 2px solid ${(matryoshkaBlobsVisible[clusterLevel] ? "white" : "black")}
                         `}
