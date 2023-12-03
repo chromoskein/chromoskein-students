@@ -3,7 +3,7 @@
     import type { vec3 } from "gl-matrix";
     import { staticColors } from "../utils/treecolors";
     import type { ClusterBlob, ClusterNode } from "../utils/main";
-    import SignedDistanceGridBlended from "./SignedDistanceGridBlended.svelte";
+    import SignedDistanceGridBlended from "../objects/SignedDistanceGridBlended.svelte";
     import { blobFromPoints } from "../utils/main";
 
     export let selectedTimestep: number;

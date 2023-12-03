@@ -3,7 +3,7 @@
 
     import type { vec3, vec4 } from "gl-matrix";
     import type { ClusterBlob, ClusterNode } from "../utils/main";
-    import TimeVolume from "./TimeVolume.svelte";
+    import TimeVolume from "../objects/TimeVolume.svelte";
 
     export let blobs: ClusterBlob[][] = [];
     export let volumeRadius: number;

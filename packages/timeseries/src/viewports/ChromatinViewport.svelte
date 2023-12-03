@@ -1,8 +1,8 @@
 <script lang="ts">
     import { vec3 } from "gl-matrix";
-    import ContinuousTube from "./objects/ContinuousTube.svelte";
-    import Spline from "./objects/Spline.svelte";
-    import { lineToSpline } from "./utils/lineToSpline";
+    import ContinuousTube from "../objects/ContinuousTube.svelte";
+    import Spline from "../objects/Spline.svelte";
+    import { lineToSpline } from "../utils/lineToSpline";
     import Viewport3D from "./Viewport3D.svelte";
 
     // Array of arrays is used because chromosome can be of multiple parts (even though current data is only one part)

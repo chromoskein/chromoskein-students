@@ -14,12 +14,12 @@
 
 <script lang="ts">
   import { vec3, vec4 } from "gl-matrix";
-  import ContinuousTube from "./objects/ContinuousTube.svelte";
-  import Sphere from "./objects/Sphere.svelte";
-  import Spline from "./objects/Spline.svelte";
-  import { lineToSpline } from "./utils/lineToSpline";
-  import { averagePathlines, normalizePointClouds, type ClusterNode } from "./utils/main";
-  import { simplify } from "./utils/simplifyLine";
+  import ContinuousTube from "../objects/ContinuousTube.svelte";
+  import Sphere from "../objects/Sphere.svelte";
+  import Spline from "../objects/Spline.svelte";
+  import { lineToSpline } from "../utils/lineToSpline";
+  import { averagePathlines, normalizePointClouds, type ClusterNode } from "../utils/main";
+  import { simplify } from "../utils/simplifyLine";
   import Viewport3D from "./Viewport3D.svelte";
 
   import { BoundingBoxFromPoints, OrbitCamera, toRadian, normalizePointsByBoundingBox } from "lib-graphics";
