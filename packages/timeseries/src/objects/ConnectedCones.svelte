@@ -10,7 +10,6 @@
     export let tubeRadius = 0.3;
     export let tubePoints: vec3[] = [];
     export let tubeColor: vec3 = vec3.fromValues(1.0, 1.0, 1.0);
-    export let tubeMulticolored: boolean = false;
     export let coneStartRadius = 0.0;
     export let coneCenter: vec3 = vec3.fromValues(0.0, 0.0, 0.0);
     export let coneHeight = 0.0;
