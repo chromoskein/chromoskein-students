@@ -32,8 +32,8 @@
   
     $: if ($viewport) {
       keepIfNull(tubeID);
-      keepIfNull(coneUp);
-      keepIfNull(coneDown);
+      keepIfNull(coneUpID);
+      keepIfNull(coneDownID);
   
       [tube, tubeID] = $viewport.scene.addObjectInstanced(
         RoundedConeInstanced,
