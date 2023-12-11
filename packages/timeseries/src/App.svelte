@@ -223,12 +223,10 @@
   let firstPCVal: number[] = [];
   let secondPCVal: number[] = [];
   $: if (blobs[selectedTimestep] && (visualizationSelected == "Cones")) {
-      let firstPC = computePCA(0, blobs, selectedTimestep, true);
-      firstPCVec = firstPC.vectors;
-      firstPCVal = firstPC.eigenvalues;
-      let secondPC = computePCA(1, blobs, selectedTimestep, false);
-      secondPCVal = secondPC.eigenvalues;
-    
+      let PCA = computePCA(blobs, selectedTimestep);
+      firstPCVec = PCA.firstPCVec;
+      firstPCVal = PCA.firstPCVal;
+      secondPCVal = PCA.secondPCVal;
   }
 
   // fixed for now
@@ -340,9 +338,9 @@
                 tubePoints={centerPoints}
                 tubeRadius={(1.0 / centerPoints.length) / 20.0} 
                 tubeColor={[0.9, 0.9, 0.9]} 
-                coneStartRadius={secondPCVal[i] / 20.0 + 0.05}
+                coneStartRadius={secondPCVal[i] / 10.0 + 0.1}
                 coneCenter={blob.center}
-                coneHeight={firstPCVal[i] / 2.0 + 0.3}
+                coneHeight={firstPCVal[i] / 10.0 + 0.1}
                 coneOrientation={vec3.fromValues(firstPCVec[i][0], firstPCVec[i][1], firstPCVec[i][2])}
                 coneColor={blobsColored ? [dataClustersGivenK[blobsAmount][i].color.rgb[0], dataClustersGivenK[blobsAmount][i].color.rgb[1], dataClustersGivenK[blobsAmount][i].color.rgb[2]] : [1.0, 1.0, 1.0]}
               />

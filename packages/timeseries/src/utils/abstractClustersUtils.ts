@@ -3,37 +3,47 @@ import PCA from 'pca-js';
 
 export interface PCAresult
 {
-    vectors: vec3[];
-    eigenvalues: number[];
+    firstPCVec: vec3[];
+    firstPCVal: number[];
+    secondPCVal: number[];
 }
 
-function transformValues(values) {
-    if (values.length == 1) {
+function transformValues(valuesToTransform, allValues) {
+    if (valuesToTransform.length == 1) {
       return [1.0];
     }
 
-    let min = Math.min.apply(Math, values);
-    let max = Math.max.apply(Math, values);
-    for (let i = 0; i < values.length; i++) {
-      values[i] = (values[i] - min) / (max - min);
+    let min = Math.min.apply(Math, allValues);
+    let max = Math.max.apply(Math, allValues);
+    for (let i = 0; i < valuesToTransform.length; i++) {
+      valuesToTransform[i] = (valuesToTransform[i] - min) / (max - min);
     }
-    return values;
+    return valuesToTransform;
   }
 
-export function computePCA(index, blobs, selectedTimestep, computeVectors) {
+export function computePCA(blobs, selectedTimestep) {
     let PCAresult: PCAresult = {
-        vectors: [],
-        eigenvalues: []
+        firstPCVec: [],
+        firstPCVal: [],
+        secondPCVal: []
     };
     for (let i = 0; i < blobs[selectedTimestep].length; i++) {
         let data =  blobs[selectedTimestep][i].normalizedPoints;
         let result = PCA.getEigenVectors(data);
-        if (computeVectors) {
-            PCAresult.vectors.push(result[index].vector);
-        }
-        PCAresult.eigenvalues.push(result[index].eigenvalue);
+        PCAresult.firstPCVec.push(result[0].vector);
+        PCAresult.firstPCVal.push(result[0].eigenvalue);
+        PCAresult.secondPCVal.push(result[1].eigenvalue);
     }
-    PCAresult.eigenvalues = transformValues(PCAresult.eigenvalues);
+    
+    // if there is only one blob, it cannot have the same height and radius (sphere)
+    if (blobs[selectedTimestep].length == 1) {
+        PCAresult.firstPCVal = [1.0];
+        PCAresult.secondPCVal = [0.5];
+    } else {
+        let allValues = PCAresult.firstPCVal.concat(PCAresult.secondPCVal);
+        PCAresult.firstPCVal = transformValues(PCAresult.firstPCVal, allValues);
+        PCAresult.secondPCVal = transformValues(PCAresult.secondPCVal, allValues)
+    }
     return PCAresult;
 }
 
