@@ -281,6 +281,7 @@ export type ClusterNode = {
     from: number;    
     to: number;
     points: vec3[];
+    delimiters: number[];
     
     color: {
         h: number;
@@ -321,6 +322,7 @@ export function clusterPathlines(pathlines: vec3[][]): ClusterNode[][] {
                     rgb: [0.0, 0.0, 0.0]
                 },
                 children: [],
+                delimiters: [],
                 points: [],
             };
         }
@@ -353,16 +355,23 @@ export function clusterTimestep(timestep: vec3[]): ClusterNode[][] {
             let min = Math.min(...kClusters[i]);
             let max = Math.max(...kClusters[i])
             let points = [];
-            
+            let delimiters = [0];
+            let count = 0;
+
             let sorted = kClusters[i].sort((a, b) => a - b);
             let temp = 0;
             for (let i = 0; i < timestep.length; i++) {
                 if (sorted[temp] == i) {
                     points.push(timestep[i]);
-                    temp++;                    
+                    temp++;
+                    count++;                    
+                } else if (count != delimiters[delimiters.length - 1]) {
+                    delimiters.push(count);
                 }
             }
-            
+            if (count != delimiters[delimiters.length - 1]) {
+                delimiters.push(count);
+            }
             kClustersRanges[k][i] = {
                 k, i,
                 from: min,
@@ -372,6 +381,7 @@ export function clusterTimestep(timestep: vec3[]): ClusterNode[][] {
                     rgb: [0.0, 0.0, 0.0]
                 },
                 children: [],
+                delimiters: delimiters,
                 points: points,
             };
         }

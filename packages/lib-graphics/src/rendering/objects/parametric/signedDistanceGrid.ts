@@ -3,7 +3,7 @@ import type { BoundingBox, Ray } from "../../../shared";
 import { IParametricObject } from "./shared";
 import * as r from 'restructure';
 import { mat4, vec3, vec4 } from "gl-matrix";
-import { signedDistanceGridFromPoints } from "./signedDistanceGridFromPoints";
+import { signedDistanceGridFromArbitraryPoints, signedDistanceGridFromPoints } from "./signedDistanceGridFromPoints";
 
 class Pipelines {
     private static _instance: Pipelines;
@@ -55,12 +55,25 @@ class Pipelines {
         const gridFromPointsModule = device.createShaderModule({
             code: signedDistanceGridFromPoints(),
         });
+
+        const gridFromArbitraryPointsModule = device.createShaderModule({
+            code: signedDistanceGridFromArbitraryPoints(),
+        });
         this.shaderModules.set('gridFromPoints', gridFromPointsModule);
+        this.shaderModules.set('gridFromArbitraryPoints', gridFromArbitraryPointsModule);
 
         this.computePipelines.set('gridFromPoints', device.createComputePipeline({
             layout: gridFromPointsPL,
             compute: {
                 module: gridFromPointsModule,
+                entryPoint: 'main',
+            }
+        }));
+
+        this.computePipelines.set('gridFromArbitraryPoints', device.createComputePipeline({
+            layout: gridFromPointsPL,
+            compute: {
+                module: gridFromArbitraryPointsModule,
                 entryPoint: 'main',
             }
         }));
@@ -482,6 +495,72 @@ export class SignedDistanceGrid extends IParametricObject {
         device.queue.submit([commandEncoder.finish()]);
 
         this.onAllocationMoved();
+    }
+
+    public fromArbitraryPoints(device: GPUDevice, points: Array<vec3>, delimiters: Array<number>, radius: number = 0.05) {
+        const pipeline = this._pipelines.computePipelines.get('gridFromArbitraryPoints');
+        const bgl = this._pipelines.bindGroupLayouts.get('gridFromPoints');
+
+        if (!pipeline || !bgl) return;
+
+        if (!this._texture) {
+            this._texture = this._graphicsLibrary.device.createTexture({
+                size: {
+                    width: GridTextureSize,
+                    height: GridTextureSize,
+                    depthOrArrayLayers: GridTextureSize,
+                },
+                mipLevelCount: 1,
+                dimension: "3d",
+                format: "r32float",
+                usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+            });
+        }
+        
+        const delimitersCPUBuffer = new Uint32Array(delimiters.length);
+        for(let i = 0; i < delimiters.length; i++) {
+            delimitersCPUBuffer.set([delimiters[i]], i);
+        }
+        
+        const pointsCPUBuffer = new Float32Array(points.length * 4);
+        
+        let writeRadius = radius * (1.0 / this.properties[0].scale[0]);
+        for (let i = 0; i < points.length; i++) {
+                pointsCPUBuffer.set(points[i], 4 * i);
+                pointsCPUBuffer.set([writeRadius], 4 * i + 3);
+        }
+
+        const pointsBuffer = device.createBuffer({ size: points.length * 4 * 4, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE });
+        const delmitersBuffer = device.createBuffer({ size: delimiters.length * 4, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE })
+        const bindGroup = device.createBindGroup({
+            layout: bgl,
+            entries: [{
+                binding: 0,
+                resource: { buffer: pointsBuffer }
+            }, {
+                binding: 1,
+                resource: this._texture.createView()
+            }, {
+                binding: 2,
+                resource: { buffer: delmitersBuffer }
+            }]
+        });
+
+        device.queue.writeBuffer(pointsBuffer, 0, pointsCPUBuffer, 0);
+        device.queue.writeBuffer(delmitersBuffer, 0, delimitersCPUBuffer, 0);
+        const commandEncoder = device.createCommandEncoder();
+        const computePass = commandEncoder.beginComputePass();
+        computePass.setPipeline(pipeline);
+        computePass.setBindGroup(0, bindGroup);
+        const workgroupSize: number = GridTextureSize / 4;
+        computePass.dispatchWorkgroups(workgroupSize, workgroupSize, points.length * workgroupSize);
+        computePass.end();
+
+        device.queue.submit([commandEncoder.finish()]);
+
+        this.onAllocationMoved();
+
+        console.log(delimiters);
     }
 
     public translate(t: vec3, index: number = 0) {

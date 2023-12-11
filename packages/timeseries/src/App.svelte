@@ -23,6 +23,7 @@
   import { Slider } from "carbon-components-svelte";
   import TimeVolume from "./objects/TimeVolume.svelte";
   import SignedDistanceGrid from "./objects/SignedDistanceGrid.svelte";
+  import SignedDistanceGridArbitrary from "./objects/SignedDistanceGridArbitrary.svelte";
   import { treeColor, staticColors } from "./utils/treecolors";
   import Sphere from "./objects/Sphere.svelte";
   import {DSVDelimiter, parseBEDString} from "./utils/data-parser";
@@ -62,14 +63,17 @@
   }
 
   let dataClusteredTimestep: ClusterBlob[] = [];
+  let dataClusteredTimestepDelimiters: number[][] = [];
 
   $: if (dataClustersByTimestep && dataClustersByTimestep[blobsAmount] && dataTimesteps) {
 
     dataClusteredTimestep = [];
+    dataClusteredTimestepDelimiters =[];
     for (const [clusterIndex, cluster] of dataClustersByTimestep[blobsAmount].entries()) {
       //dataTimesteps[selectedTimestep].filter((val, idx) => cluster.indexes[idx]);
       //dataClusteredTimestep[clusterIndex] = blobFromPoints(dataTimesteps[selectedTimestep].filter((val, idx) => cluster.indexes[idx]));
       dataClusteredTimestep[clusterIndex] = blobFromPoints(cluster.points);
+      dataClusteredTimestepDelimiters[clusterIndex] = cluster.delimiters;
     }
 
   }
@@ -309,8 +313,9 @@
           {/if}
           {#if dataClusteredTimestep && visualizationSelected == "Clustering"}
             {#each dataClusteredTimestep as blob, i}
-              <SignedDistanceGrid
+              <SignedDistanceGridArbitrary
                 points={blob.normalizedPoints}
+                delimiters={dataClusteredTimestepDelimiters[i]}
                 translate={blob.center}
                 scale={blob.scale}
                 radius={blobsRadius}
