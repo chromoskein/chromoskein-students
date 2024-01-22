@@ -1,4 +1,4 @@
-import type { vec3 } from "gl-matrix";
+import { vec3 } from "gl-matrix";
 import PCA from 'pca-js';
 
 export interface PCAresult
@@ -53,4 +53,47 @@ export function getCenterPoints(blobs, selectedTimestep) {
         centerPoints.push(blobs[selectedTimestep][i].center);
     }
     return centerPoints;
+}
+
+function distance(a, b) {
+    return Math.sqrt((b[0] - a[0]) * (b[0] - a[0]) + (b[1] - a[1]) * (b[1] - a[1]) + (b[2] - a[2]) * (b[2] - a[2]));
+}
+
+function sortedCenters(center, centers, index) {
+    let distances = new Map<vec3, number>();
+
+    for (let i = 0; i < centers.length; i++) {
+        if (i == index) { continue; }
+        distances.set(centers[i], distance(center, centers[i]));
+    }
+
+    let sorted = new Map([...distances.entries()].sort((a, b) => a[1] - b[1]));
+
+    return [ ...sorted.keys() ];
+}
+
+export function findClosestBlobs(blobs, centerPoints) {
+    let closestBlobs: vec3[][] = [];
+    for (let i = 0; i < blobs.length; i++) {
+        closestBlobs[i] = [];
+        closestBlobs[i] = sortedCenters(blobs[i].center, centerPoints, i);
+      }
+    return closestBlobs;
+}
+
+export function getConeOrientation(blobs, closestBlobs) {
+    let coneOrient: vec3[][] = [];
+
+    for (let i = 0; i < blobs.length; i++) {
+        coneOrient[i] = [];
+        for (let j = 0; j < closestBlobs[i].length; j++) {
+          coneOrient[i].push(vec3.fromValues(
+            closestBlobs[i][j][0] - blobs[i].center[0],
+            closestBlobs[i][j][1] - blobs[i].center[1],
+            closestBlobs[i][j][2] - blobs[i].center[2]
+          ));
+        }
+      }
+
+      return coneOrient;
 }
