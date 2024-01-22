@@ -27,7 +27,7 @@
   import { treeColor, staticColors } from "./utils/treecolors";
   import Sphere from "./objects/Sphere.svelte";
   import {DSVDelimiter, parseBEDString} from "./utils/data-parser";
-  import {computePCA, getCenterPoints} from "./utils/abstractClustersUtils";
+  import {computePCA, findClosestBlobs, getCenterPoints, getConeOrientation} from "./utils/abstractClustersUtils";
 
   import "@carbon/styles/css/styles.css";
   import "@carbon/charts/styles.css";
@@ -35,6 +35,7 @@
   import ConnectedSpheres from "./objects/ConnectedSpheres.svelte";
   import BlobVolumes from "./visalizations/BlobVolumes.svelte";
   import MatryoshkaClusters from "./visalizations/MatryoshkaClusters.svelte";
+    import Hedgehog from "./objects/Hedgehog.svelte";
 
   export const saveAs = (blob, name) => {
     // Namespace is used to prevent conflict w/ Chrome Poper Blocker extension (Issue https://github.com/eligrey/FileSaver.js/issues/561)
@@ -219,7 +220,7 @@
   }
 
   let centerPoints: vec3[] = [];
-  $: if (blobs[selectedTimestep] && (visualizationSelected == "Spheres"  || visualizationSelected == "Cones")) {
+  $: if (blobs[selectedTimestep] && (visualizationSelected == "Spheres"  || visualizationSelected == "Cones" || visualizationSelected == "Hedgehog")) {
     centerPoints = getCenterPoints(blobs, selectedTimestep);
   }
 
@@ -230,7 +231,14 @@
       let PCA = computePCA(blobs, selectedTimestep);
       firstPCVec = PCA.firstPCVec;
       firstPCVal = PCA.firstPCVal;
-      secondPCVal = PCA.secondPCVal;
+      secondPCVal = PCA.secondPCVal;    
+  }
+
+  let closestBlobs: vec3[][] = [];
+  let coneOrient: vec3[][] = [];
+  $: if (blobs[selectedTimestep] && (visualizationSelected == "Hedgehog") && blobsAmount > 1) {
+    closestBlobs = findClosestBlobs(blobs[selectedTimestep], centerPoints);
+    coneOrient = getConeOrientation(blobs[selectedTimestep], closestBlobs);
   }
 
   // fixed for now
@@ -351,6 +359,20 @@
               />
             {/each}                
           {/if}
+          {#if blobs[selectedTimestep] && visualizationSelected == "Hedgehog" && blobsAmount > 1}
+            {#each blobs[selectedTimestep] as blob, i}
+              <Hedgehog
+                tubePoints={centerPoints}
+                tubeRadius={(1.0 / centerPoints.length) / 20.0} 
+                tubeColor={[0.9, 0.9, 0.9]}
+                coneStartRadius={0.1}
+                coneCenter={blob.center}
+                coneHeight={0.5}
+                coneOrientation={coneOrient[i]}
+                coneColor={blobsColored ? [dataClustersGivenK[blobsAmount][i].color.rgb[0], dataClustersGivenK[blobsAmount][i].color.rgb[1], dataClustersGivenK[blobsAmount][i].color.rgb[2]] : [1.0, 1.0, 1.0]}
+              />
+            {/each}
+          {/if}
         </Viewport3D>
       {/if}
     </Pane>
@@ -389,6 +411,7 @@
               <SelectItem value="Matryoshka" />
               <SelectItem value="Spheres" />
               <SelectItem value="Cones" />
+              <SelectItem value="Hedgehog" />
             </Select>
 
             <Checkbox labelText="Colored" bind:checked={blobsColored} />
