@@ -3,7 +3,7 @@ import { marchingCubes } from 'marching-cubes-fast';
 import { deindexTriangles_meshView } from 'triangles-index';
 
 import { CsvDelimiter, parseXyz } from "lib-dataloader";
-import { clusterData } from "./hclust";
+import { clusterData, clusterDataSequential } from "./hclust";
 import * as Graphics from "lib-graphics";
 
 export const clamp = (num: number, min: number, max: number) => Math.min(Math.max(num, min), max);
@@ -304,7 +304,7 @@ export function clusterPathlines(pathlines: vec3[][]): ClusterNode[][] {
         return distances.reduce((a, b) => a + b, 0);
     };
     
-    const { clusters, distances, order, clustersGivenK } = clusterData({ data: pathlines, distance: distFunc });
+    const { clusters, distances, order, clustersGivenK } = clusterDataSequential({ data: pathlines, distance: distFunc });
     
     const kClustersRanges: ClusterNode[][] = new Array(clustersGivenK.length);
     for (const [k, kClusters] of clustersGivenK.entries()) {
@@ -345,7 +345,7 @@ export function clusterTimestep(timestep: vec3[]): ClusterNode[][] {
         return vec3.distance(a, b);
     };
     
-    const { clusters, distances, order, clustersGivenK } = clusterData({ data: timestep, distance: distFunc, onProgress: (a) => {} });
+    const { clusters, distances, order, clustersGivenK } = clusterDataSequential({ data: timestep, distance: distFunc });
     
     const kClustersRanges: ClusterNode[][] = new Array(clustersGivenK.length);
     for (const [k, kClusters] of clustersGivenK.entries()) {

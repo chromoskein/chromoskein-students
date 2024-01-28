@@ -120,8 +120,8 @@
     const timesteps = await loadTimesteps(filenames);
     dataTimesteps = normalizePointClouds(timesteps);
     // dataTimesteps = normalizePointClouds(timesteps);
-    // dataPathlines = timestepsToPathlines(dataTimesteps);
-    //dataClustersGivenK = await clusterPathlines(dataPathlines);
+    dataPathlines = timestepsToPathlines(dataTimesteps);
+    dataClustersGivenK = await clusterPathlines(dataPathlines);
 
     // const bytes = new TextEncoder().encode(JSON.stringify(clusterPathlines(dataPathlines)));
     // const blob = new Blob([bytes], {
@@ -129,7 +129,7 @@
     // });
     // saveAs(blob, `clusters.json`);
 
-    dataClustersGivenK = await (await fetch("./clusters.json")).json();
+    //dataClustersGivenK = await (await fetch("./clusters.json")).json();
     dataClustersByTimestep = clusterTimestep(dataTimesteps[selectedTimestep]).slice(0, 16);
     treeColor(dataClustersByTimestep);
   });
