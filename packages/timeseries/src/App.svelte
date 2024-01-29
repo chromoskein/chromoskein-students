@@ -236,8 +236,9 @@
 
   let closestBlobs: vec3[][] = [];
   let coneOrient: vec3[][] = [];
+  let maxDistance = 2.0;
   $: if (blobs[selectedTimestep] && (visualizationSelected == "Hedgehog") && blobsAmount > 1) {
-    closestBlobs = findClosestBlobs(blobs[selectedTimestep], centerPoints);
+    closestBlobs = findClosestBlobs(blobs[selectedTimestep], centerPoints, maxDistance);
     coneOrient = getConeOrientation(blobs[selectedTimestep], closestBlobs);
   }
 
@@ -425,6 +426,9 @@
             {/if}
             {#if visualizationSelected == "Matryoshka"}
               <Slider labelText="Alpha" fullWidth min={0.05} max={1.0} step={0.05} bind:value={blobAlpha} />
+            {/if}
+            {#if visualizationSelected == "Hedgehog"}
+              <Slider labelText="Max distance" fullWidth min={0.1} max={3.0} step={0.05} bind:value={maxDistance} />
             {/if}
             {#if dataClustersGivenK && visualizationSelected != "Clustering"}
               <div class="cluster-dendogram">

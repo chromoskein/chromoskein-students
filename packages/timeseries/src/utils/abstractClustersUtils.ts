@@ -59,7 +59,7 @@ function distance(a, b) {
     return Math.sqrt((b[0] - a[0]) * (b[0] - a[0]) + (b[1] - a[1]) * (b[1] - a[1]) + (b[2] - a[2]) * (b[2] - a[2]));
 }
 
-function sortedCenters(center, centers, index) {
+function sortedCenters(center, centers, index, maxDistance) {
     let distances = new Map<vec3, number>();
 
     for (let i = 0; i < centers.length; i++) {
@@ -68,15 +68,21 @@ function sortedCenters(center, centers, index) {
     }
 
     let sorted = new Map([...distances.entries()].sort((a, b) => a[1] - b[1]));
+    let result = [];
+    for (let [key, value] of sorted) {
+        if (value < maxDistance) {
+            result.push(key);
+        }
+    }
 
-    return [ ...sorted.keys() ];
+    return result;
 }
 
-export function findClosestBlobs(blobs, centerPoints) {
+export function findClosestBlobs(blobs, centerPoints, maxDistance) {
     let closestBlobs: vec3[][] = [];
     for (let i = 0; i < blobs.length; i++) {
         closestBlobs[i] = [];
-        closestBlobs[i] = sortedCenters(blobs[i].center, centerPoints, i);
+        closestBlobs[i] = sortedCenters(blobs[i].center, centerPoints, i, maxDistance);
       }
     return closestBlobs;
 }
