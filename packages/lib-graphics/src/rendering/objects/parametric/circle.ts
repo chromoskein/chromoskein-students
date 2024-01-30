@@ -1,7 +1,7 @@
 import type { Allocator, GraphicsLibrary } from "../../..";
 import type { BoundingBox, Ray } from "../../../shared";
 import { IParametricObject } from "./shared";
-import * as r from 'restructure';
+import * as r from "restructure";
 
 export interface CircleProperties {
     center: [number, number, number],
@@ -16,11 +16,11 @@ export const CircleStruct = new r.Struct({
 });
 
 export class Circle extends IParametricObject {
-    public static variableName = 'circle';
-    public static typeName = 'Circle';
+    public static variableName = "circle";
+    public static typeName = "Circle";
 
-    public getVariableName(): string { return Circle.variableName };
-    public getTypeName(): string { return Circle.typeName };
+    public getVariableName(): string { return Circle.variableName }
+    public getTypeName(): string { return Circle.typeName }
 
     static bindGroupLayouts: Array<GPUBindGroupLayout> = [];
     static createBindGroupLayouts(device: GPUDevice): void {
@@ -29,7 +29,7 @@ export class Circle extends IParametricObject {
             entries: [{
                 binding: 0,
                 visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-                buffer: { type: 'uniform' },
+                buffer: { type: "uniform" },
             }]
         })];
     }
@@ -47,8 +47,8 @@ export class Circle extends IParametricObject {
         @group(1) @binding(0) var<uniform> ${this.variableName}: ${this.typeName};
     `;
 
-    public static gpuCodeGetObject = ``;
-    public static gpuCodeGetObjectUntypedArray = ``;
+    public static gpuCodeGetObject = "";
+    public static gpuCodeGetObjectUntypedArray = "";
 
     static gpuCodeIntersectionTest = /* wgsl */`
         fn ray${this.typeName}Intersection(ray: Ray, ${this.variableName}: ${this.typeName}) -> Intersection {
@@ -74,19 +74,19 @@ export class Circle extends IParametricObject {
         }
     `;
 
-    static gpuCodeGetOutputValue(variable: 'color' | 'normal' | 'ao'): string {
+    static gpuCodeGetOutputValue(variable: "color" | "normal" | "ao"): string {
         switch (variable) {
-            case 'color': {
+            case "color": {
                 return `
                     let color = circle.color;
                 `;
             }
-            case 'normal': {
+            case "normal": {
                 return `
                     let normal = intersection.normal;
                 `;
             }
-            case 'ao': {
+            case "ao": {
                 return /* wgsl */`
                     let ao = vec2(0.0, 0.0);
                 `;
@@ -101,7 +101,7 @@ export class Circle extends IParametricObject {
 
     public rayIntersection(ray: Ray): number | null {
         return null;
-    };
+    }
 
     public toBoundingBoxes(): BoundingBox[] {
         return [];

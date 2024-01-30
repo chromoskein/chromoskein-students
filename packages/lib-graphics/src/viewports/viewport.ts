@@ -1,4 +1,4 @@
-import { Camera3D, OrbitCamera, SmoothCamera, VRCamera } from "../cameras/index";
+import { Camera3D, OrbitCamera, SmoothCamera } from "../cameras/index";
 import { Scene } from "../scene";
 import { GraphicsLibrary } from "..";
 
@@ -84,7 +84,7 @@ export abstract class Viewport {
     const dt = frametime - this._lastFrametime;
     this._lastFrametime = frametime;
 
-    if (this._camera == null || this._scene == null) {
+    if (this._camera === null || this._scene === null) {
       return;
     }
 
@@ -120,11 +120,11 @@ export abstract class Viewport {
   }
 
   public set camera(camera: Camera3D | null) {
-    if (camera == this._camera) {
+    if (camera === this._camera) {
       return;
     }
 
-    if (camera == null) {
+    if (camera === null) {
       this._camera = null;
       return;
     }

@@ -1,7 +1,7 @@
 import { Allocator, GraphicsLibrary } from "../../..";
 import type { BoundingBox, Ray } from "../../../shared";
 import { IParametricObject } from "./shared";
-import * as r from 'restructure';
+import * as r from "restructure";
 
 export interface SplineProperties {
     p0: [number, number, number, number],
@@ -12,11 +12,11 @@ export interface SplineProperties {
 
 
 export class Spline extends IParametricObject {
-    public static variableName = 'spline';
-    public static typeName = 'Spline';
+    public static variableName = "spline";
+    public static typeName = "Spline";
 
-    public getVariableName(): string { return Spline.variableName };
-    public getTypeName(): string { return Spline.typeName };
+    public getVariableName(): string { return Spline.variableName }
+    public getTypeName(): string { return Spline.typeName }
 
     static bindGroupLayouts: Array<GPUBindGroupLayout> = [];
     static createBindGroupLayouts(device: GPUDevice): void {
@@ -25,7 +25,7 @@ export class Spline extends IParametricObject {
             entries: [{
                 binding: 0,
                 visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-                buffer: { type: 'read-only-storage' },
+                buffer: { type: "read-only-storage" },
             }]
         })];
     }
@@ -48,7 +48,7 @@ export class Spline extends IParametricObject {
     `;
 
     public static gpuCodeGetObject = `let ${this.variableName}: ${this.typeName} = ${this.variableName}Storage[instanceIndex];`;
-    public static gpuCodeGetObjectUntypedArray = ``;
+    public static gpuCodeGetObjectUntypedArray = "";
 
     static gpuCodeIntersectionTest = /* wgsl */`
         struct QuadraticBezierCurve {
@@ -278,19 +278,19 @@ export class Spline extends IParametricObject {
         }
     `;
 
-    static gpuCodeGetOutputValue(variable: 'color' | 'normal' | 'ao'): string {
+    static gpuCodeGetOutputValue(variable: "color" | "normal" | "ao"): string {
         switch (variable) {
-            case 'color': {
+            case "color": {
                 return `
                     let color = ${this.variableName}.color;
                 `;
             }
-            case 'normal': {
+            case "normal": {
                 return `
                     let normal = intersection.normal;
                 `;
             }
-            case 'ao': {
+            case "ao": {
                 return /* wgsl */`
                     let ao = vec2(1.0, 1.0);
                 `;
@@ -313,7 +313,7 @@ export class Spline extends IParametricObject {
 
     public rayIntersection(ray: Ray): number | null {
         return null;
-    };
+    }
 
     public toBoundingBoxes(): BoundingBox[] {
         return [];

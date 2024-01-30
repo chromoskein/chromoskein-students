@@ -1,4 +1,4 @@
-import { mat4, quat, vec3, vec4 } from "gl-matrix";
+import { mat4, vec3, vec4 } from "gl-matrix";
 
 export function toRadian(n: number) {
     return n * (Math.PI / 180);
@@ -86,7 +86,7 @@ export class Camera {
     protected _near: number;
 
     protected _dirty = true;
-    protected _event_started_elsewhere = false;
+    protected _eventStartedElsewhere = false;
     protected _ignoreEvents = false;
 
     protected _version: number = 1;
@@ -157,7 +157,7 @@ export class Camera {
 
 
     get ignoreEvents() {
-        return this._event_started_elsewhere || this._ignoreEvents;
+        return this._eventStartedElsewhere || this._ignoreEvents;
     }
 
     public set width(width: number) {
@@ -252,20 +252,20 @@ export class Camera {
     }
 
     public onMouseUp(event: MouseEvent) {
-        if (event.buttons == 0) {
-            this._event_started_elsewhere = false;
+        if (event.buttons === 0) {
+            this._eventStartedElsewhere = false;
         }
     }
 
     public onMouseEnter(event: MouseEvent) {
-        if (event.buttons != 0) {
-            this._event_started_elsewhere = true;
+        if (event.buttons !== 0) {
+            this._eventStartedElsewhere = true;
         }
 
     }
 
     public onMouseLeave(event: MouseEvent) {
-        this._event_started_elsewhere = false;
+        this._eventStartedElsewhere = false;
     }
 
     public onWheelEvent(event: WheelEvent) {

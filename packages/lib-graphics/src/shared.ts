@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-use-before-define */
 import { vec3 } from "gl-matrix";
 
 export class Ray {
@@ -24,21 +25,21 @@ export type BoundingBox = {
     primitive: number;
 }
 
-export function BoundingBoxMakeCube(boundingBox: BoundingBox): BoundingBox {
-    let max = vec3.sub(vec3.create(), boundingBox.max, boundingBox.center);
-    let min = vec3.sub(vec3.create(), boundingBox.min, boundingBox.center);
+export function boundingBoxMakeCube(boundingBox: BoundingBox): BoundingBox {
+    const max = vec3.sub(vec3.create(), boundingBox.max, boundingBox.center);
+    const min = vec3.sub(vec3.create(), boundingBox.min, boundingBox.center);
 
     const bbSizeLengthsVec3 = vec3.sub(vec3.create(), max, min);
     const bbSizeLengths = [Math.abs(bbSizeLengthsVec3[0]), Math.abs(bbSizeLengthsVec3[1]), Math.abs(bbSizeLengthsVec3[2])];
     const maxLength = Math.max(...bbSizeLengths);
 
-    const cube = BoundingBoxEmpty();
+    const cube = boundingBoxEmpty();
     cube.min = vec3.fromValues(-maxLength, -maxLength, -maxLength);
     cube.max = vec3.fromValues(maxLength, maxLength, maxLength);
     cube.min = vec3.add(vec3.create(), cube.min, boundingBox.center);
     cube.max = vec3.add(vec3.create(), cube.max, boundingBox.center);
 
-    BoundingBoxCalculateCenter(cube);
+    boundingBoxCalculateCenter(cube);
 
     return cube;
 }
@@ -58,7 +59,7 @@ export function normalizePointsByBoundingBox(boundingBox: BoundingBox, points: A
 }
 
 //#region Constructors
-export function BoundingBoxNew(min: vec3, max: vec3, primitive = 0): BoundingBox {
+export function boundingBoxNew(min: vec3, max: vec3, primitive = 0): BoundingBox {
     return {
         min,
         max,
@@ -67,7 +68,7 @@ export function BoundingBoxNew(min: vec3, max: vec3, primitive = 0): BoundingBox
     }
 }
 
-export function BoundingBoxEmpty(): BoundingBox {
+export function boundingBoxEmpty(): BoundingBox {
     return {
         min: vec3.fromValues(Number.MAX_VALUE, Number.MAX_VALUE, Number.MAX_VALUE),
         max: vec3.fromValues(-Number.MAX_VALUE, -Number.MAX_VALUE, -Number.MAX_VALUE),
@@ -76,7 +77,7 @@ export function BoundingBoxEmpty(): BoundingBox {
     }
 }
 
-export function BoundingBoxFull(): BoundingBox {
+export function boundingBoxFull(): BoundingBox {
     return {
         min: vec3.fromValues(-Number.MAX_VALUE, -Number.MAX_VALUE, -Number.MAX_VALUE),
         max: vec3.fromValues(Number.MAX_VALUE, Number.MAX_VALUE, Number.MAX_VALUE),
@@ -85,7 +86,7 @@ export function BoundingBoxFull(): BoundingBox {
     }
 }
 
-export function BoundingBoxClone(boundingBox: BoundingBox): BoundingBox {
+export function boundingBoxClone(boundingBox: BoundingBox): BoundingBox {
     return {
         min: vec3.clone(boundingBox.min),
         max: vec3.clone(boundingBox.max),
@@ -95,69 +96,73 @@ export function BoundingBoxClone(boundingBox: BoundingBox): BoundingBox {
 
 }
 
-export function BoundingBoxFromPoints(points: Array<vec3>): BoundingBox {
-    const bb = BoundingBoxEmpty();
+export function boundingBoxFromPoints(points: Array<vec3>): BoundingBox {
+    const bb = boundingBoxEmpty();
 
     for(const p of points) {
-        BoundingBoxExtendByPoint(bb, p);
+        boundingBoxExtendByPoint(bb, p);
     }
 
-    BoundingBoxCalculateCenter(bb);
+    boundingBoxCalculateCenter(bb);
 
     return bb;
 }
 
-export function BoundingCubeFromPoints(points: Array<vec3>): BoundingBox {
-    const bb = BoundingBoxFromPoints(points);
+export function boundingCubeFromPoints(points: Array<vec3>): BoundingBox {
+    const bb = boundingBoxFromPoints(points);
 
-    return BoundingBoxMakeCube(bb);
+    return boundingBoxMakeCube(bb);
 }
 //#endregion
 
-export function BoundingBoxCalculateCenter(boundingBox: BoundingBox): void {
+export function boundingBoxCalculateCenter(boundingBox: BoundingBox): void {
     boundingBox.center = vec3.scale(vec3.create(), vec3.add(vec3.create(), boundingBox.max, boundingBox.min), 0.5);
 }
 
-export function BoundingBoxExtendByBox(boundingBox: BoundingBox, extendBy: BoundingBox): BoundingBox {
+export function boundingBoxExtendByBox(boundingBox: BoundingBox, extendBy: BoundingBox): BoundingBox {
     boundingBox.min = vec3.min(boundingBox.min, boundingBox.min, extendBy.min);
     boundingBox.max = vec3.max(boundingBox.max, boundingBox.max, extendBy.max);
 
-    BoundingBoxCalculateCenter(boundingBox);
+    boundingBoxCalculateCenter(boundingBox);
 
     return boundingBox;
 }
 
-export function BoundingBoxExtendByPoint(boundingBox: BoundingBox, extendBy: vec3): BoundingBox {
+export function boundingBoxExtendByPoint(boundingBox: BoundingBox, extendBy: vec3): BoundingBox {
     boundingBox.min = vec3.min(boundingBox.min, boundingBox.min, extendBy);
     boundingBox.max = vec3.max(boundingBox.max, boundingBox.max, extendBy);
 
-    BoundingBoxCalculateCenter(boundingBox);
+    boundingBoxCalculateCenter(boundingBox);
 
     return boundingBox;
 }
 
-export function BoundingBoxDiagonal(boundingBox: BoundingBox): vec3 {
+export function boundingBoxDiagonal(boundingBox: BoundingBox): vec3 {
     return vec3.subtract(vec3.create(), boundingBox.max, boundingBox.min);
 }
 
-export function BoundingBoxHalfArea(boundingBox: BoundingBox): number {
-    const d = BoundingBoxDiagonal(boundingBox);
+export function boundingBoxHalfArea(boundingBox: BoundingBox): number {
+    const d = boundingBoxDiagonal(boundingBox);
 
     return (d[0] + d[1]) * d[2] + d[0] * d[1];
 }
 
-export function BoundingBoxLargestAxis(boundingBox: BoundingBox): number {
-    const d = BoundingBoxDiagonal(boundingBox);
+export function boundingBoxLargestAxis(boundingBox: BoundingBox): number {
+    const d = boundingBoxDiagonal(boundingBox);
 
     let axis = 0;
 
-    if (d[0] < d[1]) axis = 1;
-    if (d[axis] < d[2]) axis = 2;
+    if (d[0] < d[1]) {
+        axis = 1;
+    }
+    if (d[axis] < d[2]) {
+        axis = 2;
+    }
 
     return axis;
 }
 
-export function BoundingBoxIntersects(boundingBox: BoundingBox, ray: Ray): boolean {
+export function boundingBoxIntersects(boundingBox: BoundingBox, ray: Ray): boolean {
     let tmin, tmax, tymin, tymax, tzmin, tzmax;
 
     const invdirx = ray.direction[0];
@@ -190,14 +195,20 @@ export function BoundingBoxIntersects(boundingBox: BoundingBox, ray: Ray): boole
 
     }
 
-    if ((tmin > tymax) || (tymin > tmax)) return false;
+    if ((tmin > tymax) || (tymin > tmax)) {
+        return false;
+    }
 
     // These lines also handle the case where tmin or tmax is NaN
     // (result of 0 * Infinity). x !== x returns true if x is NaN
 
-    if (tymin > tmin || tmin !== tmin) tmin = tymin;
+    if (tymin > tmin || tmin !== tmin) {
+        tmin = tymin;
+    }
 
-    if (tymax < tmax || tmax !== tmax) tmax = tymax;
+    if (tymax < tmax || tmax !== tmax) {
+        tmax = tymax;
+    }
 
     if (invdirz >= 0) {
 
@@ -211,15 +222,23 @@ export function BoundingBoxIntersects(boundingBox: BoundingBox, ray: Ray): boole
 
     }
 
-    if ((tmin > tzmax) || (tzmin > tmax)) return false;
+    if ((tmin > tzmax) || (tzmin > tmax)) {
+        return false;
+    }
 
-    if (tzmin > tmin || tmin !== tmin) tmin = tzmin;
+    if (tzmin > tmin || tmin !== tmin) {
+        tmin = tzmin;
+    }
 
-    if (tzmax < tmax || tmax !== tmax) tmax = tzmax;
+    if (tzmax < tmax || tmax !== tmax) {
+        tmax = tzmax;
+    }
 
     //return point closest to the ray (positive side)
 
-    if (tmax < 0) return false;
+    if (tmax < 0) {
+        return false;
+    }
 
     return true;
 }

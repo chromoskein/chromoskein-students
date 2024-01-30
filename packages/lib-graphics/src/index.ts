@@ -1,5 +1,4 @@
-import type { Camera, Camera3D, OrbitCamera } from "./cameras/index";
-import type { SmoothCamera } from "./cameras/smooth";
+import type { Camera3D } from "./cameras/index";
 import { Mesh } from "./rendering/objects/mesh";
 import { Circle, RoundedCone, RoundedConeInstanced, Sphere, Spline, SignedDistanceGrid, Volume, RayObject } from "./rendering/objects/parametric";
 import { Scene } from "./scene";
@@ -15,11 +14,11 @@ export * from "./rendering";
 export * from "./shared";
 export * from "./scene";
 
-export let ParametricShapes = [
+export const parametricShapes = [
     Circle, Sphere, RoundedCone, RoundedConeInstanced, Spline, SignedDistanceGrid, RayObject
 ];
 
-export let MeshShapes = [Mesh];
+export const meshShapes = [Mesh];
 
 export class GraphicsLibrary {
     private _adapter: GPUAdapter;
@@ -40,8 +39,8 @@ export class GraphicsLibrary {
         this._adapter = adapter;
         this._device = device;
 
-        this.bindGroupLayouts.set('camera', device.createBindGroupLayout({
-            label: 'Camera BGL',
+        this.bindGroupLayouts.set("camera", device.createBindGroupLayout({
+            label: "Camera BGL",
             entries: [{
                 binding: 0,
                 visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT | GPUShaderStage.COMPUTE,
@@ -49,22 +48,22 @@ export class GraphicsLibrary {
             }]
         }));
 
-        for(const objectType of ParametricShapes) {
+        for(const objectType of parametricShapes) {
             objectType.createBindGroupLayouts(device);
         }
 
         Volume.createBindGroupLayouts(device);
 
-        for(const objectType of MeshShapes) {
+        for(const objectType of meshShapes) {
             objectType.createBindGroupLayouts(device);
         }
 
         this._nearestClampSampler = this._device.createSampler({
-            magFilter: 'nearest',
-            minFilter: 'nearest',
-            addressModeU: 'clamp-to-edge',
-            addressModeV: 'clamp-to-edge',
-            addressModeW: 'clamp-to-edge',
+            magFilter: "nearest",
+            minFilter: "nearest",
+            addressModeU: "clamp-to-edge",
+            addressModeV: "clamp-to-edge",
+            addressModeW: "clamp-to-edge",
         });
         // this._nearestRepeatSampler = this._device.createSampler({
         //     magFilter: 'nearest',
@@ -74,15 +73,15 @@ export class GraphicsLibrary {
         //     addressModeW: 'repeat',
         // });
         this._linearSampler = this._device.createSampler({
-            magFilter: 'linear',
-            minFilter: 'linear',
+            magFilter: "linear",
+            minFilter: "linear",
         });
         this._dummy1DTextureView = device.createTexture({
             size: {
                 width: 4,
                 height: 1,
             },
-            format: 'rgba8unorm',
+            format: "rgba8unorm",
             usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST
         }).createView({
         });

@@ -1,4 +1,4 @@
-import { ComposedObject, ConcreteObject, GraphicsLibrary, IObject, Mesh, MeshShapes, ParametricShapes } from "../../..";
+import { ConcreteObject, GraphicsLibrary, IObject, Mesh, meshShapes, parametricShapes } from "../../..";
 import type { Scene } from "../../../scene";
 import { IParametricObject, Volume } from "../../objects/parametric";
 import type { PassRenderSettings } from "../shared";
@@ -26,14 +26,14 @@ class Pipelines {
         this.renderPipelines = new Map();
 
         //#region Graphics Library Requirements
-        const cameraBGL = graphicsLibrary.bindGroupLayouts.get('camera');
+        const cameraBGL = graphicsLibrary.bindGroupLayouts.get("camera");
 
         if (!cameraBGL) {
             throw "Camera BGL of Graphics Library should have been initialized at this point."
         }
         //#endregion Graphics Library Requirements
 
-        for (const ty of ParametricShapes) {
+        for (const ty of parametricShapes) {
             const shaderCode = parametricShaderTemplate(
                 ty.variableName,
                 ty.typeName,
@@ -42,9 +42,9 @@ class Pipelines {
                 ty.gpuCodeGetBoundingRectangleVertex,
                 ty.gpuCodeIntersectionTest,
                 {
-                    color: ty.gpuCodeGetOutputValue('color'),
-                    normal: ty.gpuCodeGetOutputValue('normal'),
-                    ao: ty.gpuCodeGetOutputValue('ao')
+                    color: ty.gpuCodeGetOutputValue("color"),
+                    normal: ty.gpuCodeGetOutputValue("normal"),
+                    ao: ty.gpuCodeGetOutputValue("ao")
                 },
                 ty.gpuCodeGetIntersection(ty.variableName, ty.typeName)
             );
@@ -76,14 +76,14 @@ class Pipelines {
                             format: navigator.gpu.getPreferredCanvasFormat(),
                             blend: {
                                 color: {
-                                    srcFactor: 'src-alpha',
-                                    dstFactor: 'one-minus-src-alpha',
-                                    operation: 'add',
+                                    srcFactor: "src-alpha",
+                                    dstFactor: "one-minus-src-alpha",
+                                    operation: "add",
                                 },
                                 alpha: {
-                                    operation: 'add',
-                                    srcFactor: 'zero',
-                                    dstFactor: 'one',
+                                    operation: "add",
+                                    srcFactor: "zero",
+                                    dstFactor: "one",
                                 }
                             },
                         },
@@ -93,30 +93,30 @@ class Pipelines {
                         // },
                         // World Normals
                         {
-                            format: 'rgba32float',
+                            format: "rgba32float",
                         },
                         {
-                            format: 'rg8unorm',
+                            format: "rg8unorm",
                         }
                     ]
 
                 },
                 primitive: {
-                    topology: 'triangle-strip',
-                    stripIndexFormat: 'uint32',
-                    cullMode: 'none',
+                    topology: "triangle-strip",
+                    stripIndexFormat: "uint32",
+                    cullMode: "none",
                 },
 
                 depthStencil: {
                     depthWriteEnabled: true,
-                    depthCompare: 'greater',
-                    format: 'depth32float',
+                    depthCompare: "greater",
+                    format: "depth32float",
                 },
             }));
         }
 
         // Transparrent
-        for (const ty of ParametricShapes) {
+        for (const ty of parametricShapes) {
             const shaderCode = transparentParametricShaderTemplate(
                 ty.variableName,
                 ty.typeName,
@@ -125,7 +125,7 @@ class Pipelines {
                 ty.gpuCodeGetBoundingRectangleVertex,
                 ty.gpuCodeIntersectionTest,
                 {
-                    color: ty.gpuCodeGetOutputValue('color'),
+                    color: ty.gpuCodeGetOutputValue("color"),
                 },
                 ty.gpuCodeGetIntersection(ty.variableName, ty.typeName)
             );
@@ -159,14 +159,14 @@ class Pipelines {
                             format: navigator.gpu.getPreferredCanvasFormat(),
                             blend: {
                                 color: {
-                                    srcFactor: 'src-alpha',
-                                    dstFactor: 'one-minus-src-alpha',
-                                    operation: 'add',
+                                    srcFactor: "src-alpha",
+                                    dstFactor: "one-minus-src-alpha",
+                                    operation: "add",
                                 },
                                 alpha: {
-                                    operation: 'add',
-                                    srcFactor: 'zero',
-                                    dstFactor: 'one',
+                                    operation: "add",
+                                    srcFactor: "zero",
+                                    dstFactor: "one",
                                 }
                             },
                         }
@@ -174,9 +174,9 @@ class Pipelines {
 
                 },
                 primitive: {
-                    topology: 'triangle-strip',
-                    stripIndexFormat: 'uint32',
-                    cullMode: 'none',
+                    topology: "triangle-strip",
+                    stripIndexFormat: "uint32",
+                    cullMode: "none",
                 }
             }));
         }
@@ -190,26 +190,26 @@ class Pipelines {
             Volume.gpuCodeGetBoundingRectangleVertex,
             Volume.gpuCodeIntersectionTest,
             {
-                color: Volume.gpuCodeGetOutputValue('color'),
-                normal: Volume.gpuCodeGetOutputValue('normal'),
-                ao: Volume.gpuCodeGetOutputValue('ao')
+                color: Volume.gpuCodeGetOutputValue("color"),
+                normal: Volume.gpuCodeGetOutputValue("normal"),
+                ao: Volume.gpuCodeGetOutputValue("ao")
             }
         );
 
         const shaderModule = device.createShaderModule({
-            label: `DeferredPass-Volume`,
+            label: "DeferredPass-Volume",
             code: shaderCode
         });
-        this.shaderModules.set('DeferredPass-Volume', shaderModule);
+        this.shaderModules.set("DeferredPass-Volume", shaderModule);
 
         const pipelineLayout = device.createPipelineLayout({
-            label: `DeferredPass-Volume`,
+            label: "DeferredPass-Volume",
             bindGroupLayouts: [...[cameraBGL], ...Volume.bindGroupLayouts],
         });
-        this.pipelineLayouts.set('Volume', pipelineLayout);
+        this.pipelineLayouts.set("Volume", pipelineLayout);
 
-        this.renderPipelines.set('DeferredPass-Volume', device.createRenderPipeline({
-            label: `DeferredPass-Volume`,
+        this.renderPipelines.set("DeferredPass-Volume", device.createRenderPipeline({
+            label: "DeferredPass-Volume",
             layout: pipelineLayout,
             vertex: {
                 module: shaderModule,
@@ -220,17 +220,17 @@ class Pipelines {
                 entryPoint: "main_fragment",
                 targets: [// Color
                     {
-                        format: 'rgba8unorm',
+                        format: "rgba8unorm",
                         blend: {
                             color: {
-                                operation: 'add',
-                                srcFactor: 'one',
-                                dstFactor: 'zero',
+                                operation: "add",
+                                srcFactor: "one",
+                                dstFactor: "zero",
                             },
                             alpha: {
-                                operation: 'add',
-                                srcFactor: 'one',
-                                dstFactor: 'zero',
+                                operation: "add",
+                                srcFactor: "one",
+                                dstFactor: "zero",
                             }
                         },
                         writeMask: GPUColorWrite.ALL
@@ -239,21 +239,21 @@ class Pipelines {
 
             },
             primitive: {
-                topology: 'triangle-strip',
-                stripIndexFormat: 'uint32',
-                cullMode: 'none',
+                topology: "triangle-strip",
+                stripIndexFormat: "uint32",
+                cullMode: "none",
             }
         }));
 
-        for (const ty of MeshShapes) {
+        for (const ty of meshShapes) {
             const shaderCode = meshShaderTemplate(
                 ty.gpuGlobals,
                 ty.gpuVertexShader,
                 ty.gpuFragmentShader,
                 {
-                    color: ty.gpuCodeGetOutputValue('color'),
-                    normal: ty.gpuCodeGetOutputValue('normal'),
-                    ao: ty.gpuCodeGetOutputValue('ao'),
+                    color: ty.gpuCodeGetOutputValue("color"),
+                    normal: ty.gpuCodeGetOutputValue("normal"),
+                    ao: ty.gpuCodeGetOutputValue("ao"),
                 }
             );
 
@@ -290,22 +290,22 @@ class Pipelines {
                         // },
                         // World Normals
                         {
-                            format: 'rgba32float',
+                            format: "rgba32float",
                         },
                         {
-                            format: 'rg8unorm',
+                            format: "rg8unorm",
                         }
                     ]
 
                 },
                 primitive: {
-                    topology: 'triangle-list',
-                    cullMode: 'none',
+                    topology: "triangle-list",
+                    cullMode: "none",
                 },
                 depthStencil: {
                     depthWriteEnabled: true,
-                    depthCompare: 'greater',
-                    format: 'depth32float',
+                    depthCompare: "greater",
+                    format: "depth32float",
                 },
             }));
         }
@@ -314,7 +314,7 @@ class Pipelines {
     }
 
     public static getInstance(graphicsLibrary: GraphicsLibrary): Pipelines {
-        if (this._instance && Pipelines._lastDeviceUsed == graphicsLibrary.device) {
+        if (this._instance && Pipelines._lastDeviceUsed === graphicsLibrary.device) {
             return this._instance;
         }
 
@@ -358,28 +358,28 @@ export class DeferredPass extends Pass {
 
         this._volumeTexture?.destroy();
         this._volumeTexture = this._graphicsLibrary.device.createTexture({
-            format: 'rgba8unorm',
+            format: "rgba8unorm",
             size: { width: this.width, height: this.height },
             usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING
         });
 
         this._depthTexture?.destroy();
         this._depthTexture = this._graphicsLibrary.device.createTexture({
-            format: 'depth32float',
+            format: "depth32float",
             size: { width: this.width, height: this.height },
             usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING
         });
 
         this._normalsTexture?.destroy();
         this._normalsTexture = this._graphicsLibrary.device.createTexture({
-            format: 'rgba32float',
+            format: "rgba32float",
             size: { width: this.width, height: this.height },
             usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING
         });
 
         this._aoTexture?.destroy();
         this._aoTexture = this._graphicsLibrary.device.createTexture({
-            format: 'rg8unorm',
+            format: "rg8unorm",
             size: { width: this.width, height: this.height },
             usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING
         });
@@ -389,7 +389,7 @@ export class DeferredPass extends Pass {
         this.width = width;
         this.height = height;
 
-        for (const parametricShape of ParametricShapes) {
+        for (const parametricShape of parametricShapes) {
             parametricShape.resize(this._graphicsLibrary, width, height);
         }
 
@@ -408,28 +408,28 @@ export class DeferredPass extends Pass {
                 {
                     view: this._colorTexture.createView(),
                     clearValue: { r: 0.0, g: 0.0, b: 0.0, a: 1.0 },
-                    loadOp: 'clear',
-                    storeOp: 'store',
+                    loadOp: "clear",
+                    storeOp: "store",
                 },
                 {
                     view: this._normalsTexture.createView(),
                     clearValue: { r: 0.0, g: 0.0, b: 0.0, a: 1.0 },
-                    loadOp: 'clear',
-                    storeOp: 'store',
+                    loadOp: "clear",
+                    storeOp: "store",
                 },
                 {
                     view: this._aoTexture.createView(),
                     clearValue: { r: 0.0, g: 0.0, b: 0.0, a: 0.0 },
-                    loadOp: 'clear',
-                    storeOp: 'store',
+                    loadOp: "clear",
+                    storeOp: "store",
                 },
             ],
             depthStencilAttachment: {
                 view: this._depthTexture.createView(),
 
                 depthClearValue: 0.0,
-                depthLoadOp: 'clear',
-                depthStoreOp: 'store',
+                depthLoadOp: "clear",
+                depthStoreOp: "store",
             }
         });
 
@@ -439,7 +439,9 @@ export class DeferredPass extends Pass {
             if (object instanceof IParametricObject) {
                 const pipeline = this._pipelines.renderPipelines.get(object.getTypeName());
 
-                if (!pipeline) continue;
+                if (!pipeline) {
+                    continue;
+                }
 
                 renderPass.setPipeline(pipeline);
                 object.record(renderPass, 1, frameID);
@@ -447,7 +449,9 @@ export class DeferredPass extends Pass {
             if (object instanceof Mesh) {
                 const pipeline = this._pipelines.renderPipelines.get(object.getTypeName());
 
-                if (!pipeline) continue;
+                if (!pipeline) {
+                    continue;
+                }
 
                 renderPass.setPipeline(pipeline);
                 object.record(renderPass, 1);
@@ -461,8 +465,8 @@ export class DeferredPass extends Pass {
                 {
                     view: this._colorTexture.createView(),
                     clearValue: { r: 0.0, g: 0.0, b: 0.0, a: 1.0 },
-                    loadOp: 'load',
-                    storeOp: 'store',
+                    loadOp: "load",
+                    storeOp: "store",
                 },
             ]
         });
@@ -474,7 +478,9 @@ export class DeferredPass extends Pass {
             if (object instanceof IParametricObject) {
                 const pipeline = this._pipelines.renderPipelines.get(`TransparentDeferredPass-${object.getTypeName()}`);
 
-                if (!pipeline) continue;
+                if (!pipeline) {
+                    continue;
+                }
 
                 transparrentRenderPass.setPipeline(pipeline);
                 object.record(transparrentRenderPass, 1, frameID);
@@ -484,7 +490,7 @@ export class DeferredPass extends Pass {
         transparrentRenderPass.end();
 
         // Volumetric Render Pass
-        const volumePipeline = this._pipelines.renderPipelines.get('DeferredPass-Volume');
+        const volumePipeline = this._pipelines.renderPipelines.get("DeferredPass-Volume");
         if (!this.depthTexture || !Volume.bindGroupLayouts[1] || !volumePipeline) {
             return;
         }
@@ -493,8 +499,8 @@ export class DeferredPass extends Pass {
             colorAttachments: [
                 {
                     view: this._volumeTexture.createView(),
-                    loadOp: 'clear',
-                    storeOp: 'store',
+                    loadOp: "clear",
+                    storeOp: "store",
                 }
             ]
         });
@@ -520,7 +526,7 @@ export class DeferredPass extends Pass {
         }
 
         volumeRenderPass.end();
-    };
+    }
 
     public get colorTexture(): GPUTexture | null {
         return this._colorTexture;

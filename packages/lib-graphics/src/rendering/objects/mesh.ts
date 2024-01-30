@@ -2,7 +2,7 @@ import { BoundingBox } from "../../shared";
 import { ConcreteObject } from "./shared";
 import { GraphicsLibrary } from "../..";
 import { Allocator } from "../../allocation";
-import * as r from 'restructure';
+import * as r from "restructure";
 import { mat4, vec4, vec3 } from "gl-matrix";
 
 export interface Vertex {
@@ -30,11 +30,11 @@ export const MeshUniformStruct = new r.Struct({
 });
 
 export class Mesh extends ConcreteObject {
-    public static variableName = 'mesh';
-    public static typeName = 'Mesh';
+    public static variableName = "mesh";
+    public static typeName = "Mesh";
 
-    public getVariableName(): string { return Mesh.variableName };
-    public getTypeName(): string { return Mesh.typeName };
+    public getVariableName(): string { return Mesh.variableName }
+    public getTypeName(): string { return Mesh.typeName }
 
     static bindGroupLayouts: Array<GPUBindGroupLayout> = [];
     static createBindGroupLayouts(device: GPUDevice): void {
@@ -43,12 +43,12 @@ export class Mesh extends ConcreteObject {
             entries: [{
                 binding: 0,
                 visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-                buffer: { type: 'uniform' },
+                buffer: { type: "uniform" },
             },
             {
                 binding: 1,
                 visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-                buffer: { type: 'read-only-storage' },
+                buffer: { type: "read-only-storage" },
             }]
         })];
     }
@@ -110,19 +110,19 @@ export class Mesh extends ConcreteObject {
         // }
     `;
 
-    static gpuCodeGetOutputValue(variable: 'color' | 'normal' | 'ao'): string {
+    static gpuCodeGetOutputValue(variable: "color" | "normal" | "ao"): string {
         switch (variable) {
-            case 'color': {
+            case "color": {
                 return /* wgsl */`
                     let color = vec4<f32>(meshUniform.color.rgb, 1.0);
                 `;
             }
-            case 'normal': {
+            case "normal": {
                 return /* wgsl */`
                     let normal = vec4<f32>(1.0);
                 `;
             }
-            case 'ao': {
+            case "ao": {
                 return /* wgsl */`
                     let ao = vec2(1.0, 1.0);
                 `;

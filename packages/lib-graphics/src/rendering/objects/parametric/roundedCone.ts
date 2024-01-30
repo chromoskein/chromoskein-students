@@ -1,7 +1,7 @@
 import type { Allocator, GraphicsLibrary } from "../../..";
 import type { BoundingBox, Ray } from "../../../shared";
 import { IParametricObject } from "./shared";
-import * as r from 'restructure';
+import * as r from "restructure";
 
 export interface RoundedConeProperties {
     start: [number, number, number],
@@ -20,11 +20,11 @@ export const RoundedConeStruct = new r.Struct({
 });
 
 export class RoundedCone extends IParametricObject {
-    public static variableName = 'roundedCone';
-    public static typeName = 'RoundedCone';
+    public static variableName = "roundedCone";
+    public static typeName = "RoundedCone";
 
-    public getVariableName(): string { return RoundedCone.variableName };
-    public getTypeName(): string { return RoundedCone.typeName };
+    public getVariableName(): string { return RoundedCone.variableName }
+    public getTypeName(): string { return RoundedCone.typeName }
 
     static bindGroupLayouts: Array<GPUBindGroupLayout> = [];
     static createBindGroupLayouts(device: GPUDevice): void {
@@ -33,7 +33,7 @@ export class RoundedCone extends IParametricObject {
             entries: [{
                 binding: 0,
                 visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-                buffer: { type: 'uniform' },
+                buffer: { type: "uniform" },
             }]
         })];
     }
@@ -53,7 +53,7 @@ export class RoundedCone extends IParametricObject {
         @group(1) @binding(0) var<uniform> ${this.variableName}: ${this.typeName};
     `;
 
-    public static gpuCodeGetObject = ``;
+    public static gpuCodeGetObject = "";
     public static gpuCodeGetObjectUntypedArray = `
         let ${this.variableName}: ${this.typeName} = ${this.typeName}(
             vec3<f32>(words[0], words[1], words[2]),
@@ -167,17 +167,17 @@ export class RoundedCone extends IParametricObject {
         }
     `;
 
-    static gpuCodeGetOutputValue(variable: 'color' | 'normal' | 'ao'): string {
+    static gpuCodeGetOutputValue(variable: "color" | "normal" | "ao"): string {
         switch (variable) {
-            case 'color': {
-                return ``;
+            case "color": {
+                return "";
             }
-            case 'normal': {
+            case "normal": {
                 return `
                     let normal = intersection.normal;
                 `;
             }
-            case 'ao': {
+            case "ao": {
                 return /* wgsl */`
                     let ao = vec2(1.0, 1.0);
                 `;
@@ -202,7 +202,7 @@ export class RoundedCone extends IParametricObject {
 
     public rayIntersection(ray: Ray): number | null {
         return null;
-    };
+    }
 
     public toBoundingBoxes(): BoundingBox[] {
         return [];

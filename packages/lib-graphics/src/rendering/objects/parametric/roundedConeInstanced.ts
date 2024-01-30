@@ -1,7 +1,7 @@
 import { Allocator, GraphicsLibrary } from "../../..";
 import type { BoundingBox, Ray } from "../../../shared";
 import { IParametricObject } from "./shared";
-import * as r from 'restructure';
+import * as r from "restructure";
 
 export interface RoundedConeInstancedProperties {
     start: [number, number, number],
@@ -13,11 +13,11 @@ export interface RoundedConeInstancedProperties {
 
 
 export class RoundedConeInstanced extends IParametricObject {
-    public static variableName = 'roundedConeInstanced';
-    public static typeName = 'RoundedConeInstanced';
+    public static variableName = "roundedConeInstanced";
+    public static typeName = "RoundedConeInstanced";
 
-    public getVariableName(): string { return RoundedConeInstanced.variableName };
-    public getTypeName(): string { return RoundedConeInstanced.typeName };
+    public getVariableName(): string { return RoundedConeInstanced.variableName }
+    public getTypeName(): string { return RoundedConeInstanced.typeName }
 
     static bindGroupLayouts: Array<GPUBindGroupLayout> = [];
     static createBindGroupLayouts(device: GPUDevice): void {
@@ -26,7 +26,7 @@ export class RoundedConeInstanced extends IParametricObject {
             entries: [{
                 binding: 0,
                 visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-                buffer: { type: 'read-only-storage' },
+                buffer: { type: "read-only-storage" },
             }]
         })];
     }
@@ -150,19 +150,19 @@ export class RoundedConeInstanced extends IParametricObject {
         }
     `;
 
-    static gpuCodeGetOutputValue(variable: 'color' | 'normal' | 'ao'): string {
+    static gpuCodeGetOutputValue(variable: "color" | "normal" | "ao"): string {
         switch (variable) {
-            case 'color': {
+            case "color": {
                 return `
                     let color = ${this.variableName}.color;
                 `;
             }
-            case 'normal': {
+            case "normal": {
                 return `
                     let normal = intersection.normal;
                 `;
             }
-            case 'ao': {
+            case "ao": {
                 return /* wgsl */`
                     let ao = vec2(1.0, 1.0);
                 `;
@@ -181,7 +181,7 @@ export class RoundedConeInstanced extends IParametricObject {
 
     public rayIntersection(ray: Ray): number | null {
         return null;
-    };
+    }
 
     public toBoundingBoxes(): BoundingBox[] {
         return [];

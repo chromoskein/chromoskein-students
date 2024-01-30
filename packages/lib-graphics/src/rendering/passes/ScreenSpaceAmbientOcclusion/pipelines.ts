@@ -1,5 +1,5 @@
 import { GraphicsLibrary } from "../../..";
-import ssaoShader from './ssao.wgsl?raw';
+import ssaoShader from "./ssao.wgsl?raw";
 
 export class Pipelines {
     private static _instance: Pipelines;
@@ -21,7 +21,7 @@ export class Pipelines {
         this.computePipelines = new Map();
 
         //#region Graphics Library Requirements
-        const cameraBGL = graphicsLibrary.bindGroupLayouts.get('camera');
+        const cameraBGL = graphicsLibrary.bindGroupLayouts.get("camera");
 
         if (!cameraBGL) {
             throw "Camera BGL of Graphics Library should have been initialized at this point."
@@ -29,10 +29,10 @@ export class Pipelines {
         //#endregion Graphics Library Requirements
 
         const shaderModule = device.createShaderModule({
-            label: `SSAO`,
+            label: "SSAO",
             code: ssaoShader
         });
-        this.shaderModules.set(`SSAO`, shaderModule);
+        this.shaderModules.set("SSAO", shaderModule);
 
         const globalsBGL = device.createBindGroupLayout({
             entries: [
@@ -41,7 +41,7 @@ export class Pipelines {
                     binding: 0,
                     visibility: GPUShaderStage.COMPUTE,
                     buffer: {
-                        type: 'uniform',
+                        type: "uniform",
                     }
                 },
                 // Noise Texture
@@ -49,8 +49,8 @@ export class Pipelines {
                     binding: 1,
                     visibility: GPUShaderStage.COMPUTE,
                     texture: {
-                        sampleType: 'unfilterable-float',
-                        viewDimension: '2d',
+                        sampleType: "unfilterable-float",
+                        viewDimension: "2d",
                         multisampled: false,
                     }
                 },
@@ -59,8 +59,8 @@ export class Pipelines {
                     binding: 2,
                     visibility: GPUShaderStage.COMPUTE,
                     texture: {
-                        sampleType: 'unfilterable-float',
-                        viewDimension: '2d'
+                        sampleType: "unfilterable-float",
+                        viewDimension: "2d"
                     }
                 },
                 // Ambient Occlusion Output
@@ -68,9 +68,9 @@ export class Pipelines {
                     binding: 3,
                     visibility: GPUShaderStage.COMPUTE,
                     storageTexture: {
-                        access: 'write-only',
-                        format: 'r32float',
-                        viewDimension: '2d',
+                        access: "write-only",
+                        format: "r32float",
+                        viewDimension: "2d",
                     }
                 },
             ]
@@ -83,8 +83,8 @@ export class Pipelines {
                     binding: 0,
                     visibility: GPUShaderStage.COMPUTE,
                     texture: {
-                        sampleType: 'depth',
-                        viewDimension: '2d',
+                        sampleType: "depth",
+                        viewDimension: "2d",
                         multisampled: false,
                     }
                 },
@@ -93,28 +93,28 @@ export class Pipelines {
                     binding: 1,
                     visibility: GPUShaderStage.COMPUTE,
                     texture: {
-                        sampleType: 'unfilterable-float',
-                        viewDimension: '2d',
+                        sampleType: "unfilterable-float",
+                        viewDimension: "2d",
                         multisampled: false,
                     }
                 }]
         });
 
-        this.bindGroupLayouts.set('Globals', globalsBGL);
-        this.bindGroupLayouts.set('Input', inputBGL);
+        this.bindGroupLayouts.set("Globals", globalsBGL);
+        this.bindGroupLayouts.set("Input", inputBGL);
 
         const pipelineLayout = device.createPipelineLayout({
-            label: `SSAO`,
+            label: "SSAO",
             bindGroupLayouts: [...[cameraBGL], globalsBGL, inputBGL],
         });
-        this.pipelineLayouts.set(`SSAO`, pipelineLayout);
+        this.pipelineLayouts.set("SSAO", pipelineLayout);
 
-        this.computePipelines.set(`SSAO`, device.createComputePipeline({
-            label: `SSAO`,
+        this.computePipelines.set("SSAO", device.createComputePipeline({
+            label: "SSAO",
             layout: pipelineLayout,
             compute: {
                 module: shaderModule,
-                entryPoint: 'main'
+                entryPoint: "main"
             }
         }));
 
@@ -122,7 +122,7 @@ export class Pipelines {
     }
 
     public static getInstance(graphicsLibrary: GraphicsLibrary): Pipelines {
-        if (this._instance && Pipelines._lastDeviceUsed == graphicsLibrary.device) {
+        if (this._instance && Pipelines._lastDeviceUsed === graphicsLibrary.device) {
             return this._instance;
         }
 

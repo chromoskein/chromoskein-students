@@ -1,7 +1,7 @@
 import type { Allocator, GraphicsLibrary } from "../../..";
 import type { BoundingBox, Ray } from "../../../shared";
 import { IParametricObject } from "./shared";
-import * as r from 'restructure';
+import * as r from "restructure";
 import { mat4, vec3, vec4 } from "gl-matrix";
 import { signedDistanceGridFromArbitraryPoints, signedDistanceGridFromPoints } from "./signedDistanceGridFromPoints";
 
@@ -25,23 +25,23 @@ class Pipelines {
         this.computePipelines = new Map();
 
         const gridFromPointsBGL = device.createBindGroupLayout({
-            label: `SignedDistanceGridFromPoints`,
+            label: "SignedDistanceGridFromPoints",
             entries: [{
                 binding: 0,
                 visibility: GPUShaderStage.COMPUTE,
-                buffer: { type: 'read-only-storage' },
+                buffer: { type: "read-only-storage" },
             }, {
                 binding: 1,
                 visibility: GPUShaderStage.COMPUTE,
                 storageTexture: {
-                    format: 'r32float',
-                    access: 'write-only',
+                    format: "r32float",
+                    access: "write-only",
                     viewDimension: "3d"
                 }
             }, {
                 binding: 2,
                 visibility: GPUShaderStage.COMPUTE,
-                buffer: { type: 'read-only-storage' },
+                buffer: { type: "read-only-storage" },
             }]
         });
 
@@ -49,8 +49,8 @@ class Pipelines {
             bindGroupLayouts: [gridFromPointsBGL]
         });
 
-        this.bindGroupLayouts.set('gridFromPoints', gridFromPointsBGL);
-        this.pipelineLayouts.set('gridFromPoints', gridFromPointsPL)
+        this.bindGroupLayouts.set("gridFromPoints", gridFromPointsBGL);
+        this.pipelineLayouts.set("gridFromPoints", gridFromPointsPL)
 
         const gridFromPointsModule = device.createShaderModule({
             code: signedDistanceGridFromPoints(),
@@ -59,22 +59,22 @@ class Pipelines {
         const gridFromArbitraryPointsModule = device.createShaderModule({
             code: signedDistanceGridFromArbitraryPoints(),
         });
-        this.shaderModules.set('gridFromPoints', gridFromPointsModule);
-        this.shaderModules.set('gridFromArbitraryPoints', gridFromArbitraryPointsModule);
+        this.shaderModules.set("gridFromPoints", gridFromPointsModule);
+        this.shaderModules.set("gridFromArbitraryPoints", gridFromArbitraryPointsModule);
 
-        this.computePipelines.set('gridFromPoints', device.createComputePipeline({
+        this.computePipelines.set("gridFromPoints", device.createComputePipeline({
             layout: gridFromPointsPL,
             compute: {
                 module: gridFromPointsModule,
-                entryPoint: 'main',
+                entryPoint: "main",
             }
         }));
 
-        this.computePipelines.set('gridFromArbitraryPoints', device.createComputePipeline({
+        this.computePipelines.set("gridFromArbitraryPoints", device.createComputePipeline({
             layout: gridFromPointsPL,
             compute: {
                 module: gridFromArbitraryPointsModule,
-                entryPoint: 'main',
+                entryPoint: "main",
             }
         }));
 
@@ -82,7 +82,7 @@ class Pipelines {
     }
 
     public static getInstance(graphicsLibrary: GraphicsLibrary): Pipelines {
-        if (this._instance && Pipelines._lastDeviceUsed == graphicsLibrary.device) {
+        if (this._instance && Pipelines._lastDeviceUsed === graphicsLibrary.device) {
             return this._instance;
         }
 
@@ -112,11 +112,11 @@ export const GridTextureSize: number = 64;
 export class SignedDistanceGrid extends IParametricObject {
     private _pipelines: Pipelines;
 
-    public static variableName = 'signedDistanceGrid';
-    public static typeName = 'SignedDistanceGrid';
+    public static variableName = "signedDistanceGrid";
+    public static typeName = "SignedDistanceGrid";
 
-    public getVariableName(): string { return SignedDistanceGrid.variableName };
-    public getTypeName(): string { return SignedDistanceGrid.typeName };
+    public getVariableName(): string { return SignedDistanceGrid.variableName }
+    public getTypeName(): string { return SignedDistanceGrid.typeName }
 
     static bindGroupLayouts: Array<GPUBindGroupLayout> = [];
     static createBindGroupLayouts(device: GPUDevice): void {
@@ -125,7 +125,7 @@ export class SignedDistanceGrid extends IParametricObject {
             entries: [{
                 binding: 0,
                 visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-                buffer: { type: 'read-only-storage' },
+                buffer: { type: "read-only-storage" },
             }, {
                 binding: 1,
                 visibility: GPUShaderStage.FRAGMENT,
@@ -137,7 +137,7 @@ export class SignedDistanceGrid extends IParametricObject {
                 binding: 2,
                 visibility: GPUShaderStage.FRAGMENT,
                 sampler: {
-                    type: 'filtering'
+                    type: "filtering"
                 }
             }]
         })
@@ -168,8 +168,8 @@ export class SignedDistanceGrid extends IParametricObject {
         @group(1) @binding(2) var linearSampler: sampler;
         `;
 
-        public static gpuCodeGetObject = ``;
-        public static gpuCodeGetObjectUntypedArray = ``;
+        public static gpuCodeGetObject = "";
+        public static gpuCodeGetObjectUntypedArray = "";
 
         static gpuCodeIntersectionTest = /* wgsl */`
         fn calcNormal(p: vec3<f32>, i: u32) -> vec3<f32> // for function f(p)
@@ -326,18 +326,18 @@ export class SignedDistanceGrid extends IParametricObject {
         var intersection = Intersection(objectIntersection.t, objectIntersection.position, objectIntersection.normal);     
     `}
 
-    static gpuCodeGetOutputValue(variable: 'color' | 'normal' | 'ao'): string {
+    static gpuCodeGetOutputValue(variable: "color" | "normal" | "ao"): string {
         switch (variable) {
-            case 'color': {
+            case "color": {
                 return /* wgsl */`
                 `;
             }
-            case 'normal': {
+            case "normal": {
                 return /* wgsl */`
                     let normal = intersection.normal;
                 `;
             }
-            case 'ao': {
+            case "ao": {
                 return /* wgsl */`
                     let ao = vec2(1.0, 1.0);
                 `;
@@ -362,7 +362,7 @@ export class SignedDistanceGrid extends IParametricObject {
 
     public rayIntersection(ray: Ray): number | null {
         return null;
-    };
+    }
 
     public toBoundingBoxes(): BoundingBox[] {
         return [];
@@ -423,10 +423,12 @@ export class SignedDistanceGrid extends IParametricObject {
     // }
 
     public fromPoints(device: GPUDevice, points: Array<Array<vec3>>, radius: Array<number> = [0.05]) {
-        const pipeline = this._pipelines.computePipelines.get('gridFromPoints');
-        const bgl = this._pipelines.bindGroupLayouts.get('gridFromPoints');
+        const pipeline = this._pipelines.computePipelines.get("gridFromPoints");
+        const bgl = this._pipelines.bindGroupLayouts.get("gridFromPoints");
 
-        if (!pipeline || !bgl) return;
+        if (!pipeline || !bgl) {
+            return;
+        }
 
 
         if (!this._texture) {
@@ -445,7 +447,7 @@ export class SignedDistanceGrid extends IParametricObject {
 
         
         const delimitersCPUBuffer = new Uint32Array(points.length + 1);
-        let delimiters = [0];
+        const delimiters = [0];
         let len = 0;
         delimitersCPUBuffer.set([0], 0);
         for(let i = 0; i < points.length; i++) {
@@ -458,7 +460,7 @@ export class SignedDistanceGrid extends IParametricObject {
         
         let offset = 0;
         for (let j = 0; j < points.length; j++) {
-            let writeRadius = radius[j] * (1.0 / this.properties[j].scale[0]);
+            const writeRadius = radius[j] * (1.0 / this.properties[j].scale[0]);
             for(let i = 0; i < points[j].length; i++) {
                 pointsCPUBuffer.set(points[j][i], 4 * i + 4 * offset);
                 pointsCPUBuffer.set([writeRadius], 4 * i + 3 + 4 * offset);
@@ -498,10 +500,12 @@ export class SignedDistanceGrid extends IParametricObject {
     }
 
     public fromArbitraryPoints(device: GPUDevice, points: Array<vec3>, delimiters: Array<number>, radius: number = 0.05) {
-        const pipeline = this._pipelines.computePipelines.get('gridFromArbitraryPoints');
-        const bgl = this._pipelines.bindGroupLayouts.get('gridFromPoints');
+        const pipeline = this._pipelines.computePipelines.get("gridFromArbitraryPoints");
+        const bgl = this._pipelines.bindGroupLayouts.get("gridFromPoints");
 
-        if (!pipeline || !bgl) return;
+        if (!pipeline || !bgl) {
+            return;
+        }
 
         if (!this._texture) {
             this._texture = this._graphicsLibrary.device.createTexture({
@@ -524,7 +528,7 @@ export class SignedDistanceGrid extends IParametricObject {
         
         const pointsCPUBuffer = new Float32Array(points.length * 4);
         
-        let writeRadius = radius * (1.0 / this.properties[0].scale[0]);
+        const writeRadius = radius * (1.0 / this.properties[0].scale[0]);
         for (let i = 0; i < points.length; i++) {
                 pointsCPUBuffer.set(points[i], 4 * i);
                 pointsCPUBuffer.set([writeRadius], 4 * i + 3);

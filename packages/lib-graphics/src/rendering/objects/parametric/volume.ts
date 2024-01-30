@@ -1,7 +1,7 @@
 import type { Allocator, GraphicsLibrary } from "../../..";
 import type { BoundingBox, Ray } from "../../../shared";
 import { IParametricObject } from "./shared";
-import * as r from 'restructure';
+import * as r from "restructure";
 import { mat4, vec3, vec4 } from "gl-matrix";
 import { padVolume } from "./volumeHelpers";
 import { volumeFromPathlines } from "./volumeFromPathlines";
@@ -26,43 +26,43 @@ class Pipelines {
         this.computePipelines = new Map();
 
         const volumeFromPathlinesBGL = device.createBindGroupLayout({
-            label: `VolumeFromPathlines`,
+            label: "VolumeFromPathlines",
             entries: [{
                 binding: 0,
                 visibility: GPUShaderStage.COMPUTE,
-                buffer: { type: 'uniform' },
+                buffer: { type: "uniform" },
             },
             {
                 binding: 1,
                 visibility: GPUShaderStage.COMPUTE,
-                buffer: { type: 'read-only-storage' },
+                buffer: { type: "read-only-storage" },
             },
             {
                 binding: 2,
                 visibility: GPUShaderStage.COMPUTE,
-                buffer: { type: 'read-only-storage' },
+                buffer: { type: "read-only-storage" },
             },
             {
                 binding: 3,
                 visibility: GPUShaderStage.COMPUTE,
-                buffer: { type: 'read-only-storage' },
+                buffer: { type: "read-only-storage" },
             },
             {
                 binding: 4,
                 visibility: GPUShaderStage.COMPUTE,
-                buffer: { type: 'read-only-storage' },
+                buffer: { type: "read-only-storage" },
             },
             {
                 binding: 5,
                 visibility: GPUShaderStage.COMPUTE,
-                buffer: { type: 'read-only-storage' },
+                buffer: { type: "read-only-storage" },
             },
             {
                 binding: 6,
                 visibility: GPUShaderStage.COMPUTE,
                 storageTexture: {
-                    format: 'rgba8unorm',
-                    access: 'write-only',
+                    format: "rgba8unorm",
+                    access: "write-only",
                     viewDimension: "3d"
                 }
             }]
@@ -72,19 +72,19 @@ class Pipelines {
             bindGroupLayouts: [volumeFromPathlinesBGL]
         });
 
-        this.bindGroupLayouts.set('volumeFromPathlines', volumeFromPathlinesBGL);
-        this.pipelineLayouts.set('volumeFromPathlines', volumeFromPathlinesPL)
+        this.bindGroupLayouts.set("volumeFromPathlines", volumeFromPathlinesBGL);
+        this.pipelineLayouts.set("volumeFromPathlines", volumeFromPathlinesPL)
 
         const volumeFromPathlinesModule = device.createShaderModule({
             code: volumeFromPathlines(),
         });
-        this.shaderModules.set('volumeFromPathlines', volumeFromPathlinesModule);
+        this.shaderModules.set("volumeFromPathlines", volumeFromPathlinesModule);
 
-        this.computePipelines.set('volumeFromPathlines', device.createComputePipeline({
+        this.computePipelines.set("volumeFromPathlines", device.createComputePipeline({
             layout: volumeFromPathlinesPL,
             compute: {
                 module: volumeFromPathlinesModule,
-                entryPoint: 'main',
+                entryPoint: "main",
             }
         }));
 
@@ -92,7 +92,7 @@ class Pipelines {
     }
 
     public static getInstance(graphicsLibrary: GraphicsLibrary): Pipelines {
-        if (this._instance && Pipelines._lastDeviceUsed == graphicsLibrary.device) {
+        if (this._instance && Pipelines._lastDeviceUsed === graphicsLibrary.device) {
             return this._instance;
         }
 
@@ -130,11 +130,11 @@ export const VolumeTextureSize: number = 64;
 export class Volume extends IParametricObject {
     private _pipelines: Pipelines;
 
-    public static variableName = 'volume';
-    public static typeName = 'Volume';
+    public static variableName = "volume";
+    public static typeName = "Volume";
 
-    public getVariableName(): string { return Volume.variableName };
-    public getTypeName(): string { return Volume.typeName };
+    public getVariableName(): string { return Volume.variableName }
+    public getTypeName(): string { return Volume.typeName }
 
     static bindGroupLayouts: Array<GPUBindGroupLayout> = [];
     static createBindGroupLayouts(device: GPUDevice): void {
@@ -143,7 +143,7 @@ export class Volume extends IParametricObject {
             entries: [{
                 binding: 0,
                 visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-                buffer: { type: 'read-only-storage' },
+                buffer: { type: "read-only-storage" },
             }, {
                 binding: 1,
                 visibility: GPUShaderStage.FRAGMENT,
@@ -154,7 +154,7 @@ export class Volume extends IParametricObject {
                 binding: 2,
                 visibility: GPUShaderStage.FRAGMENT,
                 sampler: {
-                    type: 'filtering'
+                    type: "filtering"
                 }
             }, {
                 binding: 3,
@@ -218,8 +218,8 @@ export class Volume extends IParametricObject {
         const M_PI: f32 = 3.14159265358979323846;
     `;
 
-    public static gpuCodeGetObject = ``;
-    public static gpuCodeGetObjectUntypedArray = ``;
+    public static gpuCodeGetObject = "";
+    public static gpuCodeGetObjectUntypedArray = "";
 
     static gpuCodeIntersectionTest = /* wgsl */`
         fn rayUnitBoxIntersection(ray: Ray) -> vec2<f32> {
@@ -275,9 +275,9 @@ export class Volume extends IParametricObject {
         }
     `;
 
-    static gpuCodeGetOutputValue(variable: 'color' | 'normal' | 'ao'): string {
+    static gpuCodeGetOutputValue(variable: "color" | "normal" | "ao"): string {
         switch (variable) {
-            case 'color': {
+            case "color": {
                 return /* wgsl */`
                     var color = vec4<f32>(0.0);
 
@@ -405,12 +405,12 @@ export class Volume extends IParametricObject {
                     // }
                 `;
             }
-            case 'normal': {
+            case "normal": {
                 return /* wgsl */`
                     let normal = intersection.normal;
                 `;
             }
-            case 'ao': {
+            case "ao": {
                 return /* wgsl */`
                     let ao = vec2(0.0, 0.0);
                 `;
@@ -431,7 +431,7 @@ export class Volume extends IParametricObject {
 
     public rayIntersection(ray: Ray): number | null {
         return null;
-    };
+    }
 
     public toBoundingBoxes(): BoundingBox[] {
         return [];
@@ -478,7 +478,7 @@ export class Volume extends IParametricObject {
         });
 
         let paddedGrid = grid;
-        if (size % 256 != 0) {
+        if (size % 256 !== 0) {
             paddedGrid = padVolume(grid, [size, size, size]);
         }
 
@@ -501,10 +501,12 @@ export class Volume extends IParametricObject {
     }
 
     public fromPointArrays(device: GPUDevice, points: vec3[][][], radius: number[]) {
-        const pipeline = this._pipelines.computePipelines.get('volumeFromPathlines');
-        const bgl = this._pipelines.bindGroupLayouts.get('volumeFromPathlines');
+        const pipeline = this._pipelines.computePipelines.get("volumeFromPathlines");
+        const bgl = this._pipelines.bindGroupLayouts.get("volumeFromPathlines");
 
-        if (!pipeline || !bgl) return;
+        if (!pipeline || !bgl) {
+            return;
+        }
 
         this._textureSize = VolumeTextureSize;
 
@@ -534,7 +536,7 @@ export class Volume extends IParametricObject {
             pointsCountCPUBuffer.set([points[i][0].length], i);
         }
         
-        let pointsFlat = points.flat().flat();
+        const pointsFlat = points.flat().flat();
         const pointsCPUBuffer = new Float32Array(pointsFlat.length * 4);
         for (let i = 0; i < pointsFlat.length; i++) {
             pointsCPUBuffer.set(pointsFlat[i], 4 * i);
@@ -603,14 +605,14 @@ export class Volume extends IParametricObject {
     }
 
     public async setColorMapFromBitmap(bitmap: ImageBitmap) {
-        let texture = this._graphicsLibrary.device.createTexture({
+        const texture = this._graphicsLibrary.device.createTexture({
             size: [bitmap.width, bitmap.height, 1],
             format: "rgba8unorm",
             usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT
         });
 
-        let src = { source: bitmap };
-        let dst = { texture: texture };
+        const src = { source: bitmap };
+        const dst = { texture: texture };
 
         this._graphicsLibrary.device.queue.copyExternalImageToTexture(src, dst, [bitmap.width, bitmap.height]);
 

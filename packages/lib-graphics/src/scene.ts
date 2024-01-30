@@ -48,9 +48,9 @@ export class Scene {
     }
 
     public buildBVH(): void {
-        console.time('scene::buildBVH');
+        console.time("scene::buildBVH");
 
-        if (this.bvhWorker != null) {
+        if (this.bvhWorker !== null) {
             this.bvhWorker.terminate();
         }
 
@@ -120,7 +120,7 @@ export class Scene {
         // };
         // this.bvhWorker.postMessage({ objectsBuffer: copyOfObjectsBuffer });
 
-        console.timeEnd('scene::buildBVH');
+        console.timeEnd("scene::buildBVH");
     }
 
     public addObject<T extends IObject>(objectType: new (id: number, graphicsLibrary: GraphicsLibrary, allocator: Allocator) => T): [T, number] {
@@ -218,18 +218,18 @@ export class Scene {
 
     public rayIntersection(ray: Ray): [IParametricObject | null, number] {
         let closest = null;
-        let min_dist = Infinity;
+        let minDist = Infinity;
         for(const object of this._objects){
             if(object instanceof IParametricObject){
                 const dist = object.rayIntersection(ray);
-                if(dist !== null && dist < min_dist){
-                    min_dist = dist;
+                if(dist !== null && dist < minDist){
+                    minDist = dist;
                     closest = object;
                 }
             }  
         }
 
-        return [closest, min_dist];
+        return [closest, minDist];
     }
 
     public get version(): number {

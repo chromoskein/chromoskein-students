@@ -4,7 +4,7 @@ import { mat4, quat, vec3, vec4 } from "gl-matrix";
 // const TAU = Math.PI * 2.0;
 const PI = Math.PI;
 
-function deg_to_rad(degrees: number): number {
+function degToRad(degrees: number): number {
     return degrees * (PI / 180.0);
 }
 
@@ -100,7 +100,9 @@ export class SmoothCamera extends Camera {
 
     protected updateZooming(dt: number): void {
         this.zooming.currentLerpTime += dt;
-        if (this.zooming.currentLerpTime > this.animTime) this.zooming.currentLerpTime = this.animTime;
+        if (this.zooming.currentLerpTime > this.animTime) {
+            this.zooming.currentLerpTime = this.animTime;
+        }
         const perc = this.zooming.currentLerpTime / this.animTime;
 
         const currentZoom = this.lerpNumber(0.0, this.zooming.endAmount, easeOutExp(perc));
@@ -117,7 +119,7 @@ export class SmoothCamera extends Camera {
         }
 
         //~ zoom-to-cursor: shifting the camera slightly so that the cursor stays in the same position
-        if (this.zoomToCursor && (change != 0.0)) {
+        if (this.zoomToCursor && (change !== 0.0)) {
             this.adjustZoomToCursor(change);
 
             this._version++;
@@ -162,7 +164,7 @@ export class SmoothCamera extends Camera {
         if (this.orbiting.currentLerpTime > this.animTime) {
             this.orbiting.currentLerpTime = this.animTime;
             this._version++;
-        };
+        }
         const perc = this.orbiting.currentLerpTime / this.animTime;
 
         const currentAngleX = this.lerpNumber(0.0, this.orbiting.endAngleX, easeOutExp(perc));
@@ -175,9 +177,9 @@ export class SmoothCamera extends Camera {
 
         const horizRot = quat.create();
         // quat.setAxisAngle(horizRot, this.up(), deg_to_rad(-rotIncrementY));
-        quat.setAxisAngle(horizRot, vec3.fromValues(0, 1, 0), deg_to_rad(-rotIncrementY));
+        quat.setAxisAngle(horizRot, vec3.fromValues(0, 1, 0), degToRad(-rotIncrementY));
         const vertRot = quat.create();
-        quat.setAxisAngle(vertRot, this.right(), deg_to_rad(rotIncrementX));
+        quat.setAxisAngle(vertRot, this.right(), degToRad(rotIncrementX));
         // quat.setAxisAngle(vertRot, vec3.fromValues(1, 0, 0), deg_to_rad(rotIncrementX));
         const newRot = quat.create();
         quat.mul(newRot, horizRot, vertRot);
@@ -292,7 +294,9 @@ export class SmoothCamera extends Camera {
     public onMouseDown(event: MouseEvent): void {
         super.onMouseDown(event);
         
-        if (this.ignoreEvents) return;
+        if (this.ignoreEvents) {
+            return;
+        }
 
         this.lastMousePos = { x: event.screenX, y: event.screenY };
     }
@@ -300,9 +304,11 @@ export class SmoothCamera extends Camera {
     public onMouseMove(event: MouseEvent): void {
         super.onMouseMove(event);
 
-        if (this.ignoreEvents) return;
+        if (this.ignoreEvents) {
+            return;
+        }
 
-        if (event.buttons == 1 && !event.altKey) //~ => Left button => Orbiting
+        if (event.buttons === 1 && !event.altKey) //~ => Left button => Orbiting
         {
             const delta = { x: event.screenX - this.lastMousePos.x, y: event.screenY - this.lastMousePos.y };
 
@@ -318,10 +324,10 @@ export class SmoothCamera extends Camera {
 
             this.lastMousePos = { x: event.screenX, y: event.screenY };
 
-            console.log('orbiting');
+            console.log("orbiting");
             this._version++;
         }
-        else if ((event.buttons == 4) || (event.buttons == 1 && event.altKey)) //~ => Middle button => Panning
+        else if ((event.buttons === 4) || (event.buttons === 1 && event.altKey)) //~ => Middle button => Panning
         {
             const delta = { x: event.screenX - this.lastMousePos.x, y: event.screenY - this.lastMousePos.y };
 
@@ -366,7 +372,9 @@ export class SmoothCamera extends Camera {
     public onWheelEvent(event: WheelEvent): void {
         super.onWheelEvent(event);
 
-        if (this.ignoreEvents) return;
+        if (this.ignoreEvents) {
+            return;
+        }
 
         const speed = this.zoomingSpeed;
 
@@ -380,9 +388,11 @@ export class SmoothCamera extends Camera {
     public onKeyDown(event: KeyboardEvent): void {
         super.onKeyDown(event);
 
-        if (this.ignoreEvents) return;
+        if (this.ignoreEvents) {
+            return;
+        }
 
-        if (event.key === 't') {
+        if (event.key === "t") {
             console.log("T key pressed!");
             const depthSS = this.depthViewToScreenSpace(10);
             console.log("depth in screenspace: " + depthSS);
@@ -391,7 +401,7 @@ export class SmoothCamera extends Camera {
             const sampleVecWS = vec3.create();
             this.screenToWorldPoint(sampleVecWS, sampleVecSS);
             console.log("sampleVecWS: " + sampleVecWS);
-        } if (event.key === 'r') { //~ testing if known projected WS position unprojects back correctly
+        } if (event.key === "r") { //~ testing if known projected WS position unprojects back correctly
             const origWS = vec3.fromValues(1, 2, 3);
             // let origWS = vec3.fromValues(0, 0, 0);
             //~ project to screenspace
@@ -411,7 +421,7 @@ export class SmoothCamera extends Camera {
             const reconstructedWS = vec3.create();
             this.screenToWorldPoint(reconstructedWS, vecSS);
         }
-        if (event.key === 'z') {
+        if (event.key === "z") {
             if (this.zoomToCursor) {
                 this.zoomToCursor = false;
                 console.log("Zoom-To-Cursor: Switched OFF")
@@ -463,7 +473,7 @@ export class SmoothCamera extends Camera {
         //~ get world-space position from screen-space coordinates
         const worldPos = vec3.create();
         const viewport = vec4.fromValues(0, 0, this.width, this.height); // (x, y, width, height)
-        this.Unproject(worldPos, screenPosition, viewMat, projMat, viewport);
+        this.unproject(worldPos, screenPosition, viewMat, projMat, viewport);
 
         //~ output
         vec3.copy(out, worldPos);
@@ -474,7 +484,7 @@ export class SmoothCamera extends Camera {
         used this: https://gist.github.com/evshiron/8339cd1f1f73925b92e395b6a8aebf80 (evshiron)
         different solution: https://github.com/toji/gl-matrix/issues/101 (mattdesl)
     */
-    protected Unproject(out: vec3, input: vec3, view: mat4, projection: mat4, viewport: vec4): void {
+    protected unproject(out: vec3, input: vec3, view: mat4, projection: mat4, viewport: vec4): void {
         const x = viewport[0];
         const y = viewport[1];
         const width = viewport[2];

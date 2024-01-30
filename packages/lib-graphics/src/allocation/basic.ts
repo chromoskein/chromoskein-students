@@ -81,7 +81,7 @@ export class BasicAllocator extends Allocator {
     }
 
     public deallocate(allocations: Allocation[] | null = null): void {
-        if (allocations == null) {
+        if (allocations === null) {
             this._allocations = [];
             this._gpuBuffer.inner.destroy();
         } else {

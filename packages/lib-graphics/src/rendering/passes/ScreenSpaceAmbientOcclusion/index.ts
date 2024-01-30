@@ -2,7 +2,7 @@ import { GraphicsLibrary, PassRenderSettings } from "../../..";
 import { Pass } from "../shared";
 import { BlueNoise } from "./noise";
 import { Pipelines } from "./pipelines";
-import * as r from 'restructure';
+import * as r from "restructure";
 import { vec3 } from "gl-matrix";
 
 const lerp = (a: number, b: number, f: number): number => {
@@ -76,7 +76,7 @@ export class ScreenSpaceAmbientOcclusionPass extends Pass {
 
         for (let i = 0; i < 2; i++) {
             this._ssaoTextures[i] = this._graphicsLibrary.device.createTexture({
-                format: 'r32float',
+                format: "r32float",
                 size: { width: this.width, height: this.height },
                 usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.STORAGE_BINDING
             });
@@ -93,8 +93,8 @@ export class ScreenSpaceAmbientOcclusionPass extends Pass {
     }
 
     public beforeRender() {
-        const globalsBGL = this._pipelines.bindGroupLayouts.get('Globals');
-        const inputBGL = this._pipelines.bindGroupLayouts.get('Input');
+        const globalsBGL = this._pipelines.bindGroupLayouts.get("Globals");
+        const inputBGL = this._pipelines.bindGroupLayouts.get("Input");
 
         if (this._dirty
             && this.width > 0
@@ -137,7 +137,7 @@ export class ScreenSpaceAmbientOcclusionPass extends Pass {
 
             // Recreate bind groups
             this.globalsBindGroupEven = this._graphicsLibrary.device.createBindGroup({
-                label: 'SSAO Globals Even',
+                label: "SSAO Globals Even",
                 layout: globalsBGL,
                 entries: [
                     { binding: 0, resource: { buffer: this._globalsBuffer, offset: 0 } },
@@ -148,7 +148,7 @@ export class ScreenSpaceAmbientOcclusionPass extends Pass {
             });
 
             this.globalsBindGroupOdd = this._graphicsLibrary.device.createBindGroup({
-                label: 'SSAO Globals Odd',
+                label: "SSAO Globals Odd",
                 layout: globalsBGL,
                 entries: [
                     { binding: 0, resource: { buffer: this._globalsBuffer, offset: 0 } },
@@ -159,7 +159,7 @@ export class ScreenSpaceAmbientOcclusionPass extends Pass {
             });
 
             this.gBufferBindGroup = this._graphicsLibrary.device.createBindGroup({
-                label: 'SSAO G-Buffer',
+                label: "SSAO G-Buffer",
                 layout: inputBGL,
                 entries: [
                     { binding: 0, resource: this._depthTextureView },
@@ -174,10 +174,10 @@ export class ScreenSpaceAmbientOcclusionPass extends Pass {
     }
 
     public render({ encoder, cameraBindGroup }: ScreenSpaceAmbientOcclusionPassSettings): void {
-        const pipeline = this._pipelines.computePipelines.get('SSAO');
+        const pipeline = this._pipelines.computePipelines.get("SSAO");
 
         if (this._ssaoTextures.length < 2
-            || this._noise == null
+            || this._noise === null
             || !this.globalsBindGroupEven || !this.globalsBindGroupOdd || !this.gBufferBindGroup || !pipeline) {
             return;
         }
@@ -188,7 +188,7 @@ export class ScreenSpaceAmbientOcclusionPass extends Pass {
 
         encoder.setPipeline(pipeline);
         encoder.setBindGroup(0, cameraBindGroup);
-        encoder.setBindGroup(1, this.currentTexture == 0 ? this.globalsBindGroupEven : this.globalsBindGroupOdd);
+        encoder.setBindGroup(1, this.currentTexture === 0 ? this.globalsBindGroupEven : this.globalsBindGroupOdd);
         encoder.setBindGroup(2, this.gBufferBindGroup);
         encoder.dispatchWorkgroups(
             Math.ceil((this.width + 7) / 8),
@@ -197,10 +197,10 @@ export class ScreenSpaceAmbientOcclusionPass extends Pass {
 
         this._accumulatedSamplesCount += this._globals.samplesPerPass;
         // this.currentTexture = (this.currentTexture + 1) % 2;
-    };
+    }
 
     public get ssaoTexture(): GPUTexture | null {
-        return this._ssaoTextures.length == 2 ? this._ssaoTextures[1] : null;
+        return this._ssaoTextures.length === 2 ? this._ssaoTextures[1] : null;
     }
 
     public set depthTextureView(depthTextureView: GPUTextureView | null) {
@@ -227,6 +227,6 @@ export class ScreenSpaceAmbientOcclusionPass extends Pass {
         return this._accumulatedSamplesCount;
     }
 
-    public setDirty() { this._dirty = true; };
-    public dirty(): boolean { return this._dirty; };
+    public setDirty() { this._dirty = true; }
+    public dirty(): boolean { return this._dirty; }
 }

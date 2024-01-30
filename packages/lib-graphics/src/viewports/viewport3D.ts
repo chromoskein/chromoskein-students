@@ -1,9 +1,9 @@
-import { Camera3D, GraphicsLibrary, OrbitCamera, SmoothCamera, VRCamera } from "..";
+import { Camera3D, GraphicsLibrary } from "..";
 import { DeferredPass } from "../rendering";
 import { Scene } from "../scene";
 import { mergeShader } from "./mergeShader";
 import { Viewport } from "./viewport";
-import * as r from 'restructure';
+import * as r from "restructure";
 import { ScreenSpaceAmbientOcclusionPass } from "../rendering/passes/ScreenSpaceAmbientOcclusion";
 
 export class ViewportPipelines {
@@ -24,7 +24,7 @@ export class ViewportPipelines {
         this.renderPipelines = new Map();
 
         //#region Graphics Library Requirements
-        const cameraBGL = graphicsLibrary.bindGroupLayouts.get('camera');
+        const cameraBGL = graphicsLibrary.bindGroupLayouts.get("camera");
 
         if (!cameraBGL) {
             throw "Camera BGL of Graphics Library should have been initialized at this point."
@@ -32,17 +32,17 @@ export class ViewportPipelines {
         //#endregion Graphics Library Requirements
 
         const shaderModule = device.createShaderModule({
-            label: `Merge`,
+            label: "Merge",
             code: mergeShader
         });
-        this.shaderModules.set('Merge', shaderModule);
+        this.shaderModules.set("Merge", shaderModule);
 
         const globalsBGL = device.createBindGroupLayout({
             entries: [
-                { binding: 0, visibility: GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
+                { binding: 0, visibility: GPUShaderStage.FRAGMENT, buffer: { type: "uniform" } },
             ]
         });
-        this.bindGroupLayouts.set('MergeGlobals', globalsBGL);
+        this.bindGroupLayouts.set("MergeGlobals", globalsBGL);
 
         const inputTexturesBGL = device.createBindGroupLayout({
             entries: [
@@ -52,15 +52,15 @@ export class ViewportPipelines {
                 { binding: 3, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: "unfilterable-float", viewDimension: "2d" } },
             ]
         });
-        this.bindGroupLayouts.set('MergeInputTextures', inputTexturesBGL);
+        this.bindGroupLayouts.set("MergeInputTextures", inputTexturesBGL);
 
         const pipelineLayout = device.createPipelineLayout({
             bindGroupLayouts: [globalsBGL, inputTexturesBGL],
         });
-        this.pipelineLayouts.set('Merge', pipelineLayout);
+        this.pipelineLayouts.set("Merge", pipelineLayout);
 
-        this.renderPipelines.set('Merge', device.createRenderPipeline({
-            label: `Merge`,
+        this.renderPipelines.set("Merge", device.createRenderPipeline({
+            label: "Merge",
             layout: pipelineLayout,
             vertex: {
                 module: shaderModule,
@@ -75,8 +75,8 @@ export class ViewportPipelines {
 
             },
             primitive: {
-                topology: 'triangle-strip',
-                stripIndexFormat: 'uint32',
+                topology: "triangle-strip",
+                stripIndexFormat: "uint32",
             },
         }));
 
@@ -84,7 +84,7 @@ export class ViewportPipelines {
     }
 
     public static getInstance(graphicsLibrary: GraphicsLibrary): ViewportPipelines {
-        if (this._instance && ViewportPipelines._lastDeviceUsed == graphicsLibrary.device) {
+        if (this._instance && ViewportPipelines._lastDeviceUsed === graphicsLibrary.device) {
             return this._instance;
         }
 
@@ -126,7 +126,7 @@ export class Viewport3D extends Viewport {
         });
         this.mergeGlobals = MergeShaderGlobalsStruct.fromBuffer(new Uint8Array(128));
         this.mergeBindGroupGlobals = graphicsLibrary.device.createBindGroup({
-            layout: this._pipelines.bindGroupLayouts.get('MergeGlobals')!,
+            layout: this._pipelines.bindGroupLayouts.get("MergeGlobals")!,
             entries: [{ binding: 0, resource: { buffer: this.mergeGlobalsBuffer } }],
         });
     }
@@ -152,7 +152,7 @@ export class Viewport3D extends Viewport {
         const device = this.graphicsLibrary.device;
 
         //#region Camera
-        const cameraBindGroupLayout = this.graphicsLibrary.bindGroupLayouts.get('camera');
+        const cameraBindGroupLayout = this.graphicsLibrary.bindGroupLayouts.get("camera");
 
         if (!this._camera || !this._scene || !cameraBindGroupLayout) {
             return;
@@ -173,7 +173,7 @@ export class Viewport3D extends Viewport {
         //#endregion Before Render
 
         //#region Merge Pipeline
-        const mergePipeline = this._pipelines.renderPipelines.get('Merge');
+        const mergePipeline = this._pipelines.renderPipelines.get("Merge");
 
         const mergeGlobalsArrayBuffer = new Uint8Array(128);
         mergeGlobalsArrayBuffer.set(MergeShaderGlobalsStruct.toBuffer(this.mergeGlobals), 0);
@@ -192,7 +192,7 @@ export class Viewport3D extends Viewport {
         computePassEncoder.end();
 
         let mergeBindGroupInputTextures = null;
-        const layout = this._pipelines.bindGroupLayouts.get('MergeInputTextures');
+        const layout = this._pipelines.bindGroupLayouts.get("MergeInputTextures");
         if (this.deferredPass.colorTexture && this.deferredPass.volumeTexture && this.deferredPass.aoTexture && this.ssaoPass.ssaoTexture && layout) {
             mergeBindGroupInputTextures = this.graphicsLibrary.device.createBindGroup({
                 layout,
@@ -211,8 +211,8 @@ export class Viewport3D extends Viewport {
                     {
                         view: textureView,
                         clearValue: this.clearColor,
-                        loadOp: 'clear',
-                        storeOp: 'store',
+                        loadOp: "clear",
+                        storeOp: "store",
                     },
                 ]
             });

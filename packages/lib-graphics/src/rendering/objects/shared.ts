@@ -12,8 +12,8 @@ export abstract class IObject {
 
     protected _frameID: number = 0;
 
-    public static variableName = 'iParametric';
-    public static typeName = 'IParametric';
+    public static variableName = "iParametric";
+    public static typeName = "IParametric";
 
     public parent: IObject | null = null;
 
@@ -69,7 +69,7 @@ export abstract class ConcreteObject extends IObject {
         if (this.hidden) {
             return;
         }
-    };
+    }
     
     /**
      * Whether this object should be part of bounding volume hierarchy.

@@ -12,6 +12,42 @@ export class BinPosition {
     to = 0;
 }
 
+function distanceMapBindGroupLayout(): GPUBindGroupLayoutDescriptor {
+    return {
+        label: "Distance Map BGL",
+        entries: [
+            {
+                binding: 0,
+                visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+                buffer: {
+                    type: "uniform",
+                }
+            },
+            {
+                binding: 1,
+                visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+                buffer: {
+                    type: "uniform",
+                }
+            },
+            {
+                binding: 2,
+                visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+                buffer: {
+                    type: "read-only-storage",
+                }
+            },
+            {
+                binding: 3,
+                visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+                buffer: {
+                    type: "read-only-storage",
+                }
+            }
+        ],
+    };
+}
+
 function distanceMapPipelineLayout(device : GPUDevice): GPUPipelineLayoutDescriptor {
     return {
         bindGroupLayouts: [
@@ -37,45 +73,8 @@ function distanceMapPipelineDescriptor(device: GPUDevice): GPURenderPipelineDesc
             ]
         },
         primitive: {
-            topology: 'triangle-list',
+            topology: "triangle-list",
         },
-    };
-};
-
-
-function distanceMapBindGroupLayout(): GPUBindGroupLayoutDescriptor {
-    return {
-        label: "Distance Map BGL",
-        entries: [
-            {
-                binding: 0,
-                visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-                buffer: {
-                    type: 'uniform',
-                }
-            },
-            {
-                binding: 1,
-                visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-                buffer: {
-                    type: 'uniform',
-                }
-            },
-            {
-                binding: 2,
-                visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-                buffer: {
-                    type: 'read-only-storage',
-                }
-            },
-            {
-                binding: 3,
-                visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-                buffer: {
-                    type: 'read-only-storage',
-                }
-            }
-        ],
     };
 }
 
@@ -189,7 +188,7 @@ export class DistanceViewport {
         this.graphicsLibrary = graphicsLibrary;
         this._canvas = canvas;
 
-        if (this._canvas != null) {
+        if (this._canvas !== null) {
             this._context = this._canvas.getContext("webgpu");
 
             const parent = this._canvas.parentElement;
@@ -207,7 +206,7 @@ export class DistanceViewport {
             });
 
             if (parent) {
-                observer.observe(parent, { box: 'device-pixel-content-box' });
+                observer.observe(parent, { box: "device-pixel-content-box" });
             }
         }
 
@@ -223,11 +222,11 @@ export class DistanceViewport {
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
         });
 
-        if (positions != null) {
+        if (positions !== null) {
             this.setPositions(positions);
         }
 
-        if (colors != null && colorIndices != null) {
+        if (colors !== null && colorIndices !== null) {
             this.setColors(colors, colorIndices);
         }
     }
@@ -279,7 +278,7 @@ export class DistanceViewport {
 
         this._context.configure({
             device: this.graphicsLibrary.device,
-            format: 'bgra8unorm',
+            format: "bgra8unorm",
             usage: GPUTextureUsage.RENDER_ATTACHMENT,
             alphaMode: "opaque",
             // size,
@@ -295,7 +294,7 @@ export class DistanceViewport {
         //const renderPipelines = this.graphicsLibrary.renderPipelines;
         //const bindGroupLayouts = this.graphicsLibrary.bindGroupLayouts;
 
-        if (this._camera == null || this.width <= 0 || this.height <= 0 || this.globals.sizes[0] <= 0 || this.positions == null || this.colors == null) {
+        if (this._camera === null || this.width <= 0 || this.height <= 0 || this.globals.sizes[0] <= 0 || this.positions === null || this.colors === null) {
             return;
         }
 
@@ -306,8 +305,8 @@ export class DistanceViewport {
                 {
                     view: textureView,
                     clearValue: { r: 0.0, g: 0.0, b: 0.0, a: 1.0 },
-                    loadOp: 'clear',
-                    storeOp: 'store',
+                    loadOp: "clear",
+                    storeOp: "store",
                 },
             ],
         };
@@ -380,7 +379,7 @@ export class DistanceViewport {
     /// Setters & Getters
     ///
     public getHoveredElement(mousePosition: vec2, lod: number | null = null): BinPosition | null {
-        if (this._camera == null || this.globals.sizes[0] == 0) {
+        if (this._camera === null || this.globals.sizes[0] === 0) {
             return null;
         }
 
@@ -418,7 +417,7 @@ export class DistanceViewport {
     }
 
     public getVisibleRectangle(ndcCorners: Array<vec4> | null = null): Array<vec4> {
-        if (ndcCorners == null) {
+        if (ndcCorners === null) {
             ndcCorners = [
                 vec4.fromValues(-1.0, 1.0, 0.0, 1.0),
                 vec4.fromValues(1.0, 1.0, 0.0, 1.0),
@@ -530,16 +529,16 @@ export class DistanceViewport {
     }
 
     public setPositions(positions: Array<vec3>): void {
-        let pos = new Array<vec4>();
+        const pos = new Array<vec4>();
         for (let i = 0; i < positions.length; i++) {
             pos.push(vec4.fromValues(positions[i][0], positions[i][1], positions[i][2], 1.0))
         }
 
-        console.time('distanceMap::setPositions');
+        console.time("distanceMap::setPositions");
         const device = this.graphicsLibrary.device;
         this.globals = globalsNew();
 
-        let result = this.maximumDistances(pos, this.globals);
+        const result = this.maximumDistances(pos, this.globals);
         this.globals = result.globals;
         this.positionsCPU = result.positions;
 
@@ -579,7 +578,7 @@ export class DistanceViewport {
         );
 
         this.recalculateLoD();
-        console.timeEnd('distanceMap::setPositions');
+        console.timeEnd("distanceMap::setPositions");
 
         this.cameraConfiguration = {
             type: CameraConfigurationType.Ortho,
@@ -624,7 +623,7 @@ export class DistanceViewport {
             currentLoD += 1;
 
             let newSize = 0;
-            if (currentSize % 2 == 0) {
+            if (currentSize % 2 === 0) {
                 newSize = Math.floor(currentSize / 2);
             } else {
                 newSize = evenStrategy ? Math.floor(currentSize / 2) : Math.floor(currentSize / 2) + 1;
@@ -632,7 +631,7 @@ export class DistanceViewport {
 
             const currentOffset = globals.offsets[currentLoD - 1];
 
-            const end = (currentSize % 2 == 0) ? newSize : newSize - 1;
+            const end = (currentSize % 2 === 0) ? newSize : newSize - 1;
             for (let i = 0; i < end; i++) {
                 const newPosition = vec4.add(vec4.create(), positions[currentOffset + i * 2], positions[currentOffset + i * 2 + 1]);
                 vec4.scale(newPosition, newPosition, 0.5);
@@ -662,7 +661,7 @@ export class DistanceViewport {
 
             let maximumDistance = 0.0;
 
-            console.time('distanceMap::setPositions::maxDistance');
+            console.time("distanceMap::setPositions::maxDistance");
             const subsetStart = globals.offsets[currentLoD];
             const subsetEnd = globals.offsets[currentLoD] + globals.sizes[currentLoD];
             for (let i = subsetStart; i < subsetEnd; i++) {
@@ -677,7 +676,7 @@ export class DistanceViewport {
                     }
                 }
             }
-            console.timeEnd('distanceMap::setPositions::maxDistance');
+            console.timeEnd("distanceMap::setPositions::maxDistance");
 
             globals.maxDistances[currentLoD] = Math.sqrt(maximumDistance);
         }
@@ -712,7 +711,7 @@ export class DistanceViewport {
             currentLoD += 1;
 
             let newSize = 0;
-            if (currentSize % 2 == 0) {
+            if (currentSize % 2 === 0) {
                 newSize = Math.floor(currentSize / 2);
             } else {
                 newSize = evenStrategy ? Math.floor(currentSize / 2) : Math.floor(currentSize / 2) + 1;
@@ -721,7 +720,7 @@ export class DistanceViewport {
             const previousOffset = this.globals.offsets[currentLoD - 1];
             const currentOffset = previousOffset + this.globals.sizes[currentLoD - 1];
 
-            const end = (currentSize % 2 == 0) ? newSize : newSize - 1;
+            const end = (currentSize % 2 === 0) ? newSize : newSize - 1;
             for (let i = 0; i < end; i++) {
                 const newColorIndex = Math.max(newColorIndices[previousOffset + i * 2], newColorIndices[previousOffset + i * 2 + 1]);
 

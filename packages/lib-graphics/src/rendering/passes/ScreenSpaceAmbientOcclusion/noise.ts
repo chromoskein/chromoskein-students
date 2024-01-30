@@ -1,6 +1,6 @@
 import { GraphicsLibrary } from "../../..";
-import { Image } from 'image-js';
-import noiseImagePNG from './HDR_RGB_0.png';
+import { Image } from "image-js";
+import noiseImagePNG from "./HDR_RGB_0.png";
 import { vec3 } from "gl-matrix";
 
 export class BlueNoise {
@@ -16,20 +16,20 @@ export class BlueNoise {
     }
 
     public static async getInstance(graphicsLibrary: GraphicsLibrary): Promise<BlueNoise> {
-        if (this._instance && BlueNoise._lastDeviceUsed == graphicsLibrary.device) {
+        if (this._instance && BlueNoise._lastDeviceUsed === graphicsLibrary.device) {
             return this._instance;
         }
 
-        let noiseTexture = graphicsLibrary.device.createTexture({
+        const noiseTexture = graphicsLibrary.device.createTexture({
             size: {
                 width: 64,
                 height: 64,
                 depthOrArrayLayers: 1,
             },
-            format: 'rgba32float',
+            format: "rgba32float",
             usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING
         });
-        let normalizedImageSamples = [];
+        const normalizedImageSamples = [];
 
         const noiseImage = await Image.load(noiseImagePNG);
 

@@ -24,7 +24,7 @@ export class Ortho2DCamera {
     private _translateX = 0.0;
     private _translateY = 0.0;
 
-    protected _event_started_elsewhere = false;
+    protected _eventStartedElsewhere = false;
     protected _ignoreEvents = false;
 
     protected _version: number = 0;
@@ -151,7 +151,7 @@ export class Ortho2DCamera {
         return this._viewProjectionInverseMatrix;
     }
     get ignoreEvents() {
-        return this._event_started_elsewhere || this._ignoreEvents;
+        return this._eventStartedElsewhere || this._ignoreEvents;
     }
 
     // public get viewbox(): "" {
@@ -238,7 +238,9 @@ export class Ortho2DCamera {
     /// Events
     ///
     public onMouseDown(event: MouseEvent) {
-        if (this.ignoreEvents) return;
+        if (this.ignoreEvents) {
+            return;
+        }
 
         this.lastX = event.offsetX;
         this.lastY = event.offsetY;
@@ -248,7 +250,9 @@ export class Ortho2DCamera {
     }
 
     public onMouseMove(event: MouseEvent) {
-        if (this.ignoreEvents) return;
+        if (this.ignoreEvents) {
+            return;
+        }
 
         if (this.mousePressed) {
             // const zoomRatio = this.zoom / this.maxZoom;
@@ -267,8 +271,8 @@ export class Ortho2DCamera {
     }
 
     public onMouseUp(event: MouseEvent) {
-        if (event.buttons == 0) {
-            this._event_started_elsewhere = false;
+        if (event.buttons === 0) {
+            this._eventStartedElsewhere = false;
         }
 
         this.mousePressed = false;
@@ -277,7 +281,9 @@ export class Ortho2DCamera {
     }
 
     public onWheelEvent(event: WheelEvent) {
-        if (this.ignoreEvents) return;
+        if (this.ignoreEvents) {
+            return;
+        }
 
         this.zoom += (event.deltaY / 100.0) * (this._maxZoom / 50.0);
 
@@ -285,8 +291,8 @@ export class Ortho2DCamera {
     }
 
     public onMouseEnter(event: MouseEvent) {
-        if (event.buttons != 0) {
-            this._event_started_elsewhere = true;
+        if (event.buttons !== 0) {
+            this._eventStartedElsewhere = true;
         }
 
     }

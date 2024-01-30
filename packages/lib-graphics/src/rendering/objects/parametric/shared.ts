@@ -4,8 +4,8 @@ import type { Ray } from "../../../shared";
 import { ConcreteObject } from "../shared";
 
 export abstract class IParametricObject extends ConcreteObject {   
-    public static variableName = 'iParametric';
-    public static typeName = 'IParametric';
+    public static variableName = "iParametric";
+    public static typeName = "IParametric";
 
     public getTypeName() { return IParametricObject.typeName; }
 
@@ -17,14 +17,14 @@ export abstract class IParametricObject extends ConcreteObject {
     public collisionEnabled: boolean = true;
 
     //#region GPU Functions for Shader Construction
-    public static gpuCodeGlobals: string = ``;
+    public static gpuCodeGlobals: string = "";
 
     public static gpuCodeGetObject: string = `let ${this.variableName} = ${this.typeName};`;
     public static gpuCodeGetObjectUntypedArray: string = `
         let ${this.variableName}: ${this.typeName} = ${this.typeName}();
     `;
 
-    public static resize(graphicsLibrary: GraphicsLibrary, width: number, height: number, ): void {};
+    public static resize(graphicsLibrary: GraphicsLibrary, width: number, height: number, ): void {}
 
     constructor(id: number, graphicsLibrary: GraphicsLibrary, allocator: Allocator) {
         super(id, graphicsLibrary, allocator);
@@ -51,7 +51,7 @@ export abstract class IParametricObject extends ConcreteObject {
      *  let color = sphereUniform[instance].color;
      * ```
      */
-     public static gpuCodeGetOutputValue(variable: 'color' | 'normal' | 'ao'): string { return ""; };
+     public static gpuCodeGetOutputValue(variable: "color" | "normal" | "ao"): string { return ""; }
 
     /**
      * GPU function that projects this parametric object's bounding rectangle based on current camera.
