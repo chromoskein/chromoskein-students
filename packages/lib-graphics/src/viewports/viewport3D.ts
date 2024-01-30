@@ -1,4 +1,4 @@
-import { GraphicsLibrary, OrbitCamera, SmoothCamera } from "..";
+import { Camera3D, GraphicsLibrary, OrbitCamera, SmoothCamera, VRCamera } from "..";
 import { DeferredPass } from "../rendering";
 import { Scene } from "../scene";
 import { mergeShader } from "./mergeShader";
@@ -115,7 +115,7 @@ export class Viewport3D extends Viewport {
     protected deferredPass: DeferredPass = new DeferredPass(this.graphicsLibrary);
     protected ssaoPass: ScreenSpaceAmbientOcclusionPass = new ScreenSpaceAmbientOcclusionPass(this.graphicsLibrary, 0.3);
 
-    constructor(graphicsLibrary: GraphicsLibrary, scene: Scene | null = null, camera: OrbitCamera | SmoothCamera | null = null) {
+    constructor(graphicsLibrary: GraphicsLibrary, scene: Scene | null = null, camera: Camera3D | null = null) {
         super(graphicsLibrary, scene, camera);
 
         this._pipelines = ViewportPipelines.getInstance(graphicsLibrary);

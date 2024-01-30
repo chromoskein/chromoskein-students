@@ -2,9 +2,8 @@ import { vec3 } from "gl-matrix";
 
 export class Ray {
     origin: vec3 = vec3.fromValues(0.0, 0.0, 0.0);
-    direction: vec3 = vec3.fromValues(0.0, 0.0, 0.0);
-
     minT = 0.0;
+    direction: vec3 = vec3.fromValues(0.0, 0.0, 0.0);
     maxT = Number.MAX_VALUE;
 
     constructor(origin: vec3, direction: vec3) {

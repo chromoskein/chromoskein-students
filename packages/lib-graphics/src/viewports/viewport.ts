@@ -1,4 +1,4 @@
-import { OrbitCamera, SmoothCamera } from "../cameras/index";
+import { Camera3D, OrbitCamera, SmoothCamera, VRCamera } from "../cameras/index";
 import { Scene } from "../scene";
 import { GraphicsLibrary } from "..";
 
@@ -9,7 +9,7 @@ export abstract class Viewport {
   protected height = 0;
 
   protected _scene: Scene | null;
-  protected _camera: OrbitCamera | SmoothCamera | null = null;
+  protected _camera: Camera3D | null = null;
 
   //#region Options
   public clearColor: GPUColorDict = { r: 0.0, g: 0.0, b: 0.0, a: 1.0 };
@@ -37,7 +37,7 @@ export abstract class Viewport {
   constructor(
     graphicsLibrary: GraphicsLibrary,
     scene: Scene | null = null,
-    camera: OrbitCamera | SmoothCamera | null = null) {
+    camera: Camera3D | null = null) {
     this.graphicsLibrary = graphicsLibrary;
 
     this._camera = camera ?? new OrbitCamera(this.graphicsLibrary.device, this.width, this.height);
@@ -119,7 +119,7 @@ export abstract class Viewport {
     return this._scene;
   }
 
-  public set camera(camera: OrbitCamera | SmoothCamera | null) {
+  public set camera(camera: Camera3D | null) {
     if (camera == this._camera) {
       return;
     }
@@ -133,7 +133,7 @@ export abstract class Viewport {
     this._cameraVersionUsed = 0;
   }
 
-  public get camera(): OrbitCamera | SmoothCamera | null {
+  public get camera(): Camera3D | null {
     return this._camera;
   }
 }

@@ -1,5 +1,6 @@
 export * from "./shared"
 export * from "./sphere"
+export * from "./ray"
 export * from "./roundedCone"
 export * from "./roundedConeInstanced"
 export * from "./circle"

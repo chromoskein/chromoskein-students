@@ -64,6 +64,26 @@ export const sphereToBoundingRectangleFunction: string = /* wgsl */`
         );
     }
 
+    fn fullQuad(vertex: u32) -> vec2<f32> {
+        var corner: vec2<f32>;
+        switch(vertex) {
+          case 0: {
+            corner = vec2<f32>(-1, 1);
+          }
+          case 1: {
+            corner = vec2<f32>(1, 1);
+          }
+          case 2: {
+            corner = vec2<f32>(-1, -1);
+          }
+          default: { // 3
+            corner = vec2<f32>(1, -1);
+          }
+        }
+    
+        return corner;
+    }
+
     fn sphereToBoundingRectangleVertex(position: vec3<f32>, radius: f32, vertex: u32) -> vec2<f32> {
         let T: mat4x4<f32> = mat4x4<f32>(
             vec4<f32>(radius, 0.0, 0.0, 0.0),

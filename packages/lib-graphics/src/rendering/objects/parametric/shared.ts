@@ -14,6 +14,8 @@ export abstract class IParametricObject extends ConcreteObject {
     //#region CPU Intersection Functions
     public abstract rayIntersection(ray: Ray): number | null;
 
+    public collisionEnabled: boolean = true;
+
     //#region GPU Functions for Shader Construction
     public static gpuCodeGlobals: string = ``;
 

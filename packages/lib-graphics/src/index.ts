@@ -1,7 +1,7 @@
-import type { OrbitCamera } from "./cameras/index";
+import type { Camera, Camera3D, OrbitCamera } from "./cameras/index";
 import type { SmoothCamera } from "./cameras/smooth";
 import { Mesh } from "./rendering/objects/mesh";
-import { Circle, RoundedCone, RoundedConeInstanced, Sphere, Spline, SignedDistanceGrid, Volume } from "./rendering/objects/parametric";
+import { Circle, RoundedCone, RoundedConeInstanced, Sphere, Spline, SignedDistanceGrid, Volume, RayObject } from "./rendering/objects/parametric";
 import { Scene } from "./scene";
 import { DistanceViewport } from "./viewports/distanceViewport";
 import { Viewport3D } from "./viewports/index";
@@ -13,9 +13,10 @@ export * from "./utils";
 export * from "./culling";
 export * from "./rendering";
 export * from "./shared";
+export * from "./scene";
 
 export let ParametricShapes = [
-    Circle, Sphere, RoundedCone, RoundedConeInstanced, Spline, SignedDistanceGrid
+    Circle, Sphere, RoundedCone, RoundedConeInstanced, Spline, SignedDistanceGrid, RayObject
 ];
 
 export let MeshShapes = [Mesh];
@@ -87,7 +88,7 @@ export class GraphicsLibrary {
         });
     }
 
-    public create3DViewport(scene: Scene | null = null, camera: OrbitCamera | SmoothCamera | null = null): Viewport3D {
+    public create3DViewport(scene: Scene | null = null, camera: Camera3D | null = null): Viewport3D {
         return new Viewport3D(this, scene, camera);
     }
 

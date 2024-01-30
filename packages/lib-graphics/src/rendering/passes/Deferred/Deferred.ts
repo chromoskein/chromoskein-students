@@ -1,10 +1,11 @@
-import { GraphicsLibrary, IObject, Mesh, MeshShapes, ParametricShapes } from "../../..";
+import { ComposedObject, ConcreteObject, GraphicsLibrary, IObject, Mesh, MeshShapes, ParametricShapes } from "../../..";
 import type { Scene } from "../../../scene";
 import { IParametricObject, Volume } from "../../objects/parametric";
 import type { PassRenderSettings } from "../shared";
 import { Pass } from "../shared";
 import { meshShaderTemplate } from "./MeshShaderTemplate";
 import { parametricShaderTemplate } from "./ParametricShaderTemplate";
+import { transparentParametricShaderTemplate } from "./TransparentParametricShaderTemplate";
 import { volumeShaderTemplate } from "./VolumeShaderTemplate";
 
 class Pipelines {
@@ -73,6 +74,18 @@ class Pipelines {
                     targets: [// Color
                         {
                             format: navigator.gpu.getPreferredCanvasFormat(),
+                            blend: {
+                                color: {
+                                    srcFactor: 'src-alpha',
+                                    dstFactor: 'one-minus-src-alpha',
+                                    operation: 'add',
+                                },
+                                alpha: {
+                                    operation: 'add',
+                                    srcFactor: 'zero',
+                                    dstFactor: 'one',
+                                }
+                            },
                         },
                         // World Positions
                         // {
@@ -99,6 +112,72 @@ class Pipelines {
                     depthCompare: 'greater',
                     format: 'depth32float',
                 },
+            }));
+        }
+
+        // Transparrent
+        for (const ty of ParametricShapes) {
+            const shaderCode = transparentParametricShaderTemplate(
+                ty.variableName,
+                ty.typeName,
+                ty.gpuCodeGlobals,
+                ty.gpuCodeGetObject,
+                ty.gpuCodeGetBoundingRectangleVertex,
+                ty.gpuCodeIntersectionTest,
+                {
+                    color: ty.gpuCodeGetOutputValue('color'),
+                },
+                ty.gpuCodeGetIntersection(ty.variableName, ty.typeName)
+            );
+
+            const passName = `TransparentDeferredPass-${ty.typeName}`;
+
+            const shaderModule = device.createShaderModule({
+                label: passName,
+                code: shaderCode
+            });
+            this.shaderModules.set(passName, shaderModule);
+
+            const pipelineLayout = device.createPipelineLayout({
+                label: passName,
+                bindGroupLayouts: [...[cameraBGL], ...ty.bindGroupLayouts],
+            });
+            this.pipelineLayouts.set(passName, pipelineLayout);
+
+            this.renderPipelines.set(passName, device.createRenderPipeline({
+                label: passName,
+                layout: pipelineLayout,
+                vertex: {
+                    module: shaderModule,
+                    entryPoint: "main_vertex",
+                },
+                fragment: {
+                    module: shaderModule,
+                    entryPoint: "main_fragment",
+                    targets: [// Color
+                        {
+                            format: navigator.gpu.getPreferredCanvasFormat(),
+                            blend: {
+                                color: {
+                                    srcFactor: 'src-alpha',
+                                    dstFactor: 'one-minus-src-alpha',
+                                    operation: 'add',
+                                },
+                                alpha: {
+                                    operation: 'add',
+                                    srcFactor: 'zero',
+                                    dstFactor: 'one',
+                                }
+                            },
+                        }
+                    ]
+
+                },
+                primitive: {
+                    topology: 'triangle-strip',
+                    stripIndexFormat: 'uint32',
+                    cullMode: 'none',
+                }
             }));
         }
 
@@ -355,8 +434,8 @@ export class DeferredPass extends Pass {
         });
 
         renderPass.setBindGroup(0, cameraBindGroup);
-        const nonVolumeObjects = scene.objects.filter(object => !(object instanceof Volume)) as IObject[];
-        for (const object of nonVolumeObjects) {
+        const nonTransparentObjects = scene.objects.filter(object => !(object instanceof Volume || (object instanceof ConcreteObject && object.transparent))) as IObject[];
+        for (const object of nonTransparentObjects) {
             if (object instanceof IParametricObject) {
                 const pipeline = this._pipelines.renderPipelines.get(object.getTypeName());
 
@@ -376,6 +455,33 @@ export class DeferredPass extends Pass {
         }
 
         renderPass.end();
+
+        const transparrentRenderPass = encoder.beginRenderPass({
+            colorAttachments: [
+                {
+                    view: this._colorTexture.createView(),
+                    clearValue: { r: 0.0, g: 0.0, b: 0.0, a: 1.0 },
+                    loadOp: 'load',
+                    storeOp: 'store',
+                },
+            ]
+        });
+
+        transparrentRenderPass.setBindGroup(0, cameraBindGroup);
+        
+        const transparentObjects = scene.objects.filter(object => object instanceof ConcreteObject && object.transparent) as IObject[];
+        for (const object of transparentObjects) {
+            if (object instanceof IParametricObject) {
+                const pipeline = this._pipelines.renderPipelines.get(`TransparentDeferredPass-${object.getTypeName()}`);
+
+                if (!pipeline) continue;
+
+                transparrentRenderPass.setPipeline(pipeline);
+                object.record(transparrentRenderPass, 1, frameID);
+            }
+        }
+
+        transparrentRenderPass.end();
 
         // Volumetric Render Pass
         const volumePipeline = this._pipelines.renderPipelines.get('DeferredPass-Volume');

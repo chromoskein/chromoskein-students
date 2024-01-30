@@ -1,5 +1,6 @@
+import { vec3 } from "gl-matrix";
 import type { Allocator, GraphicsLibrary } from "../../..";
-import type { BoundingBox, Ray } from "../../../shared";
+import { BoundingBoxEmpty, type BoundingBox, type Ray, BoundingBoxExtendByPoint, BoundingBoxCalculateCenter } from "../../../shared";
 import { IParametricObject } from "./shared";
 import * as r from 'restructure';
 
@@ -88,7 +89,7 @@ export class Sphere extends IParametricObject {
             
             var result = (ambient + diffuse) * sphere.color.rgb;
 
-            return vec4(result, 1.0);
+            return vec4(result, sphere.color.a);
         }
     `;
 
@@ -114,7 +115,8 @@ export class Sphere extends IParametricObject {
         return /* wgsl */`
         var intersection = ray${typeName}Intersection(ray, ${name});
         var color = vec4<f32>(calculateLight(ray, intersection));
-        `}
+        `
+    }
 
     static gpuCodeGetBoundingRectangleVertex = `
         let boundingRectangleVertex = sphereToBoundingRectangleVertex(${this.variableName}.center.xyz, ${this.variableName}.radius, vertexIndex);
@@ -122,11 +124,40 @@ export class Sphere extends IParametricObject {
     //#endregion GPU Code
 
     public rayIntersection(ray: Ray): number | null {
-        return null;
+        if(!this.collisionEnabled){
+            return null;
+        }
+
+        const center = this.properties.center;
+        const radius = this.properties.radius;
+        
+        let oc = vec3.create();
+        vec3.sub(oc, ray.origin, center);
+        let b = vec3.dot(oc, ray.direction);
+        let c = vec3.dot( oc, oc ) - radius * radius;
+        var h = b*b - c;
+    
+        // no intersection
+        if(h < 0.0) {
+            return null;
+        }
+        h = Math.sqrt( h );
+        let t = -b - h;
+        return t;
     };
 
     public toBoundingBoxes(): BoundingBox[] {
-        return [];
+        const result = BoundingBoxEmpty();
+
+        const spherePosition = this.properties.center;
+        const sphereRadius = this.properties.radius;
+    
+        BoundingBoxExtendByPoint(result, vec3.add(vec3.create(), spherePosition, vec3.fromValues(sphereRadius, sphereRadius, sphereRadius)));
+        BoundingBoxExtendByPoint(result, vec3.add(vec3.create(), spherePosition, vec3.fromValues(-sphereRadius, -sphereRadius, -sphereRadius)));
+    
+        BoundingBoxCalculateCenter(result);
+    
+        return [result];
     }
 
     private _bindGroup: GPUBindGroup | null = null;
@@ -180,5 +211,9 @@ export class Sphere extends IParametricObject {
     public toBuffer(buffer: ArrayBuffer, offset: number): void {
         const u8View = new Uint8Array(buffer, offset);
         u8View.set(SphereStruct.toBuffer(this.properties), 0);
+    }
+
+    public setTransparent(){
+        this._transparent = true;
     }
 }

@@ -1,4 +1,4 @@
-import { mat4, vec3, vec4 } from "gl-matrix";
+import { mat4, quat, vec3, vec4 } from "gl-matrix";
 
 export function toRadian(n: number) {
     return n * (Math.PI / 180);
@@ -65,6 +65,7 @@ export type SmoothCameraConfiguration = {
 export enum ProjectionType {
     Perpsective,
     Orthographic,
+    Custom
 }
 
 export class Camera {

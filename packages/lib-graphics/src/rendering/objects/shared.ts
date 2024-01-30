@@ -93,8 +93,8 @@ export abstract class ConcreteObject extends IObject {
     public get visible(): boolean { return this._visible; }
     public get hidden(): boolean { return !this._visible; }
 
-    protected get opaque(): boolean { return !this._transparent; }
-    protected get transparent(): boolean { return this._transparent; }
+    public get opaque(): boolean { return !this._transparent; }
+    public get transparent(): boolean { return this._transparent; }
 
     public setDirtyCPU(): void { this._dirtyCPU = true; }
     public setCleanGPU(): void { this._dirtyGPU = false; }
