@@ -406,8 +406,8 @@ export type ClusterBlob = {
 }
 
 export function blobFromPoints(points: vec3[]) {
-    let bb = Graphics.BoundingBoxFromPoints(points);
-    Graphics.BoundingBoxCalculateCenter(bb);
+    let bb = Graphics.boundingBoxFromPoints(points);
+    Graphics.boundingBoxCalculateCenter(bb);
     
     let bbSizeLengthsVec3 = vec3.sub(vec3.create(), bb.max, bb.min);
     let bbSizeLengths = [Math.abs(bbSizeLengthsVec3[0]), Math.abs(bbSizeLengthsVec3[1]), Math.abs(bbSizeLengthsVec3[2])];
