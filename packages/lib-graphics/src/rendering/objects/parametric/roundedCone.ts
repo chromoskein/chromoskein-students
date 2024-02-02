@@ -1,6 +1,7 @@
 import type { Allocator, GraphicsLibrary } from "../../..";
 import type { BoundingBox, Ray } from "../../../shared";
 import { IParametricObject } from "./shared";
+import { vec3 } from "gl-matrix";
 import * as r from "restructure";
 
 export interface RoundedConeProperties {
@@ -201,7 +202,67 @@ export class RoundedCone extends IParametricObject {
     //#endregion GPU Code
 
     public rayIntersection(ray: Ray): number | null {
-        return null;
+        let ba = vec3.create();
+        vec3.sub(ba, this.properties.end, this.properties.start);
+        let oa = vec3.create();
+        vec3.sub(oa, ray.origin, this.properties.start);
+        let ob = vec3.create();
+        vec3.sub(ob, ray.origin, this.properties.end);
+        let rr = this.properties.startRadius - this.properties.endRadius;
+        let m0 = vec3.dot(ba,ba);
+        let m1 = vec3.dot(ba,oa);
+        let m2 = vec3.dot(ba,ray.direction);
+        let m3 = vec3.dot(ray.direction, oa);
+        let m5 = vec3.dot(oa,oa);
+        let m6 = vec3.dot(ob,ray.direction);
+        let m7 = vec3.dot(ob,ob);
+        
+        // body
+        let d2 = m0 - rr * rr;
+        let k2 = d2    - m2 * m2;
+        let k1 = d2 * m3 - m1 * m2 + m2 * rr * this.properties.startRadius;
+        let k0 = d2 * m5 - m1 * m1 + m1 * rr * this.properties.startRadius * 2.0 - m0 * this.properties.startRadius * this.properties.startRadius;
+            
+        let h = k1 * k1 - k0 * k2;
+        
+        if (h < 0.0) {
+            return null;
+        }
+        
+        var t = (-Math.sqrt(h) - k1) / k2;          
+        let y = m1 - this.properties.startRadius * rr + t * m2;
+
+        if(y > 0.0 && y < d2) 
+        {
+            let intersection = vec3.create();
+            vec3.scaleAndAdd(intersection, ray.origin, ray.direction, t);
+            return vec3.length(intersection);
+        }
+
+        // caps          
+        let h1 = m3*m3 - m5 + this.properties.startRadius * this.properties.startRadius;
+        let h2 = m6*m6 - m7 + this.properties.endRadius * this.properties.endRadius;
+        if(Math.max(h1,h2) < 0.0) {
+            return null
+        }
+        
+        t = 0.000001;
+        if(h1 > 0.0)
+        {        
+            t = -m3 - Math.sqrt(h1);
+        }
+
+        if(h2 > 0.0)
+        {
+            let t2 = -m6 - Math.sqrt(h2);
+
+            if(t2 < t) {                    
+                t = t2;
+            }
+        }
+        let intersection = vec3.create();
+        vec3.scaleAndAdd(intersection, ray.origin, ray.direction, t);
+        return vec3.length(intersection);
     }
 
     public toBoundingBoxes(): BoundingBox[] {
