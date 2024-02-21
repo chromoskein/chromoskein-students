@@ -35,7 +35,8 @@
   import ConnectedSpheres from "./objects/ConnectedSpheres.svelte";
   import BlobVolumes from "./visalizations/BlobVolumes.svelte";
   import MatryoshkaClusters from "./visalizations/MatryoshkaClusters.svelte";
-    import Hedgehog from "./objects/Hedgehog.svelte";
+  import Hedgehog from "./objects/Hedgehog.svelte";
+  import InteractiveCluster from "./visalizations/InteractiveCluster.svelte";
 
   export const saveAs = (blob, name) => {
     // Namespace is used to prevent conflict w/ Chrome Poper Blocker extension (Issue https://github.com/eligrey/FileSaver.js/issues/561)
@@ -122,6 +123,7 @@
     // dataTimesteps = normalizePointClouds(timesteps);
     dataPathlines = timestepsToPathlines(dataTimesteps);
     dataClustersGivenK = await clusterPathlines(dataPathlines);
+    dataClustersGivenK.slice(0, 16);
 
     // const bytes = new TextEncoder().encode(JSON.stringify(clusterPathlines(dataPathlines)));
     // const blob = new Blob([bytes], {
@@ -308,6 +310,13 @@
               matryoshkaBlobsVisible={matryoshkaBlobsVisible} 
             />
           {/if}
+          {#if visualizationSelected == "Composite"}
+            <InteractiveCluster
+              dataClustersGivenK={dataClustersGivenK}
+              points={dataPathlines.map((pathline) => pathline[selectedTimestep])}
+            />
+          {/if}
+
           {#if blobs[selectedTimestep] && visualizationSelected == "Default"}
             {#each blobs[selectedTimestep] as blob, i}
               <SignedDistanceGrid
@@ -413,6 +422,7 @@
               <SelectItem value="Spheres" />
               <SelectItem value="Cones" />
               <SelectItem value="Hedgehog" />
+              <SelectItem value="Composite" />
             </Select>
 
             <Checkbox labelText="Colored" bind:checked={blobsColored} />

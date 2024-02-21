@@ -6,6 +6,10 @@ import { CsvDelimiter, parseXyz } from "lib-dataloader";
 import { clusterData, clusterDataSequential } from "./hclust";
 import * as Graphics from "lib-graphics";
 
+import type { Writable } from "svelte/store";
+import type { Viewport3D } from "lib-graphics";
+import { intros } from "svelte/internal";
+
 export const clamp = (num: number, min: number, max: number) => Math.min(Math.max(num, min), max);
 export const mix = (start: number, end: number, amt: number) => (1 - amt) * start + amt * end;
 
@@ -433,3 +437,88 @@ export function blobFromPoints(points: vec3[]) {
     //   type: "application/json;charset=utf-8",
     // });
     // saveAs(blob, `clusters.json`);
+
+
+export abstract class AbstractClusterComposite {
+    depth: number;
+    clusterIdx: number;
+    parent: AbstractClusterComposite;
+
+    constructor(depth: number, clusterIdx: number) {
+        this.depth = depth;
+        this.clusterIdx = clusterIdx;
+        this.parent = null;
+    }
+
+    abstract rayIntersection(ray: Graphics.Ray, clustersGivenK: ClusterNode[][], points: vec3[], viewport: Viewport3D);
+    abstract updatePoints(viewport: Viewport3D, points: vec3[]);
+    abstract deleteVisualization(viewport: Viewport3D);
+}
+
+export class ClusterLeaf extends AbstractClusterComposite {
+    cluster: ClusterNode;
+    children: AbstractClusterComposite[];
+    isLeaf: boolean;
+
+    object: Graphics.Sphere;
+    objectID: number;
+
+    constructor(depth: number, clusterIdx: number, clustersGivenK: ClusterNode[][], parent: AbstractClusterComposite) {
+        super(depth, clusterIdx);
+        this.parent = parent;
+        this.cluster = clustersGivenK[depth][clusterIdx]
+        this.children = [];
+        this.isLeaf = true;
+    }
+
+    updatePoints(viewport: Viewport3D, points: vec3[]) {
+        if (!this.isLeaf) {
+            for (let child of this.children) {
+                child.updatePoints(viewport, points);
+            }
+            return;
+        }
+
+        if (this.objectID == null) {
+            [this.object, this.objectID] = viewport.scene.addObject(Graphics.Sphere);
+            this.object.properties.radius = 0.25;
+        }
+        
+        let bb = Graphics.boundingBoxFromPoints(points.slice(this.cluster.from, this.cluster.to + 1));
+        this.object.properties.center = [bb.center[0], bb.center[1], bb.center[2]];
+        this.object.properties.color = [this.cluster.color.rgb[0], this.cluster.color.rgb[1], this.cluster.color.rgb[2], 1];
+        this.object.setDirtyCPU();
+    }
+
+    split(clustersGivenK: ClusterNode[][], points: vec3[], viewport: Viewport3D) {
+        if (!this.isLeaf || this.depth + 1 == clustersGivenK.length) return;
+
+        this.isLeaf = false;
+        this.deleteVisualization(viewport);
+
+        for (let clusterIdx of this.cluster.children) {
+            this.children.push(new ClusterLeaf(this.depth + 1, clusterIdx, clustersGivenK, this));
+        }
+    }
+
+    rayIntersection(ray: Graphics.Ray, clustersGivenK: ClusterNode[][], points: vec3[], viewport: Viewport3D) {
+        if (!this.isLeaf) {
+            for (let child of this.children) {
+                child.rayIntersection(ray, clustersGivenK, points, viewport);
+            }
+            return;
+        }
+
+        let intersection = this.object.rayIntersection(ray);
+
+        if (intersection != null) {
+            this.split(clustersGivenK, points, viewport);
+        }
+    }
+
+    deleteVisualization(viewport: Viewport3D) {
+        if (this.objectID) {
+            viewport.scene.removeObjectByID(this.objectID);
+        }
+    }
+}

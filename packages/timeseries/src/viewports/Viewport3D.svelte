@@ -1,8 +1,7 @@
 <script lang="ts">
   import { getContext, onMount, setContext } from "svelte";
   import { writable, type Writable } from "svelte/store";
-  import * as Graphics from "lib-graphics";
-  import { vec2 } from "gl-matrix";
+  import type * as Graphics from "lib-graphics";
 
   // Context
   let device: Writable<GPUDevice> = getContext("device");
@@ -65,6 +64,7 @@
 
     $viewportInner.camera.onMouseDown(event);
 
+    /*
     let rect = canvas.getBoundingClientRect(); // abs. size of element    
     let ray = Graphics.screenSpaceToRay(vec2.fromValues((event.clientX - rect.left) / rect.width, (event.clientY - rect.top) / rect.height), $viewportInner.camera);
     let intersect = $viewportInner.scene.rayIntersection(ray);
@@ -75,7 +75,7 @@
       sphere.properties.color = [1.0, 1.0, 1.0, 1.0];
       sphere.setDirtyCPU();
     }
-
+    */
     afterCameraUpdate($viewportInner.camera as Graphics.OrbitCamera);
   }
 
@@ -152,7 +152,7 @@
 </script>
 
 <div bind:this={wrapper} class="wrapper">
-  <canvas
+  <canvas id="canvas"
     bind:this={canvas}
     {width}
     {height}
