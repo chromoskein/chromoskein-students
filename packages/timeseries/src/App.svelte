@@ -373,7 +373,7 @@
             {#each blobs[selectedTimestep] as blob, i}
               <Hedgehog
                 tubePoints={centerPoints}
-                tubeRadius={(1.0 / centerPoints.length) / 20.0} 
+                tubeRadius={(1.0 / centerPoints.length) / 8.0} 
                 tubeColor={[0.9, 0.9, 0.9]}
                 coneStartRadius={0.1}
                 coneCenter={blob.center}
