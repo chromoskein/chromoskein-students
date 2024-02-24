@@ -1,7 +1,7 @@
-import { CameraStruct } from "../rendering";
+import { cameraStruct } from "../rendering";
 
 export const mergeShader: string = /* wgsl */ `
-${CameraStruct}
+${cameraStruct}
 
 struct VertexOutput {
     @builtin(position) Position : vec4<f32>,

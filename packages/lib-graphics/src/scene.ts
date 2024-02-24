@@ -1,11 +1,12 @@
 import type { Allocator } from "./allocation/index"
-import type { GraphicsLibrary } from ".";
+import type { GraphicsLibrary, Intersection } from ".";
 import type { BoundingBox, Ray } from "./shared";
 
 import { BasicAllocator } from "./allocation/index";
 // import { vec3, vec4 } from "gl-matrix";
 import { ConcreteObject, IObject, IParametricObject, Volume } from "./rendering";
 import { Mesh } from "./rendering/objects/mesh";
+import { vec3 } from "gl-matrix";
 
 export enum RenderObjects {
     Transparent,
@@ -216,20 +217,24 @@ export class Scene {
         }
     }
 
-    public rayIntersection(ray: Ray): [IParametricObject | null, number] {
-        let closest = null;
-        let minDist = Infinity;
+    public rayIntersection(ray: Ray): Intersection | null {
+        vec3.normalize(ray.direction, ray.direction);
+        let closestIntersection: Intersection | null = null;
+
         for(const object of this._objects){
             if(object instanceof IParametricObject){
-                const dist = object.rayIntersection(ray);
-                if(dist !== null && dist < minDist){
-                    minDist = dist;
-                    closest = object;
+                const intersection = object.rayIntersection(ray);
+                if(closestIntersection === null){
+                    closestIntersection = intersection;
+                    continue;
                 }
-            }  
-        }
 
-        return [closest, minDist];
+                if(intersection !== null && intersection.t < closestIntersection.t){
+                    closestIntersection = intersection;
+                }
+            }
+        }
+        return closestIntersection;
     }
 
     public get version(): number {

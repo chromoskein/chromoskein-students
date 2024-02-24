@@ -1,6 +1,6 @@
 import { Allocator, GraphicsLibrary } from "../../..";
 import type { BoundingBox, Ray } from "../../../shared";
-import { IParametricObject } from "./shared";
+import { IParametricObject, Intersection } from "./shared";
 import { vec3 } from "gl-matrix";
 import * as r from "restructure";
 
@@ -9,7 +9,8 @@ export interface RoundedConeInstancedProperties {
     startRadius: number,
     end: [number, number, number],
     endRadius: number,
-    color: [number, number, number, number],
+    startColor: [number, number, number, number],
+    endColor: [number, number, number, number],
 }
 
 
@@ -44,7 +45,8 @@ export class RoundedConeInstanced extends IParametricObject {
             start_radius: f32,
             end: vec3<f32>,
             end_radius: f32,
-            color: vec4<f32>,
+            startColor: vec4<f32>,
+            endColor: vec4<f32>,
         };
         
         @group(1) @binding(0) var<storage> ${this.variableName}Storage: array<${this.typeName}>;
@@ -63,7 +65,7 @@ export class RoundedConeInstanced extends IParametricObject {
 
     static gpuCodeIntersectionTest = /* wgsl */`
         fn ray${this.typeName}Intersection(ray: Ray, ${this.variableName}: ${this.typeName}) -> Intersection {
-            let invRayDirection = vec3<f32>(1.0 / ray.direction.x, 1.0 / ray.direction.y, 1.0 / ray.direction.z);
+            // let invRayDirection = vec3<f32>(1.0 / ray.direction.x, 1.0 / ray.direction.y, 1.0 / ray.direction.z);
 
             let ba = ${this.variableName}.end - ${this.variableName}.start;
             let oa = ray.origin - ${this.variableName}.start;
@@ -136,8 +138,6 @@ export class RoundedConeInstanced extends IParametricObject {
                 if(t2 < t) {                    
                     t = t2;
                     normal = (ob+t*ray.direction)/${this.variableName}.end_radius;
-                } else {
-
                 }
             }
 
@@ -155,7 +155,13 @@ export class RoundedConeInstanced extends IParametricObject {
         switch (variable) {
             case "color": {
                 return `
-                    let color = ${this.variableName}.color;
+                    let startDist = length(${this.variableName}.start - intersection.position);
+                    let endDist = length(${this.variableName}.end - intersection.position);
+                    
+                    var color = ${this.variableName}.endColor;
+                    if(startDist < endDist){
+                        color = ${this.variableName}.startColor;
+                    }
                 `;
             }
             case "normal": {
@@ -180,57 +186,57 @@ export class RoundedConeInstanced extends IParametricObject {
     `;
     //#endregion GPU Code
 
-    public rayIntersection(ray: Ray): number | null {
-        let bestDistance = Infinity;
-
+    public rayIntersection(ray: Ray): Intersection | null {
+        let bestT = Infinity;
+        let bestCone = -1;
         for (let i = 0; i < this.instances; i++) {
-            let ba = vec3.create();
+            const ba = vec3.create();
             vec3.sub(ba, this.properties[i].end, this.properties[i].start);
-            let oa = vec3.create();
+            const oa = vec3.create();
             vec3.sub(oa, ray.origin, this.properties[i].start);
-            let ob = vec3.create();
+            const ob = vec3.create();
             vec3.sub(ob, ray.origin, this.properties[i].end);
-            let rr = this.properties[i].startRadius - this.properties[i].endRadius;
-            let m0 = vec3.dot(ba,ba);
-            let m1 = vec3.dot(ba,oa);
-            let m2 = vec3.dot(ba,ray.direction);
-            let m3 = vec3.dot(ray.direction, oa);
-            let m5 = vec3.dot(oa,oa);
-            let m6 = vec3.dot(ob,ray.direction);
-            let m7 = vec3.dot(ob,ob);
+            const rr = this.properties[i].startRadius - this.properties[i].endRadius;
+            const m0 = vec3.dot(ba,ba);
+            const m1 = vec3.dot(ba,oa);
+            const m2 = vec3.dot(ba,ray.direction);
+            const m3 = vec3.dot(ray.direction, oa);
+            const m5 = vec3.dot(oa,oa);
+            const m6 = vec3.dot(ob,ray.direction);
+            const m7 = vec3.dot(ob,ob);
             
             // body
-            let d2 = m0 - rr * rr;
-            let k2 = d2    - m2 * m2;
-            let k1 = d2 * m3 - m1 * m2 + m2 * rr * this.properties[i].startRadius;
-            let k0 = d2 * m5 - m1 * m1 + m1 * rr * this.properties[i].startRadius * 2.0 - m0 * this.properties[i].startRadius * this.properties[i].startRadius;
+            const d2 = m0 - rr * rr;
+            const k2 = d2    - m2 * m2;
+            const k1 = d2 * m3 - m1 * m2 + m2 * rr * this.properties[i].startRadius;
+            const k0 = d2 * m5 - m1 * m1 + m1 * rr * this.properties[i].startRadius * 2.0 - m0 * this.properties[i].startRadius * this.properties[i].startRadius;
                 
-            let h = k1 * k1 - k0 * k2;
+            const h = k1 * k1 - k0 * k2;
             
             if (h < 0.0) {
                 continue;
             }
             
-            var t = (-Math.sqrt(h) - k1) / k2;          
-            let y = m1 - this.properties[i].startRadius * rr + t * m2;
+            let t = (-Math.sqrt(h) - k1) / k2;          
+            const y = m1 - this.properties[i].startRadius * rr + t * m2;
     
             if(y > 0.0 && y < d2) 
             {
-                let intersection = vec3.create();
-                vec3.scaleAndAdd(intersection, ray.origin, ray.direction, t);
-                if (vec3.length(intersection) < bestDistance) {
-                    bestDistance = vec3.length(intersection);
+                if (t < bestT) {
+                    bestT = t;
+                    bestCone = i;
                 }
             }
     
             // caps          
-            let h1 = m3*m3 - m5 + this.properties[i].startRadius * this.properties[i].startRadius;
-            let h2 = m6*m6 - m7 + this.properties[i].endRadius * this.properties[i].endRadius;
+            const h1 = m3*m3 - m5 + this.properties[i].startRadius * this.properties[i].startRadius;
+            const h2 = m6*m6 - m7 + this.properties[i].endRadius * this.properties[i].endRadius;
             if(Math.max(h1,h2) < 0.0) {
                 continue;
             }
             
-            t = 0.000001;
+            t = Infinity;
+            
             if(h1 > 0.0)
             {        
                 t = -m3 - Math.sqrt(h1);
@@ -238,19 +244,29 @@ export class RoundedConeInstanced extends IParametricObject {
     
             if(h2 > 0.0)
             {
-                let t2 = -m6 - Math.sqrt(h2);
+                const t2 = -m6 - Math.sqrt(h2);
     
                 if(t2 < t) {                    
                     t = t2;
                 }
             }
-            let intersection = vec3.create();
-            vec3.scaleAndAdd(intersection, ray.origin, ray.direction, t);
-            if (vec3.length(intersection) < bestDistance) {
-                bestDistance = vec3.length(intersection);
+            if (t < bestT) {
+                bestT = t;
+                bestCone = i;
             }
         }
-        return bestDistance === Infinity ? null : bestDistance;
+
+        if(bestCone === -1){
+            return null;
+        }
+
+        const intersection = vec3.scaleAndAdd(vec3.create(), ray.origin, ray.direction, bestT);
+        
+        const lengthStart = vec3.length(vec3.sub(vec3.create(), intersection, this.properties[bestCone].start));
+        const lengthEnd = vec3.length(vec3.sub(vec3.create(), intersection, this.properties[bestCone].end));
+      
+        const bestBin = lengthStart <= lengthEnd ? bestCone : bestCone + 1;
+        return { t: bestT, object: this, bin: bestBin };
     }
 
     public toBoundingBoxes(): BoundingBox[] {
@@ -262,7 +278,7 @@ export class RoundedConeInstanced extends IParametricObject {
     constructor(id: number, graphicsLibrary: GraphicsLibrary, allocator: Allocator, instances = 1) {
         super(id, graphicsLibrary, allocator);
 
-        this._allocation = allocator.allocate(instances * 48);
+        this._allocation = allocator.allocate(instances * 64);
 
         this.instances = instances;
         this.roundedConeInstancedStruct = new r.Array(new r.Struct({
@@ -270,7 +286,8 @@ export class RoundedConeInstanced extends IParametricObject {
             startRadius: r.floatle,
             end: new r.Array(r.floatle, 3),
             endRadius: r.floatle,
-            color: new r.Array(r.floatle, 4)
+            startColor: new r.Array(r.floatle, 4),
+            endColor: new r.Array(r.floatle, 4)
         }), instances);
         this.properties = this.roundedConeInstancedStruct.fromBuffer(new Uint8Array(this._allocation.cpuBuffer.inner.byteLength));
 

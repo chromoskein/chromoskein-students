@@ -1,4 +1,4 @@
-import { CameraStruct, fragmentToRayFunction, rayTracingStructs, sphereToBoundingRectangleFunction } from "../shared";
+import { cameraStruct, fragmentToRayFunction, rayTracingStructs, sphereToBoundingRectangleFunction } from "../shared";
 
 export const volumeShaderTemplate = (
     name: string,
@@ -14,7 +14,7 @@ export const volumeShaderTemplate = (
     }
 ) => {
     return /* wgsl */`
-${CameraStruct}
+${cameraStruct}
 
 @group(0) @binding(0) var<uniform> camera: Camera;
 @group(2) @binding(0) var depthTexture: texture_depth_2d;

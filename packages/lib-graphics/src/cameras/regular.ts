@@ -27,8 +27,8 @@ export class RegularCamera extends Camera {
     }
 
     protected updateCPU(): void {   
-        console.log("orientation:", this._cameraOrientation);
-        console.log("position:", this._cameraPosition);
+        //console.log("orientation:", this._cameraOrientation);
+        //console.log("position:", this._cameraPosition);
         
         const worldMatrix = this.wordTransform.matrix; 
 

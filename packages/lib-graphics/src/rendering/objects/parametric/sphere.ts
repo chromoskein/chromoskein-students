@@ -1,5 +1,5 @@
 import { vec3 } from "gl-matrix";
-import type { Allocator, GraphicsLibrary } from "../../..";
+import type { Allocator, GraphicsLibrary, Intersection } from "../../..";
 import { boundingBoxEmpty, type BoundingBox, type Ray, boundingBoxExtendByPoint, boundingBoxCalculateCenter } from "../../../shared";
 import { IParametricObject } from "./shared";
 import * as r from "restructure";
@@ -123,7 +123,7 @@ export class Sphere extends IParametricObject {
     `;
     //#endregion GPU Code
 
-    public rayIntersection(ray: Ray): number | null {
+    public rayIntersection(ray: Ray): Intersection | null {
         if(!this.collisionEnabled){
             return null;
         }
@@ -143,7 +143,7 @@ export class Sphere extends IParametricObject {
         }
         h = Math.sqrt( h );
         const t = -b - h;
-        return t;
+        return {bin: 0, t, object: this};
     }
 
     public toBoundingBoxes(): BoundingBox[] {

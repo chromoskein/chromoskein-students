@@ -3,6 +3,12 @@ import { Allocator } from "../../../allocation";
 import type { Ray } from "../../../shared";
 import { ConcreteObject } from "../shared";
 
+export interface Intersection{
+    t: number,
+    bin: number,
+    object: IParametricObject,
+}
+
 export abstract class IParametricObject extends ConcreteObject {   
     public static variableName = "iParametric";
     public static typeName = "IParametric";
@@ -12,7 +18,7 @@ export abstract class IParametricObject extends ConcreteObject {
     static bindGroupLayouts: GPUBindGroupLayout[] = [];
 
     //#region CPU Intersection Functions
-    public abstract rayIntersection(ray: Ray): number | null;
+    public abstract rayIntersection(ray: Ray): Intersection | null;
 
     public collisionEnabled: boolean = true;
 

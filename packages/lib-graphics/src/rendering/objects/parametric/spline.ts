@@ -1,7 +1,244 @@
+import { vec3 } from "gl-matrix";
 import { Allocator, GraphicsLibrary } from "../../..";
 import type { BoundingBox, Ray } from "../../../shared";
-import { IParametricObject } from "./shared";
+import { IParametricObject, Intersection } from "./shared";
 import * as r from "restructure";
+
+interface QuadraticBezierCurve {
+    p0: vec3;
+    p1: vec3;
+    p2: vec3;
+    radius: number;
+}
+
+function transformToRayFramePoint(
+    p: vec3,
+    origin: vec3,
+    u: vec3,
+    v: vec3,
+    w: vec3
+): vec3 {
+    const q: vec3 = vec3.create();
+    vec3.subtract(q, p, origin);
+    return vec3.fromValues(vec3.dot(q, u), vec3.dot(q, v), vec3.dot(q, w));
+}
+
+function makeOrthonormalBasis(n: vec3): [vec3, vec3] {
+    const b1: vec3 = vec3.create();
+    const b2: vec3 = vec3.create();
+
+    if (n[2] < 0.0) {
+        const a: number = 1.0 / (1.0 - n[2]);
+        const b: number = n[0] * n[1] * a;
+
+        vec3.set(b1, 1.0 - n[0] * n[0] * a, -b, n[0]);
+        vec3.set(b2, b, n[1] * n[1] * a - 1.0, -n[1]);
+    } else {
+        const a: number = 1.0 / (1.0 + n[2]);
+        const b: number = -n[0] * n[1] * a;
+
+        vec3.set(b1, 1.0 - n[0] * n[0] * a, b, -n[0]);
+        vec3.set(b2, b, 1.0 - n[1] * n[1] * a, -n[1]);
+    }
+
+    return [b1, b2];
+}
+
+function evaluateQuadraticBezier(curve: QuadraticBezierCurve, t: number): vec3 {
+    const p0: vec3 = curve.p0;
+    const p1: vec3 = curve.p1;
+    const p2: vec3 = curve.p2;
+    const tinv: number = 1.0 - t;
+
+    const result = vec3.scale(vec3.create(), p0, tinv * tinv);
+    vec3.scaleAndAdd(result, result, p1, 2.0 * tinv * t);
+    vec3.scaleAndAdd(result, result, p2, t * t);
+
+    return result;
+}
+
+function evaluateDifferentialQuadraticBezier(
+    curve: QuadraticBezierCurve,
+    t: number
+): vec3 {
+    const p0: vec3 = curve.p0;
+    const p1: vec3 = curve.p1;
+    const p2: vec3 = curve.p2;
+    const tinv: number = 1.0 - t;
+
+    const a = vec3.sub(vec3.create(), p1, p0);
+    const b = vec3.sub(vec3.create(), p2, p1);
+
+    const result = vec3.scale(vec3.create(), a, 2.0 * tinv);
+    vec3.scaleAndAdd(result, result, b, 2.0 * t);
+
+    return result;
+}
+
+interface QuadraticBezierCurve {
+    p0: vec3;
+    p1: vec3;
+    p2: vec3;
+    radius: number;
+}
+
+function transformToRayFrame(ray: Ray, curve: QuadraticBezierCurve): QuadraticBezierCurve {
+    const onb: [vec3, vec3] = makeOrthonormalBasis(ray.direction);
+
+    return {
+        p0: transformToRayFramePoint(curve.p0, ray.origin, onb[0], onb[1], ray.direction),
+        p1: transformToRayFramePoint(curve.p1, ray.origin, onb[0], onb[1], ray.direction),
+        p2: transformToRayFramePoint(curve.p2, ray.origin, onb[0], onb[1], ray.direction),
+        radius: curve.radius,
+    };
+}
+
+interface RayBezierIntersection {
+    co: vec3;
+    cd: vec3;
+    s: number;
+    dt: number;
+    dp: number;
+    dc: number;
+    sp: number;
+    phantom: boolean;
+}
+
+function rayBezierIntersect(intersectionIn: RayBezierIntersection, r: number): RayBezierIntersection {
+    const r2: number = r * r;
+    const drr: number = 0.0;
+
+    const intersectionOut: RayBezierIntersection = {
+        co: intersectionIn.co,
+        cd: intersectionIn.cd,
+        s: intersectionIn.s,
+        dt: intersectionIn.dt,
+        dp: intersectionIn.dp,
+        dc: intersectionIn.dc,
+        sp: intersectionIn.sp,
+        phantom: intersectionIn.phantom,
+    };
+
+    const co: vec3 = intersectionIn.co;
+    const cd: vec3 = intersectionIn.cd;
+
+    let ddd: number = cd[0] * cd[0] + cd[1] * cd[1];
+    intersectionOut.dp = co[0] * co[0] + co[1] * co[1];
+    const cdd: number = co[0] * cd[0] + co[1] * cd[1];
+    const cxd: number = co[0] * cd[1] - co[1] * cd[0];
+
+    const c: number = ddd;
+    const b: number = cd[2] * (drr - cdd);
+    const cdz2: number = cd[2] * cd[2];
+    ddd = ddd + cdz2;
+    const a: number = 2.0 * drr * cdd + cxd * cxd - ddd * r2 + intersectionOut.dp * cdz2;
+
+    const discr: number = b * b - a * c;
+    if (discr > 0.0) {
+        intersectionOut.s = (b - Math.sqrt(discr)) / c;
+    } else {
+        intersectionOut.s = (b - 0.0) / c;
+    }
+    intersectionOut.dt = (intersectionOut.s * cd[2] - cdd) / ddd;
+    intersectionOut.dc = intersectionOut.s * intersectionOut.s + intersectionOut.dp;
+    intersectionOut.sp = cdd / cd[2];
+    intersectionOut.dp = intersectionOut.dp + intersectionOut.sp * intersectionOut.sp;
+    intersectionOut.phantom = discr > 0.0;
+
+    return intersectionOut;
+}
+
+interface CurveIntersection {
+    t: number;
+    curveT: number;
+}
+
+function rayIntersection(ray: Ray, curveWS: QuadraticBezierCurve): CurveIntersection {
+    const curve: QuadraticBezierCurve = transformToRayFrame(ray, curveWS);
+
+    const result: CurveIntersection = {
+        t: -1.0,
+        curveT: 0.0,
+    };
+
+    let hit: boolean = false;
+    let tstart: number = 1.0;
+
+    if (vec3.dot(vec3.sub(vec3.create(), curve.p2, curve.p0), ray.direction) > 0.0) {
+        tstart = 0.0;
+    }
+
+    for (let ep = 0; ep < 2; ep++) {
+        let t: number = tstart;
+        let rci: RayBezierIntersection = {
+            co: vec3.zero(vec3.create()),
+            cd: vec3.zero(vec3.create()),
+            s: 0.0,
+            dt: 0.0,
+            dp: 0.0,
+            dc: 0.0,
+            sp: 0.0,
+            phantom: true
+        };
+
+        let told: number = 0.0;
+        let dt1: number = 0.0;
+        let dt2: number = 0.0;
+
+        for (let i = 0; i < 32; i++) {
+            rci.co = evaluateQuadraticBezier(curve, t);
+            rci.cd = evaluateDifferentialQuadraticBezier(curve, t);
+
+            rci = rayBezierIntersect(rci, curve.radius);
+
+            if (rci.phantom && Math.abs(rci.dt) < 0.05) {
+                rci.s += rci.co[2];
+
+                result.t = rci.s;
+                result.curveT = t;
+                hit = true;
+                break;
+            }
+
+            rci.dt = Math.min(rci.dt, 0.5);
+            rci.dt = Math.max(rci.dt, -0.5);
+
+            dt1 = dt2;
+            dt2 = rci.dt;
+
+            // Regula falsi
+            if (dt1 * dt2 < 0.0) {
+                let tnext: number;
+                if ((i & 3) === 0) {
+                    tnext = 0.5 * (told + t);
+                } else {
+                    tnext = (dt2 * told - dt1 * t) / (dt2 - dt1);
+                }
+                told = t;
+                t = tnext;
+            } else {
+                told = t;
+                t += rci.dt;
+            }
+
+            if (t < 0.0 || t > 1.0) {
+                break;
+            }
+        }
+
+        if (!hit) {
+            tstart = 1.0 - tstart;
+        } else {
+            break;
+        }
+    }
+
+    if (!hit) {
+        result.t = -1.0;
+    }
+
+    return result;
+}
 
 export interface SplineProperties {
     p0: [number, number, number, number],
@@ -311,8 +548,31 @@ export class Spline extends IParametricObject {
     `;
     //#endregion GPU Code
 
-    public rayIntersection(ray: Ray): number | null {
-        return null;
+    
+
+    public rayIntersection(ray: Ray): Intersection | null {
+        let bestT = Infinity;
+        let bestBin = null;
+        for (const [i, prop] of this.properties.entries()){
+            const curve = {
+                p0: vec3.fromValues(prop.p0[0], prop.p0[1], prop.p0[2]),
+                p1: vec3.fromValues(prop.p1[0], prop.p1[1], prop.p1[2]),
+                p2: vec3.fromValues(prop.p2[0], prop.p2[1], prop.p2[2]),
+                radius: prop.p0[3],
+            };
+
+            const intersection = rayIntersection(ray, curve);
+            if(intersection.t !== -1 && intersection.t < bestT){
+                bestT = intersection.t;
+                bestBin = Math.trunc((i + 1) / 2);
+            }
+        } 
+
+        if(bestBin === null){
+            return null;
+        }
+
+        return { bin:bestBin, t: bestT, object: this };
     }
 
     public toBoundingBoxes(): BoundingBox[] {

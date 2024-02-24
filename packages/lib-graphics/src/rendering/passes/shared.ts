@@ -21,7 +21,7 @@ export abstract class Pass {
     public dirty(): boolean { return false; }
 }
 
-export const CameraStruct: string = /* wgsl */`
+export const cameraStruct: string = /* wgsl */`
     struct Camera {
         projection: mat4x4<f32>,
         projectionInverse: mat4x4<f32>,

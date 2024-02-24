@@ -1,4 +1,4 @@
-import { CameraStruct, fragmentToRayFunction, rayTracingStructs, sphereToBoundingRectangleFunction } from "../shared";
+import { cameraStruct, fragmentToRayFunction, rayTracingStructs, sphereToBoundingRectangleFunction } from "../shared";
 
 export const parametricShaderTemplate = (
     name: string,
@@ -15,7 +15,7 @@ export const parametricShaderTemplate = (
     intersectionCalculation: string
 ) => {
     return /* wgsl */`
-${CameraStruct}
+${cameraStruct}
 
 @group(0) @binding(0) var<uniform> camera: Camera;
 

@@ -1,4 +1,4 @@
-import type { Allocator, GraphicsLibrary } from "../../..";
+import type { Allocator, GraphicsLibrary, Intersection } from "../../..";
 import type { BoundingBox, Ray } from "../../../shared";
 import { IParametricObject } from "./shared";
 import * as r from "restructure";
@@ -99,7 +99,7 @@ export class Circle extends IParametricObject {
     `;
     //#endregion GPU Code
 
-    public rayIntersection(ray: Ray): number | null {
+    public rayIntersection(ray: Ray): Intersection | null {
         return null;
     }
 

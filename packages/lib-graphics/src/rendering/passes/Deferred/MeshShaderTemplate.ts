@@ -1,4 +1,4 @@
-import { CameraStruct } from "../shared";
+import { cameraStruct } from "../shared";
 
 export const meshShaderTemplate = (
     globals: string,
@@ -13,7 +13,7 @@ export const meshShaderTemplate = (
     }
 ) => {
     return /* wgsl */`
-${CameraStruct}
+${cameraStruct}
 
 @group(0) @binding(0) var<uniform> camera: Camera;
 

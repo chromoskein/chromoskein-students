@@ -13,11 +13,6 @@ export class Ray {
     }
 }
 
-export type Intersection = {
-    ray: Ray;
-    distance: number
-}
-
 export type BoundingBox = {
     min: vec3;
     max: vec3;
