@@ -21,7 +21,7 @@
       
 
       let hitCluster: ClusterLeaf = clusterObjects.rayIntersection(ray);
-      if (hitCluster != null) hitCluster.split(dataClustersGivenK, points, $viewport);
+      if (hitCluster != null) hitCluster.split(dataClustersGivenK, points);
       clusterObjects.update(points);
 	  }
   
