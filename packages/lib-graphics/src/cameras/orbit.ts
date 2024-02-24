@@ -90,8 +90,8 @@ export class OrbitCamera extends Camera {
 
     public onWheelEvent(event: WheelEvent) {
         super.onWheelEvent(event);
-
-        this.wordTransform.scale += event.deltaY / 1000.0;
+        console.log(event.deltaY);
+        this.wordTransform.scale *= Math.pow(2, -event.deltaY / 1000.0);
         this._dirty = true;
 
         this.updateCPU();
