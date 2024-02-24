@@ -16,9 +16,9 @@ export class InteractiveClusters {
         let bestDistance = Infinity;
         let closestCluster = null;
         for (let cluster of inorder) {
-            let distance = cluster.rayIntersection(ray);
-            if (distance != null && distance < bestDistance) {
-                bestDistance = distance;
+            let intersection = cluster.rayIntersection(ray);
+            if (intersection != null && intersection.t < bestDistance) {
+                bestDistance = intersection.t;
                 closestCluster = cluster;
             }
         }
@@ -50,7 +50,7 @@ export abstract class AbstractClusterComposite {
         this.parent = null;
     }
 
-    abstract rayIntersection(ray: Graphics.Ray);
+    abstract rayIntersection(ray: Graphics.Ray) : Graphics.Intersection;
     abstract updatePoints(points: vec3[]);
     abstract deleteVisualization();
     abstract getInorder(): AbstractClusterComposite[];
@@ -110,9 +110,9 @@ export class ClusterLeaf extends AbstractClusterComposite {
         }
     }
 
-    rayIntersection(ray: Graphics.Ray) {
+    rayIntersection(ray: Graphics.Ray): Graphics.Intersection | null {
         if (!this.isLeaf) {
-            return Infinity;
+            return null;
         }
 
         return this.object.rayIntersection(ray);
