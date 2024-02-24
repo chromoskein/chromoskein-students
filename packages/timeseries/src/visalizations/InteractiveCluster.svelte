@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { type AbstractClusterComposite, type ClusterNode, ClusterLeaf } from "../utils/main";
+    import { InteractiveClusters, type ClusterNode, ClusterLeaf } from "../utils/main";
     import { getContext, onMount } from "svelte";
     import type { Writable } from "svelte/store";
     import type { Viewport3D } from "lib-graphics";
@@ -12,7 +12,7 @@
     export let dataClustersGivenK: ClusterNode[][] | null = null;
     export let points: vec3[] = [];
 
-    let clusterComponent: AbstractClusterComposite = null;
+    let clusterObjects: InteractiveClusters = null;
     let canvas: HTMLElement | null = null;
 
     function onElementButtonClick(event) {
@@ -20,30 +20,30 @@
       let ray = Graphics.screenSpaceToRay(vec2.fromValues((event.clientX - rect.left) / rect.width, (event.clientY - rect.top) / rect.height), $viewport.camera);
       
 
-      clusterComponent.rayIntersection(ray, dataClustersGivenK, points, $viewport);
-      clusterComponent.updatePoints($viewport, points);
+      let hitCluster: ClusterLeaf = clusterObjects.rayIntersection(ray);
+      if (hitCluster != null) hitCluster.split(dataClustersGivenK, points, $viewport);
+      clusterObjects.update(points);
 	  }
   
     $: if ($viewport) {
-      if (clusterComponent == null) {
-        clusterComponent = new ClusterLeaf(1, 0, dataClustersGivenK, null);
+      if (clusterObjects == null) {
+        clusterObjects = new InteractiveClusters(dataClustersGivenK, points, $viewport);
         canvas = document.getElementById("canvas");
         canvas?.addEventListener("mousedown", onElementButtonClick); 
       }
-
-      
     }
   
     $: if ($viewport && points) {
-      clusterComponent.updatePoints($viewport, points);
+      clusterObjects.update(points);
     }
 
     onMount(() => {
       return () => {
-        // Add deletion code eventually
+        if (clusterObjects)
+          clusterObjects.delete();
+        canvas = document.getElementById("canvas");
+        canvas?.removeEventListener("mousedown", onElementButtonClick); 
       };
     });
   </script>
-
-<div on:click={onElementButtonClick} />
   
