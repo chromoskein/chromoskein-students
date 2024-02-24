@@ -1,5 +1,6 @@
 <script lang="ts">
-    import { InteractiveClusters, type ClusterNode, ClusterLeaf } from "../utils/main";
+    import type { ClusterNode } from "../utils/main";
+    import { InteractiveClusters, ClusterLeaf } from "../utils/interactiveClusters";
     import { getContext, onMount } from "svelte";
     import type { Writable } from "svelte/store";
     import type { Viewport3D } from "lib-graphics";
@@ -18,7 +19,6 @@
     function onElementButtonClick(event) {
 		  let rect = canvas.getBoundingClientRect(); // abs. size of element    
       let ray = Graphics.screenSpaceToRay(vec2.fromValues((event.clientX - rect.left) / rect.width, (event.clientY - rect.top) / rect.height), $viewport.camera);
-      
 
       let hitCluster: ClusterLeaf = clusterObjects.rayIntersection(ray);
       if (hitCluster != null) hitCluster.split(dataClustersGivenK, points);
