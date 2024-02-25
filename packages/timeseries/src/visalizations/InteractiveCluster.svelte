@@ -22,7 +22,6 @@
 
       let hitCluster: ClusterLeaf = clusterObjects.rayIntersection(ray);
       if (hitCluster != null) hitCluster.split(dataClustersGivenK, points);
-      clusterObjects.update(points);
 	  }
   
     $: if ($viewport) {
@@ -34,8 +33,24 @@
     }
   
     $: if ($viewport && points) {
-      clusterObjects.update(points);
+      clusterObjects.updatePoints(points);
     }
+
+    /*
+      This function is here to prevent Svelte seeing *points* as a reactive variable
+      in the following reactive statement. This causes the reactive statement to only
+      fire in case clustersGivenK is updated
+    */
+    function updateClusters(dataClustersByK: ClusterNode[][]) {
+      if (clusterObjects && points) {
+        clusterObjects.updateClusters(points, dataClustersByK);
+      }
+    }
+
+    $: if ($viewport && dataClustersGivenK) {
+      console.log("Update clusters also");
+      updateClusters(dataClustersGivenK);
+    } 
 
     onMount(() => {
       return () => {

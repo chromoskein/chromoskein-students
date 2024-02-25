@@ -26,7 +26,14 @@ export class InteractiveClusters {
         return closestCluster;
     }
 
-    update(points: vec3[]) {
+    updateClusters(points: vec3[], clustersGivenK: ClusterNode[][]) {
+        let inorder = this.root.getInorder();
+        for (let cluster of inorder) {
+            cluster.updateCluster(clustersGivenK, points);
+        }
+    }
+
+    updatePoints(points: vec3[]) {
         let inorder = this.root.getInorder();
         for (let cluster of inorder) {
             cluster.updatePoints(points);
@@ -47,6 +54,7 @@ export abstract class AbstractClusterComposite {
     }
 
     abstract rayIntersection(ray: Graphics.Ray) : Graphics.Intersection;
+    abstract updateCluster(clustersGivenK: ClusterNode[][], points: vec3[]);
     abstract updatePoints(points: vec3[]);
     abstract deleteVisualization();
     abstract getInorder(): AbstractClusterComposite[];
@@ -86,6 +94,13 @@ export class ClusterLeaf extends AbstractClusterComposite {
             inorder = inorder.concat(this.children[i].getInorder());
         }
         return inorder;
+    }
+
+    updateCluster(clustersGivenK: ClusterNode[][], points: vec3[]) {
+        this.cluster = clustersGivenK[this.cluster.k][this.cluster.i];
+        if (this.isLeaf && this.visualisation) 
+            this.visualisation.updateCluster(points, this.cluster);
+        
     }
 
     updatePoints(points: vec3[]) {
