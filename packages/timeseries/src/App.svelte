@@ -123,7 +123,7 @@
     // dataTimesteps = normalizePointClouds(timesteps);
     dataPathlines = timestepsToPathlines(dataTimesteps);
     dataClustersGivenK = await clusterPathlines(dataPathlines);
-    dataClustersGivenK.slice(0, 16);
+    dataClustersGivenK = dataClustersGivenK.slice(0, 16);
 
     // const bytes = new TextEncoder().encode(JSON.stringify(clusterPathlines(dataPathlines)));
     // const blob = new Blob([bytes], {
@@ -442,7 +442,7 @@
             {/if}
             {#if dataClustersGivenK && visualizationSelected != "Clustering"}
               <div class="cluster-dendogram">
-                {#each dataClustersGivenK.slice(1, 15) as clustersAtLevel, clusterLevel}
+                {#each dataClustersGivenK.slice(1, 16) as clustersAtLevel, clusterLevel}
                   <div class="cluster-dendogram-row" on:click={() => dendrogramClick(clusterLevel)} on:keydown={() => { }}>
                     {#each clustersAtLevel as cluster, i}
                       <div
@@ -459,7 +459,7 @@
             {/if}
             {#if dataClustersGivenK && visualizationSelected == "Clustering"}
               <div class="cluster-dendogram">
-                {#each dataClustersByTimestep.slice(1, 15) as clustersAtLevel, clusterLevel}
+                {#each dataClustersByTimestep.slice(1, 16) as clustersAtLevel, clusterLevel}
                   <div class="cluster-dendogram-row" on:click={() => dendrogramClick(clusterLevel)} on:keydown={() => { }}>
                     {#each clustersAtLevel as cluster, i}
                       <div

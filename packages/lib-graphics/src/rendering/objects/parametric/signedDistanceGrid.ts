@@ -563,8 +563,6 @@ export class SignedDistanceGrid extends IParametricObject {
         device.queue.submit([commandEncoder.finish()]);
 
         this.onAllocationMoved();
-
-        console.log(delimiters);
     }
 
     public translate(t: vec3, index: number = 0) {

@@ -40,13 +40,9 @@ export class InteractiveClusters {
 }
 
 export abstract class AbstractClusterComposite {
-    depth: number;
-    clusterIdx: number;
     parent: AbstractClusterComposite;
 
-    constructor(depth: number, clusterIdx: number) {
-        this.depth = depth;
-        this.clusterIdx = clusterIdx;
+    constructor() {
         this.parent = null;
     }
 
@@ -65,7 +61,7 @@ export class ClusterLeaf extends AbstractClusterComposite {
     visualisation: AbstractClusterVisualisation;
 
     constructor(depth: number, clusterIdx: number, clustersGivenK: ClusterNode[][], points: vec3[], viewport: Viewport3D,  parent: AbstractClusterComposite) {
-        super(depth, clusterIdx);
+        super();
         this.parent = parent;
         this.cluster = clustersGivenK[depth][clusterIdx]
         this.children = [];
@@ -98,13 +94,22 @@ export class ClusterLeaf extends AbstractClusterComposite {
     }
 
     split(clustersGivenK: ClusterNode[][], points: vec3[]) {
-        if (!this.isLeaf || this.depth + 1 == clustersGivenK.length) return;
+        if (!this.isLeaf || this.cluster.k + 1 >= clustersGivenK.length) return;
+
+        let k = this.cluster.k;
+        let i = this.cluster.i;
+        while (clustersGivenK[k][i].children.length == 1) {
+            i = clustersGivenK[k][i].children[0];
+            k++;
+            
+            if (k + 1 >= clustersGivenK.length) return;
+        }
 
         this.isLeaf = false;
         this.deleteVisualization();
-
-        for (let clusterIdx of this.cluster.children) {
-            this.children.push(new ClusterLeaf(this.depth + 1, clusterIdx, clustersGivenK, points, this.viewport, this));
+        
+        for (let clusterIdx of clustersGivenK[k][i].children) {
+            this.children.push(new ClusterLeaf(k + 1, clusterIdx, clustersGivenK, points, this.viewport, this));
         }
     }
 

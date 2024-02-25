@@ -20,7 +20,7 @@ let children = 'children',
   ;
 
 function getChildren(root: ClusterNode[][], node: ClusterNode): ClusterNode[] {
-  if (node.k + 1 >= root.length - 1) return [];
+  if (node.k + 1 >= root.length) return [];
 
   const children = root[node.k + 1].filter((c: ClusterNode) => node.children.includes(c.i));
 
