@@ -1,13 +1,16 @@
-import type { vec3 } from "gl-matrix";
+import { vec3 } from "gl-matrix";
 import * as Graphics from "lib-graphics";
 import type { Viewport3D } from "lib-graphics";
 import type { ClusterNode } from "./main";
 
 export class InteractiveClusters {
     root: ClusterLeaf;
-    
+    viewport: Viewport3D;
+
     constructor(clustersGivenK: ClusterNode[][], points: vec3[], viewport: Viewport3D) {
-        this.root = new ClusterLeaf(1, 0, clustersGivenK, points, viewport, null);
+        this.root = new ClusterLeaf(clustersGivenK[1][0], points, viewport, null, this);
+        this.root.updatePoints(points);
+        this.viewport = viewport;
     }
 
     rayIntersection(ray: Graphics.Ray): ClusterLeaf {
@@ -40,9 +43,29 @@ export class InteractiveClusters {
         }
     }
 
+    // Used for notifying other clusters of changed elsewhere in the tree
+    eventUpdate(newNodes: AbstractClusterComposite[], points: vec3[]) {
+        let inorder: AbstractClusterComposite[] = this.root.getInorder();
+
+        for (let i = 0; i < inorder.length; i++) {
+            let cluster: AbstractClusterComposite = inorder[i];
+            if (!newNodes.includes(cluster)) {
+                cluster.eventUpdate(points);
+            }
+        }
+    }
+
     delete() {
         let inorder = this.root.getInorder();
         inorder.forEach((x : AbstractClusterComposite) => x.deleteVisualization());
+    }
+
+    getViewport() {
+        return this.viewport
+    }
+
+    getClusters() {
+        return this.root.getInorder().map((c: ClusterLeaf) => c.cluster);
     }
 }
 
@@ -56,6 +79,7 @@ export abstract class AbstractClusterComposite {
     abstract rayIntersection(ray: Graphics.Ray) : Graphics.Intersection;
     abstract updateCluster(clustersGivenK: ClusterNode[][], points: vec3[]);
     abstract updatePoints(points: vec3[]);
+    abstract eventUpdate(points: vec3[]);
     abstract deleteVisualization();
     abstract getInorder(): AbstractClusterComposite[];
 }
@@ -65,23 +89,25 @@ export class ClusterLeaf extends AbstractClusterComposite {
     children: AbstractClusterComposite[];
     isLeaf: boolean;
     viewport: Viewport3D;
+    manager: InteractiveClusters;
 
     visualisation: AbstractClusterVisualisation;
 
-    constructor(depth: number, clusterIdx: number, clustersGivenK: ClusterNode[][], points: vec3[], viewport: Viewport3D,  parent: AbstractClusterComposite) {
+    constructor(cluster: ClusterNode, points: vec3[], viewport: Viewport3D,  parent: AbstractClusterComposite, manager: InteractiveClusters) {
         super();
         this.parent = parent;
-        this.cluster = clustersGivenK[depth][clusterIdx]
+        this.cluster = cluster;
         this.children = [];
         this.isLeaf = true;
         this.viewport = viewport;
+        this.manager = manager;
 
-        this.setVisualisation(SphereClusterVisualisation, points);
+        this.setVisualisation(HedgehogClusterVisualisation, points);
     }
 
-    setVisualisation<T extends AbstractClusterVisualisation>(visualisationType: new(points: vec3[], cluster: ClusterNode, viewport: Viewport3D) => T, points: vec3[]) {
+    setVisualisation<T extends AbstractClusterVisualisation>(visualisationType: new(manager: InteractiveClusters, points: vec3[], cluster: ClusterNode, viewport: Viewport3D) => T, points: vec3[]) {
         this.deleteVisualization();
-        this.visualisation = new visualisationType(points, this.cluster, this.viewport);
+        this.visualisation = new visualisationType(this.manager, points, this.cluster, this.viewport);
     }
 
     getInorder() {
@@ -96,16 +122,20 @@ export class ClusterLeaf extends AbstractClusterComposite {
         return inorder;
     }
 
-    updateCluster(clustersGivenK: ClusterNode[][], points: vec3[]) {
+    updateCluster(clustersGivenK: ClusterNode[][]) {
         this.cluster = clustersGivenK[this.cluster.k][this.cluster.i];
         if (this.isLeaf && this.visualisation) 
-            this.visualisation.updateCluster(points, this.cluster);
-        
+            this.visualisation.updateCluster(this.cluster);        
     }
 
     updatePoints(points: vec3[]) {
         if (this.isLeaf && this.visualisation)
             this.visualisation.updatePoints(points);
+    }
+
+    eventUpdate(points: vec3[]) {
+        if (this.isLeaf && this.visualisation)
+            this.visualisation.eventUpdate(points);
     }
 
     split(clustersGivenK: ClusterNode[][], points: vec3[]) {
@@ -124,8 +154,14 @@ export class ClusterLeaf extends AbstractClusterComposite {
         this.deleteVisualization();
         
         for (let clusterIdx of clustersGivenK[k][i].children) {
-            this.children.push(new ClusterLeaf(k + 1, clusterIdx, clustersGivenK, points, this.viewport, this));
+            this.children.push(new ClusterLeaf(clustersGivenK[k + 1][clusterIdx], points, this.viewport, this, this.manager));
         }
+
+        for (let child of this.children) {
+            child.updatePoints(points);
+        }
+
+        this.manager.eventUpdate(this.children, points);
     }
 
     rayIntersection(ray: Graphics.Ray): Graphics.Intersection | null {
@@ -146,16 +182,18 @@ export class ClusterLeaf extends AbstractClusterComposite {
 
 
 export abstract class AbstractClusterVisualisation {
-    abstract rayIntersection(ray: Graphics.Ray) : Graphics.Intersection;
+    manager: InteractiveClusters;
 
-    constructor(points: vec3[], cluster: ClusterNode, viewport: Viewport3D) {
-        // Keep empty
+    constructor(manager: InteractiveClusters, points: vec3[], cluster: ClusterNode, viewport: Viewport3D) {
+        this.manager = manager;
     }
-
+    
+    abstract rayIntersection(ray: Graphics.Ray) : Graphics.Intersection;
     abstract updatePoints(points: vec3[]);
-    abstract updateCluster(points: vec3[], cluster: ClusterNode);
+    abstract updateCluster(cluster: ClusterNode);
     abstract delete(viewport: Viewport3D);
     abstract setColor(color: vec3);
+    eventUpdate(points: vec3[]) { /* For most subclasses this is unnecessary */ }
 }
 
 
@@ -164,22 +202,22 @@ export class SphereClusterVisualisation extends AbstractClusterVisualisation {
     sphereID: number;
     cluster: ClusterNode;
 
-    constructor(points: vec3[], cluster: ClusterNode, viewport: Viewport3D) {
-        super(points, cluster, viewport);
+    constructor(manager: InteractiveClusters, points: vec3[], cluster: ClusterNode, viewport: Viewport3D) {
+        super(manager, points, cluster, viewport);
 
         [this.sphere, this.sphereID] = viewport.scene.addObject(Graphics.Sphere);
-        this.updateCluster(points, cluster);
+        this.updateCluster(cluster);
         this.setColor(cluster.color.rgb);
     }
 
-    updateCluster(points: vec3[], cluster: ClusterNode) {
+    updateCluster(cluster: ClusterNode) {
         this.cluster = cluster;
-        this.updatePoints(points);
     }
 
     updatePoints(points: vec3[]) {
         let objectPoints = points.slice(this.cluster.from, this.cluster.to + 1);
-        // It is rather inefficient to create an entire AABB just for its center...
+        // It is rather inefficient to create an entire axis aligned bounding box
+        // just to calculate the mean position of a bunch of points...
         let bb = Graphics.boundingBoxFromPoints(objectPoints);
         this.sphere.properties.center = [bb.center[0], bb.center[1], bb.center[2]];
         this.sphere.properties.radius = objectPoints.length / 1000.0 * 2;
@@ -200,5 +238,134 @@ export class SphereClusterVisualisation extends AbstractClusterVisualisation {
         viewport.scene.removeObjectByID(this.sphereID);
         this.sphereID = null;
         this.sphere = null;
+    }
+}
+
+export class HedgehogClusterVisualisation extends AbstractClusterVisualisation {
+    cluster: ClusterNode;
+    viewport: Viewport3D;
+    cones: Graphics.RoundedCone[] = [];
+    conesIDs: number[] = [];
+    sphere: Graphics.Sphere = null;
+    sphereID: number = null;
+
+    constructor(manager: InteractiveClusters, points: vec3[], cluster: ClusterNode, viewport: Viewport3D) {
+        super(manager, points, cluster, viewport);
+
+        this.viewport = viewport;
+
+        this.updateCluster(cluster);
+        this.setColor(cluster.color.rgb);
+    }
+
+    updateCluster(cluster: ClusterNode) {
+        this.cluster = cluster;
+    }
+
+    updatePoints(points: vec3[]) {
+        let clusters: ClusterNode[] = this.manager.getClusters();
+        let centers = [];
+        for (let cluster of clusters) {
+            if (cluster != this.cluster) {
+                let bb = Graphics.boundingBoxFromPoints(points.slice(cluster.from, cluster.to + 1))
+                centers.push(bb.center);
+            }
+        }
+        let box = Graphics.boundingBoxFromPoints(points.slice(this.cluster.from, this.cluster.to + 1))
+        let coneCenter = box.center;
+
+        // Would be faster if there was some way to get cluster centers efficiently
+        let nearbyDirections = this.getDirections(coneCenter, centers);
+
+        // I would rather prefer to ad-hoc add/remove the objects only as needed
+        // and update the existing ones instead of deleting everything and starting over every time
+        this.delete(this.viewport);
+
+        const coneStartRadius = 0.1;
+        const coneHeight = 0.3;
+        for (let i = 0; i < nearbyDirections.length; i++) {
+            [this.cones[i], this.conesIDs[i]] = this.viewport.scene.addObject(Graphics.RoundedCone);     
+            this.cones[i].properties.start = [coneCenter[0], coneCenter[1], coneCenter[2]];
+            this.cones[i].properties.end = [
+                coneCenter[0] + coneHeight * nearbyDirections[i][0],
+                coneCenter[1] + coneHeight * nearbyDirections[i][1],
+                coneCenter[2] + coneHeight * nearbyDirections[i][2],
+            ];
+            this.cones[i].properties.startRadius = coneStartRadius;
+            this.cones[i].properties.endRadius = 0.0001;
+            this.cones[i].setDirtyCPU();
+        }
+
+        if (nearbyDirections.length == 0) {
+            [this.sphere, this.sphereID] = this.viewport.scene.addObject(Graphics.Sphere);
+            this.sphere.properties.center = [coneCenter[0], coneCenter[1], coneCenter[2]];
+            this.sphere.properties.radius = coneStartRadius;    
+            this.sphere.setDirtyCPU();
+        }
+
+        this.setColor(this.cluster.color.rgb);
+    }
+
+    eventUpdate(points: vec3[]): void {
+        this.updatePoints(points);
+    }
+
+    getDirections(center: vec3, otherCenters: vec3[]): vec3[] {
+        let directions = [];
+        for (let otherCenter of otherCenters) {
+            let direction = vec3.sub(vec3.fromValues(0, 0, 0), otherCenter, center);
+            
+            // Here the code decides how far to create octopi tentacles
+            const nearbyDistanceValue = 0.9;
+            if (vec3.len(direction) < nearbyDistanceValue) {
+                let normalizedDirection = vec3.normalize(vec3.fromValues(0, 0, 0), direction);
+                directions.push(normalizedDirection);
+            }
+        }
+        return directions;
+    }
+
+    setColor(color: vec3) {
+        for (let i = 0; i < this.cones.length; i++) {
+            this.cones[i].properties.color = [color[0], color[1], color[2], 1.0];
+            this.cones[i].setDirtyCPU();
+        }
+
+        if (this.sphereID) {
+            this.sphere.properties.color = [color[0], color[1], color[2], 1.0];
+            this.sphere.setDirtyCPU();
+        }
+    }
+
+    rayIntersection(ray: Graphics.Ray): Graphics.Intersection {
+        if (this.sphereID != null) {
+            return this.sphere.rayIntersection(ray);
+        }
+        
+        let bestT = Infinity
+        let bestIntersection = null;
+        for (let object of this.cones) {
+            let intersection = object.rayIntersection(ray);
+            if (intersection != null && intersection.t < bestT) {
+                bestT = intersection.t;
+                bestIntersection = intersection;
+            }
+        }
+
+        return bestIntersection;
+    }
+    
+    delete(viewport: Graphics.Viewport3D) {
+        for (let i = 0; i < this.conesIDs.length; i++) {
+            viewport.scene.removeObjectByID(this.conesIDs[i]);
+        } 
+        this.conesIDs = [];
+        this.cones = [];
+
+        if (this.sphereID) {
+            viewport.scene.removeObjectByID(this.sphereID);
+            this.sphereID = null;
+            this.sphere = null;
+        }
     }
 }

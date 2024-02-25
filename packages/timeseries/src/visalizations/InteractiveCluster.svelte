@@ -44,6 +44,7 @@
     function updateClusters(dataClustersByK: ClusterNode[][]) {
       if (clusterObjects && points) {
         clusterObjects.updateClusters(points, dataClustersByK);
+        clusterObjects.updatePoints(points);
       }
     }
 
