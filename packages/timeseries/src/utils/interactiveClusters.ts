@@ -62,8 +62,7 @@ export class ClusterLeaf extends AbstractClusterComposite {
     isLeaf: boolean;
     viewport: Viewport3D;
 
-    object: Graphics.Sphere;
-    objectID: number;
+    visualisation: AbstractClusterVisualisation;
 
     constructor(depth: number, clusterIdx: number, clustersGivenK: ClusterNode[][], points: vec3[], viewport: Viewport3D,  parent: AbstractClusterComposite) {
         super(depth, clusterIdx);
@@ -73,9 +72,12 @@ export class ClusterLeaf extends AbstractClusterComposite {
         this.isLeaf = true;
         this.viewport = viewport;
 
-        [this.object, this.objectID] = viewport.scene.addObject(Graphics.Sphere);
-        this.object.properties.radius = 0.2;  
-        this.updatePoints(points);
+        this.setVisualisation(SphereClusterVisualisation, points);
+    }
+
+    setVisualisation<T extends AbstractClusterVisualisation>(visualisationType: new(points: vec3[], cluster: ClusterNode, viewport: Viewport3D) => T, points: vec3[]) {
+        this.deleteVisualization();
+        this.visualisation = new visualisationType(points, this.cluster, this.viewport);
     }
 
     getInorder() {
@@ -91,12 +93,8 @@ export class ClusterLeaf extends AbstractClusterComposite {
     }
 
     updatePoints(points: vec3[]) {
-        if (!this.isLeaf) return;
-        
-        let bb = Graphics.boundingBoxFromPoints(points.slice(this.cluster.from, this.cluster.to + 1));
-        this.object.properties.center = [bb.center[0], bb.center[1], bb.center[2]];
-        this.object.properties.color = [this.cluster.color.rgb[0], this.cluster.color.rgb[1], this.cluster.color.rgb[2], 1];
-        this.object.setDirtyCPU();
+        if (this.isLeaf && this.visualisation)
+            this.visualisation.updatePoints(points);
     }
 
     split(clustersGivenK: ClusterNode[][], points: vec3[]) {
@@ -115,12 +113,72 @@ export class ClusterLeaf extends AbstractClusterComposite {
             return null;
         }
 
-        return this.object.rayIntersection(ray);
+        return this.visualisation.rayIntersection(ray);
     }
 
     deleteVisualization() {
-        if (this.objectID) {
-            this.viewport.scene.removeObjectByID(this.objectID);
+        if (this.visualisation) {
+            this.visualisation.delete(this.viewport);
+            this.visualisation = null;
         }
+    }
+}
+
+
+export abstract class AbstractClusterVisualisation {
+    abstract rayIntersection(ray: Graphics.Ray) : Graphics.Intersection;
+
+    constructor(points: vec3[], cluster: ClusterNode, viewport: Viewport3D) {
+        // Keep empty
+    }
+
+    abstract updatePoints(points: vec3[]);
+    abstract updateCluster(points: vec3[], cluster: ClusterNode);
+    abstract delete(viewport: Viewport3D);
+    abstract setColor(color: vec3);
+}
+
+
+export class SphereClusterVisualisation extends AbstractClusterVisualisation {
+    sphere: Graphics.Sphere;
+    sphereID: number;
+    cluster: ClusterNode;
+
+    constructor(points: vec3[], cluster: ClusterNode, viewport: Viewport3D) {
+        super(points, cluster, viewport);
+
+        [this.sphere, this.sphereID] = viewport.scene.addObject(Graphics.Sphere);
+        this.updateCluster(points, cluster);
+        this.setColor(cluster.color.rgb);
+    }
+
+    updateCluster(points: vec3[], cluster: ClusterNode) {
+        this.cluster = cluster;
+        this.updatePoints(points);
+    }
+
+    updatePoints(points: vec3[]) {
+        let objectPoints = points.slice(this.cluster.from, this.cluster.to + 1);
+        // It is rather inefficient to create an entire AABB just for its center...
+        let bb = Graphics.boundingBoxFromPoints(objectPoints);
+        this.sphere.properties.center = [bb.center[0], bb.center[1], bb.center[2]];
+        this.sphere.properties.radius = objectPoints.length / 1000.0 * 2;
+
+        this.sphere.setDirtyCPU();
+    }
+
+    setColor(color: vec3) {
+        this.sphere.properties.color = [color[0], color[1], color[2], 1];
+        this.sphere.setDirtyCPU();
+    }
+
+    rayIntersection(ray: Graphics.Ray): Graphics.Intersection {
+        return this.sphere.rayIntersection(ray);
+    }
+    
+    delete(viewport: Graphics.Viewport3D) {
+        viewport.scene.removeObjectByID(this.sphereID);
+        this.sphereID = null;
+        this.sphere = null;
     }
 }
