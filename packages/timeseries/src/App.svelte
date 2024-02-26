@@ -432,6 +432,8 @@
             <Select size="sm" inline labelText="Visualization type:" bind:selected={clusterVisualization}>
               <SelectItem value="Sphere" />
               <SelectItem value="Hedgehog" />
+              <SelectItem value="Cones" />
+              <SelectItem value="SignedDistanceGrid" />
             </Select>           
             {/if}
 

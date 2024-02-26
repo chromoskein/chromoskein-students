@@ -9,6 +9,7 @@
     import { vec2 } from "gl-matrix";
 
     let viewport: Writable<Viewport3D | null> = getContext("viewport");
+    let device: Writable<GPUDevice> = getContext("device");
 
     export let dataClustersGivenK: ClusterNode[][] | null = null;
     export let points: vec3[] = [];
@@ -35,7 +36,7 @@
   
     $: if ($viewport) {
       if (clusterObjects == null) {
-        clusterObjects = new InteractiveClusters(dataClustersGivenK, points, $viewport);
+        clusterObjects = new InteractiveClusters(dataClustersGivenK, points, $viewport, $device);
         canvas = document.getElementById("canvas");
         canvas?.addEventListener("mousedown", event => {
           if (event.button == 0) { // left click for mouse

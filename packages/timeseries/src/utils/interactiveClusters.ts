@@ -7,12 +7,14 @@ import PCA from 'pca-js';
 
 export class InteractiveClusters {
     root: ClusterLeaf;
+    device: GPUDevice;
     viewport: Viewport3D;
 
-    constructor(clustersGivenK: ClusterNode[][], points: vec3[], viewport: Viewport3D) {
+    constructor(clustersGivenK: ClusterNode[][], points: vec3[], viewport: Viewport3D, device: GPUDevice) {
         this.root = new ClusterLeaf(clustersGivenK[1][0], points, viewport, null, this);
         this.root.updatePoints(points);
         this.viewport = viewport;
+        this.device = device;
     }
 
     rayIntersection(ray: Graphics.Ray): ClusterLeaf {
@@ -64,6 +66,10 @@ export class InteractiveClusters {
 
     getViewport() {
         return this.viewport
+    }
+
+    getDevice() {
+        return this.device;
     }
 
     getClusters() {
@@ -170,12 +176,19 @@ export class ClusterLeaf extends AbstractClusterComposite {
     }
 
     // TODO: fix number of octopi tentacles when any cluster is split
-    // and possibly deal with splitting (octopus split to octopi?)
+    // TODO: This function is a not so great crutch. Changing representation
+    // should be the direct responsibility of the caller!!!
+    // I especially dont like that change here must also accompany
+    // change in other places
     changeRepresentation(visualizationType: string, points: vec3[]) {
         if (visualizationType == "Sphere") {
             this.setVisualisation(SphereClusterVisualisation, points);
         } else if (visualizationType == "Hedgehog") {
             this.setVisualisation(HedgehogClusterVisualisation, points);
+        } else if (visualizationType == "Cones") {
+            this.setVisualisation(PCAClusterVisualisation, points);
+        } else if (visualizationType == "SignedDistanceGrid") {
+            this.setVisualisation(SDGClusterVisualisation, points);
         }
         this.updatePoints(points);
     }
@@ -486,4 +499,60 @@ export class PCAClusterVisualisation extends AbstractClusterVisualisation {
     getConstructor() {
         return PCAClusterVisualisation;
     }
+}
+
+export class SDGClusterVisualisation extends AbstractClusterVisualisation {
+    cluster: ClusterNode;
+    viewport: Viewport3D;
+    sdgObject: Graphics.SignedDistanceGrid;
+    sdgObjectID: number | null = null;
+
+    constructor(manager: InteractiveClusters, points: vec3[], cluster: ClusterNode, viewport: Viewport3D) {
+        super(manager, points, cluster, viewport);
+
+        this.viewport = viewport;
+
+        [this.sdgObject, this.sdgObjectID] = viewport.scene.addObject(Graphics.SignedDistanceGrid);
+        this.sdgObject.setDirtyCPU();
+
+        this.updateCluster(cluster);
+        this.setColor(cluster.color.rgb);
+    }
+
+    updateCluster(cluster: ClusterNode) {
+        this.cluster = cluster;
+    }
+
+    updatePoints(points: vec3[]) {
+        let blob = blobFromPoints(points.slice(this.cluster.from, this.cluster.to + 1))
+        this.sdgObject.translate([blob.center[0], blob.center[1], blob.center[2]], 0);
+        this.sdgObject.scale(blob.scale, 0);
+        this.sdgObject.fromPoints(this.manager.getDevice(), [blob.normalizedPoints], [0.03]);
+        this.sdgObject.setDirtyCPU();
+    }
+
+    setColor(color: vec3) {
+        if (this.sdgObjectID) {
+            this.sdgObject.properties[0].color = [color[0], color[1], color[2], 1.0];
+            this.sdgObject.setDirtyCPU();
+        }
+    }
+
+    rayIntersection(ray: Graphics.Ray): Graphics.Intersection {
+        return this.sdgObject.rayIntersection(ray);
+    }
+    
+    delete(viewport: Graphics.Viewport3D) {
+        if (this.sdgObjectID) {
+            viewport.scene.removeObjectByID(this.sdgObjectID);
+            
+            this.sdgObjectID = null;
+            this.sdgObject = null;
+        }
+    }
+
+    getConstructor() {
+        return SDGClusterVisualisation;
+    }
+
 }
