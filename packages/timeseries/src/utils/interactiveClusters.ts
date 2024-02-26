@@ -81,6 +81,7 @@ export abstract class AbstractClusterComposite {
     abstract rayIntersection(ray: Graphics.Ray) : Graphics.Intersection;
     abstract updateCluster(clustersGivenK: ClusterNode[][], points: vec3[]);
     abstract updatePoints(points: vec3[]);
+    abstract setVisualisation<T extends AbstractClusterVisualisation>(visualisationType: new(manager: InteractiveClusters, points: vec3[], cluster: ClusterNode, viewport: Viewport3D) => T, points: vec3[]);
     abstract eventUpdate(points: vec3[]);
     abstract deleteVisualization();
     abstract getInorder(): AbstractClusterComposite[];
@@ -153,6 +154,7 @@ export class ClusterLeaf extends AbstractClusterComposite {
         }
 
         this.isLeaf = false;
+        let visualizationType = this.visualisation.getConstructor();
         this.deleteVisualization();
         
         for (let clusterIdx of clustersGivenK[k][i].children) {
@@ -160,6 +162,7 @@ export class ClusterLeaf extends AbstractClusterComposite {
         }
 
         for (let child of this.children) {
+            child.setVisualisation(visualizationType, points)
             child.updatePoints(points);
         }
 
@@ -206,6 +209,7 @@ export abstract class AbstractClusterVisualisation {
     abstract updateCluster(cluster: ClusterNode);
     abstract delete(viewport: Viewport3D);
     abstract setColor(color: vec3);
+    abstract getConstructor();  
     eventUpdate(points: vec3[]) { /* For most subclasses this is unnecessary */ }
 }
 
@@ -251,6 +255,10 @@ export class SphereClusterVisualisation extends AbstractClusterVisualisation {
         viewport.scene.removeObjectByID(this.sphereID);
         this.sphereID = null;
         this.sphere = null;
+    }
+
+    getConstructor() {
+        return SphereClusterVisualisation;
     }
 }
 
@@ -381,6 +389,10 @@ export class HedgehogClusterVisualisation extends AbstractClusterVisualisation {
             this.sphere = null;
         }
     }
+
+    getConstructor() {
+        return HedgehogClusterVisualisation;
+    }
 }
 
 export class PCAClusterVisualisation extends AbstractClusterVisualisation {
@@ -469,5 +481,9 @@ export class PCAClusterVisualisation extends AbstractClusterVisualisation {
             this.coneUpID = null;
             this.coneUp = null;
         }
+    }
+
+    getConstructor() {
+        return PCAClusterVisualisation;
     }
 }

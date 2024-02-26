@@ -74,7 +74,7 @@
         if (clusterObjects)
           clusterObjects.delete();
         canvas = document.getElementById("canvas");
-        canvas?.removeEventListener("mousedown", onElementButtonClick); 
+        //canvas?.removeEventListener("mousedown", onElementButtonClick); 
       };
     });
   </script>
