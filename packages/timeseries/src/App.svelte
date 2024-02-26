@@ -434,6 +434,7 @@
               <SelectItem value="Hedgehog" />
               <SelectItem value="Cones" />
               <SelectItem value="SignedDistanceGrid" />
+              <SelectItem value="Pathline" />
             </Select>           
             {/if}
 

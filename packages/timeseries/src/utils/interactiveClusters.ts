@@ -189,6 +189,8 @@ export class ClusterLeaf extends AbstractClusterComposite {
             this.setVisualisation(PCAClusterVisualisation, points);
         } else if (visualizationType == "SignedDistanceGrid") {
             this.setVisualisation(SDGClusterVisualisation, points);
+        } else if (visualizationType == "Pathline") {
+            this.setVisualisation(PathlineClusterVisualization, points);
         }
         this.updatePoints(points);
     }
@@ -503,14 +505,11 @@ export class PCAClusterVisualisation extends AbstractClusterVisualisation {
 
 export class SDGClusterVisualisation extends AbstractClusterVisualisation {
     cluster: ClusterNode;
-    viewport: Viewport3D;
     sdgObject: Graphics.SignedDistanceGrid;
     sdgObjectID: number | null = null;
 
     constructor(manager: InteractiveClusters, points: vec3[], cluster: ClusterNode, viewport: Viewport3D) {
         super(manager, points, cluster, viewport);
-
-        this.viewport = viewport;
 
         [this.sdgObject, this.sdgObjectID] = viewport.scene.addObject(Graphics.SignedDistanceGrid);
         this.sdgObject.setDirtyCPU();
@@ -553,6 +552,81 @@ export class SDGClusterVisualisation extends AbstractClusterVisualisation {
 
     getConstructor() {
         return SDGClusterVisualisation;
+    }
+
+}
+
+export class PathlineClusterVisualization extends AbstractClusterVisualisation {
+    cluster: ClusterNode;
+    viewport: Viewport3D;
+    pathline: Graphics.RoundedConeInstanced;
+    pathlineID: number | null = null;
+    n_instances: number = 0;
+
+    constructor(manager: InteractiveClusters, points: vec3[], cluster: ClusterNode, viewport: Viewport3D) {
+        super(manager, points, cluster, viewport);
+
+        this.viewport = viewport;
+        this.updateCluster(cluster);
+    }
+
+    updateCluster(cluster: ClusterNode) {
+        this.cluster = cluster;
+    }
+
+    updatePoints(points: vec3[]) {
+        let clusterPoints = points.slice(this.cluster.from, this.cluster.to + 1);
+
+        if (this.pathlineID == null || this.n_instances != clusterPoints.length - 1) {
+            this.delete(this.viewport);
+            [this.pathline, this.pathlineID] = this.viewport.scene.addObjectInstanced(
+                Graphics.RoundedConeInstanced,
+                clusterPoints.length - 1
+            );
+            this.n_instances = clusterPoints.length - 1;
+            this.setColor(this.cluster.color.rgb);
+        }
+
+        for (let i = 0; i < clusterPoints.length - 1; i++) {
+            this.pathline.properties[i].start = [clusterPoints[i][0], clusterPoints[i][1], clusterPoints[i][2]];
+            this.pathline.properties[i].end = [
+                clusterPoints[i + 1][0],
+                clusterPoints[i + 1][1],
+                clusterPoints[i + 1][2],
+            ];
+      
+            this.pathline.properties[i].startRadius = 0.04;
+            this.pathline.properties[i].endRadius = 0.04;
+      
+          }
+          this.pathline.setDirtyCPU();
+    }
+
+    setColor(color: vec3) {
+        if (this.pathlineID) {
+            for (let i = 0; i < this.n_instances - 1; i++) {
+                this.pathline.properties[i].startColor = [color[0], color[1], color[2], 1.0];
+                this.pathline.properties[i].endColor = [color[0], color[1], color[2], 1.0];
+            }
+            this.pathline.setDirtyCPU();
+        }
+    }
+
+    rayIntersection(ray: Graphics.Ray): Graphics.Intersection {
+        return this.pathline.rayIntersection(ray);
+    }
+    
+    delete(viewport: Graphics.Viewport3D) {
+        if (this.pathlineID) {
+            viewport.scene.removeObjectByID(this.pathlineID);
+            
+            this.pathlineID = null;
+            this.pathline = null;
+        }
+    }
+
+    getConstructor() {
+        return PathlineClusterVisualization;
     }
 
 }
