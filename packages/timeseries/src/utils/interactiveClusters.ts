@@ -104,7 +104,7 @@ export class ClusterLeaf extends AbstractClusterComposite {
         this.viewport = viewport;
         this.manager = manager;
 
-        this.setVisualisation(PCAClusterVisualisation, points);
+        this.setVisualisation(SphereClusterVisualisation, points);
     }
 
     setVisualisation<T extends AbstractClusterVisualisation>(visualisationType: new(manager: InteractiveClusters, points: vec3[], cluster: ClusterNode, viewport: Viewport3D) => T, points: vec3[]) {
@@ -164,6 +164,17 @@ export class ClusterLeaf extends AbstractClusterComposite {
         }
 
         this.manager.eventUpdate(this.children, points);
+    }
+
+    // TODO: fix number of octopi tentacles when any cluster is split
+    // and possibly deal with splitting (octopus split to octopi?)
+    changeRepresentation(visualizationType: string, points: vec3[]) {
+        if (visualizationType == "Sphere") {
+            this.setVisualisation(SphereClusterVisualisation, points);
+        } else if (visualizationType == "Hedgehog") {
+            this.setVisualisation(HedgehogClusterVisualisation, points);
+        }
+        this.updatePoints(points);
     }
 
     rayIntersection(ray: Graphics.Ray): Graphics.Intersection | null {

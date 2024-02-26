@@ -244,6 +244,8 @@
     coneOrient = getConeOrientation(blobs[selectedTimestep], closestBlobs);
   }
 
+  let clusterVisualization = "Sphere";
+
   // fixed for now
   let filename = "./timeseries/tmpfile.bed";
   let result = loadBEDfile(filename);
@@ -314,6 +316,7 @@
             <InteractiveCluster
               dataClustersGivenK={dataClustersGivenK}
               points={dataPathlines.map((pathline) => pathline[selectedTimestep])}
+              clusterVisualization={clusterVisualization}
             />
           {/if}
 
@@ -424,6 +427,13 @@
               <SelectItem value="Hedgehog" />
               <SelectItem value="Composite" />
             </Select>
+
+            {#if visualizationSelected == "Composite"}
+            <Select size="sm" inline labelText="Visualization type:" bind:selected={clusterVisualization}>
+              <SelectItem value="Sphere" />
+              <SelectItem value="Hedgehog" />
+            </Select>           
+            {/if}
 
             <Checkbox labelText="Colored" bind:checked={blobsColored} />
             <Checkbox labelText="Experimental colors" bind:checked={experimentalColors} />
