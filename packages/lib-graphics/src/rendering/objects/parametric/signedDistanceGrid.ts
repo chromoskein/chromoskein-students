@@ -360,8 +360,86 @@ export class SignedDistanceGrid extends IParametricObject {
     `;
     //#endregion GPU Code
 
+    private opSmoothUnion(d1: number, d2: number, k: number): number {
+        let h = Math.min(Math.max(0.5 + 0.5 * (d2 - d1) / k, 0.0), 1.0);
+        return (d2 * (1.0 - h) + d1 * h) - k*h*(1.0-h);
+    }
+    
+    private sdCapsule(p: vec3, a: vec3, b: vec3, r: number ): number
+    {
+      let pa = vec3.sub(vec3.fromValues(0, 0, 0), p, a); // p - a;
+      let ba = vec3.sub(vec3.fromValues(0, 0, 0), b, a);// b - a;
+      
+      let h = Math.min(Math.max(vec3.dot(pa,ba) / vec3.dot(ba,ba), 0.0), 1.0);
+    
+      let temp = vec3.fromValues(pa[0] - ba[0] * h, pa[1] - ba[1] * h, pa[2] - ba[2] * h);
+      return vec3.length(temp) - r;
+    }
+
+    private calculateSDFValue(p: vec3): number {
+        let sdf = this.sdCapsule(p, this._normalizedPoints[0], this._normalizedPoints[1], this._radius);
+        for(let i = 1; i < this._normalizedPoints.length - 1; i++) {
+            let p1 = this._normalizedPoints[i];
+            let p2 = this._normalizedPoints[i + 1];
+    
+            let sdf2 = this.sdCapsule(p, p1, p2, this._radius);
+            sdf = this.opSmoothUnion(sdf, sdf2, 0.1);
+        }
+
+        return sdf;
+    }
+
     public rayIntersection(ray: Ray): Intersection | null {
-        return null;
+        const invModelMatrix = this.properties[0].modelMatrixInverse;
+
+        let rayOriginLocalSpace = vec3.fromValues(
+            invModelMatrix[0] * ray.origin[0] + invModelMatrix[1] * ray.origin[1] + invModelMatrix[2]  * ray.origin[2] + invModelMatrix[3],
+            invModelMatrix[4] * ray.origin[0] + invModelMatrix[5] * ray.origin[1] + invModelMatrix[6]  * ray.origin[2] + invModelMatrix[7],
+            invModelMatrix[8] * ray.origin[0] + invModelMatrix[9] * ray.origin[1] + invModelMatrix[10] * ray.origin[2] + invModelMatrix[11]
+        );
+        
+        let rayDirectionLocalSpace = vec3.fromValues(
+            invModelMatrix[0]  * ray.direction[0] + invModelMatrix[1]  * ray.direction[1] + invModelMatrix[2]  * ray.direction[2],
+            invModelMatrix[4]  * ray.direction[0] + invModelMatrix[5]  * ray.direction[1] + invModelMatrix[6]  * ray.direction[2],
+            invModelMatrix[8]  * ray.direction[0] + invModelMatrix[9]  * ray.direction[1] + invModelMatrix[10] * ray.direction[2]
+        );
+
+        let tMin = vec3.div(vec3.fromValues(0, 0, 0), vec3.sub(vec3.fromValues(0, 0, 0), vec3.fromValues(-1, -1, -1), rayOriginLocalSpace), rayDirectionLocalSpace);
+        let tMax = vec3.div(vec3.fromValues(0, 0, 0), vec3.sub(vec3.fromValues(0, 0, 0), vec3.fromValues( 1,  1,  1), rayOriginLocalSpace), rayDirectionLocalSpace);
+
+        let t1 = vec3.min(vec3.fromValues(0, 0, 0), tMin, tMax);
+        let t2 = vec3.max(vec3.fromValues(0, 0, 0), tMin, tMax);
+
+        let tN = Math.max(Math.max(t1[0], t1[1]), t1[2]);
+        let tF = Math.min(Math.min(t2[0], t2[1]), t2[2]);
+
+        if (tN > tF) {
+            return null;
+        }
+
+        var intersection = vec3.fromValues(0, 0, 0);
+        var t = Math.max(tN, 0.0);
+        var distance = 0.0;
+        for (let i = 0; i < GridTextureSize; i++) {
+            intersection = vec3.scaleAndAdd(vec3.fromValues(0, 0, 0), rayOriginLocalSpace, rayDirectionLocalSpace, t);
+            distance = this.calculateSDFValue(intersection);
+
+            if (Math.abs(distance) <= 0.001) {
+                break;
+            } 
+
+            if (t > tF) {
+                return null;
+            }
+
+            t = t + Math.abs(distance);
+        }
+
+        // Hopefully this transformation is correct here
+        // This also assumes that the scale is uniform in all dimensions else 
+        // this calculation completely wrong
+        let tWorldSpace = t * this.properties[0].scale[0];
+        return {bin: 0, t: tWorldSpace, object: this};
     }
 
     public toBoundingBoxes(): BoundingBox[] {
@@ -370,6 +448,8 @@ export class SignedDistanceGrid extends IParametricObject {
     
     private _bindGroup: GPUBindGroup | null = null;
     private _texture: GPUTexture | null = null;
+    private _normalizedPoints: Array<vec3> = [];
+    private _radius: number = 0;
 
     constructor(id: number, graphicsLibrary: GraphicsLibrary, allocator: Allocator, instances: number = 1) {
         super(id, graphicsLibrary, allocator);
@@ -497,6 +577,9 @@ export class SignedDistanceGrid extends IParametricObject {
         device.queue.submit([commandEncoder.finish()]);
 
         this.onAllocationMoved();
+        this._normalizedPoints = points[0];
+        this._radius = radius[0];
+        //this.createCPUGrid(points[0], radius[0]);
     }
 
     public fromArbitraryPoints(device: GPUDevice, points: Array<vec3>, delimiters: Array<number>, radius: number = 0.05) {
