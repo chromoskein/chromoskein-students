@@ -390,28 +390,20 @@ export class SignedDistanceGrid extends IParametricObject {
     }
 
     public rayIntersection(ray: Ray): Intersection | null {
-        const invModelMatrix = this.properties[0].modelMatrixInverse;
+        const rayOriginTransformed = vec4.transformMat4(vec4.create(), vec4.fromValues(ray.origin[0], ray.origin[1], ray.origin[2], 1), this.properties[0].modelMatrixInverse);
+        const rayOriginLocalSpace = vec3.fromValues(rayOriginTransformed[0], rayOriginTransformed[1], rayOriginTransformed[2]);
 
-        let rayOriginLocalSpace = vec3.fromValues(
-            invModelMatrix[0] * ray.origin[0] + invModelMatrix[1] * ray.origin[1] + invModelMatrix[2]  * ray.origin[2] + invModelMatrix[3],
-            invModelMatrix[4] * ray.origin[0] + invModelMatrix[5] * ray.origin[1] + invModelMatrix[6]  * ray.origin[2] + invModelMatrix[7],
-            invModelMatrix[8] * ray.origin[0] + invModelMatrix[9] * ray.origin[1] + invModelMatrix[10] * ray.origin[2] + invModelMatrix[11]
-        );
-        
-        let rayDirectionLocalSpace = vec3.fromValues(
-            invModelMatrix[0]  * ray.direction[0] + invModelMatrix[1]  * ray.direction[1] + invModelMatrix[2]  * ray.direction[2],
-            invModelMatrix[4]  * ray.direction[0] + invModelMatrix[5]  * ray.direction[1] + invModelMatrix[6]  * ray.direction[2],
-            invModelMatrix[8]  * ray.direction[0] + invModelMatrix[9]  * ray.direction[1] + invModelMatrix[10] * ray.direction[2]
-        );
+        const rayDirectionTransformed = vec4.transformMat4(vec4.create(), vec4.fromValues(ray.direction[0], ray.direction[1], ray.direction[2], 0), this.properties[0].modelMatrixInverse);
+        const rayDirectionLocalSpace = vec3.normalize(vec3.create() ,vec3.fromValues(rayDirectionTransformed[0], rayDirectionTransformed[1], rayDirectionTransformed[2]));
 
-        let tMin = vec3.div(vec3.fromValues(0, 0, 0), vec3.sub(vec3.fromValues(0, 0, 0), vec3.fromValues(-1, -1, -1), rayOriginLocalSpace), rayDirectionLocalSpace);
-        let tMax = vec3.div(vec3.fromValues(0, 0, 0), vec3.sub(vec3.fromValues(0, 0, 0), vec3.fromValues( 1,  1,  1), rayOriginLocalSpace), rayDirectionLocalSpace);
+        const tMin = vec3.div(vec3.create(), vec3.sub(vec3.create(), vec3.fromValues(-1, -1, -1), rayOriginLocalSpace), rayDirectionLocalSpace);
+        const tMax = vec3.div(vec3.create(), vec3.sub(vec3.create(), vec3.fromValues( 1,  1,  1), rayOriginLocalSpace), rayDirectionLocalSpace);
 
-        let t1 = vec3.min(vec3.fromValues(0, 0, 0), tMin, tMax);
-        let t2 = vec3.max(vec3.fromValues(0, 0, 0), tMin, tMax);
+        const t1 = vec3.min(vec3.create(), tMin, tMax);
+        const t2 = vec3.max(vec3.create(), tMin, tMax);
 
-        let tN = Math.max(Math.max(t1[0], t1[1]), t1[2]);
-        let tF = Math.min(Math.min(t2[0], t2[1]), t2[2]);
+        const tN = Math.max(Math.max(t1[0], t1[1]), t1[2]);
+        const tF = Math.min(Math.min(t2[0], t2[1]), t2[2]);
 
         if (tN > tF) {
             return null;
@@ -421,7 +413,7 @@ export class SignedDistanceGrid extends IParametricObject {
         var t = Math.max(tN, 0.0);
         var distance = 0.0;
         for (let i = 0; i < GridTextureSize; i++) {
-            intersection = vec3.scaleAndAdd(vec3.fromValues(0, 0, 0), rayOriginLocalSpace, rayDirectionLocalSpace, t);
+            intersection = vec3.scaleAndAdd(vec3.create(), rayOriginLocalSpace, rayDirectionLocalSpace, t);
             distance = this.calculateSDFValue(intersection);
 
             if (Math.abs(distance) <= 0.001) {
@@ -438,7 +430,7 @@ export class SignedDistanceGrid extends IParametricObject {
         // Hopefully this transformation is correct here
         // This also assumes that the scale is uniform in all dimensions else 
         // this calculation completely wrong
-        let tWorldSpace = t * this.properties[0].scale[0];
+        const tWorldSpace = t * this.properties[0].scale[0];
         return {bin: 0, t: tWorldSpace, object: this};
     }
 
@@ -651,7 +643,7 @@ export class SignedDistanceGrid extends IParametricObject {
     public translate(t: vec3, index: number = 0) {
         this.properties[index].translate = [t[0], t[1], t[2], 1.0];
         this.properties[index].modelMatrix = mat4.create();
-        mat4.scale(this.properties[index].modelMatrix, this.properties[index].modelMatrix, vec3.fromValues(this.properties[index].scale[index], this.properties[index].scale[1], this.properties[index].scale[2]));
+        mat4.scale(this.properties[index].modelMatrix, this.properties[index].modelMatrix, vec3.fromValues(this.properties[index].scale[0], this.properties[index].scale[1], this.properties[index].scale[2]));
         mat4.translate(this.properties[index].modelMatrix, this.properties[index].modelMatrix, t);
 
         this.properties[index].modelMatrixInverse = mat4.invert(mat4.create(), this.properties[index].modelMatrix);
