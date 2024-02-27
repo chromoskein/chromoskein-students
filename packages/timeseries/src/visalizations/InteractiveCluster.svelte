@@ -1,6 +1,7 @@
 <script lang="ts">
     import type { ClusterNode } from "../utils/main";
-    import { InteractiveClusters, ClusterLeaf, HedgehogClusterVisualisation, SphereClusterVisualisation } from "../utils/interactiveClusters";
+    import { InteractiveClusters, ClusterLeaf, HedgehogClusterVisualisation, SphereClusterVisualisation,
+    PCAClusterVisualisation, SDGClusterVisualisation, PathlineClusterVisualization } from "../utils/interactiveClusters";
     import { getContext, onMount } from "svelte";
     import type { Writable } from "svelte/store";
     import type { Viewport3D } from "lib-graphics";
@@ -18,6 +19,14 @@
     let clusterObjects: InteractiveClusters = null;
     let canvas: HTMLElement | null = null;
 
+    const representations = {
+      "Sphere": SphereClusterVisualisation,
+      "Hedgehog": HedgehogClusterVisualisation,
+      "Cones": PCAClusterVisualisation,
+      "SignedDistanceGrid": SDGClusterVisualisation,
+      "Pathline": PathlineClusterVisualization
+    };
+
     function onElementRightButtonClick(event) {
 		  let rect = canvas.getBoundingClientRect(); // abs. size of element    
       let ray = Graphics.screenSpaceToRay(vec2.fromValues((event.clientX - rect.left) / rect.width, (event.clientY - rect.top) / rect.height), $viewport.camera);
@@ -26,12 +35,17 @@
       if (hitCluster != null) hitCluster.split(dataClustersGivenK, points);
     }
 
+    // TODO: fix number of octopi tentacles when any cluster is split
     function onElementLeftButtonClick(event) {
 		  let rect = canvas.getBoundingClientRect(); 
       let ray = Graphics.screenSpaceToRay(vec2.fromValues((event.clientX - rect.left) / rect.width, (event.clientY - rect.top) / rect.height), $viewport.camera);
 
       let hitCluster: ClusterLeaf = clusterObjects.rayIntersection(ray);
-      if (hitCluster != null) hitCluster.changeRepresentation(clusterVisualization, points);
+      if (hitCluster != null) {
+        let chosenRepresentation = representations[clusterVisualization];
+        hitCluster.setVisualisation(chosenRepresentation, points);
+        hitCluster.updatePoints(points);
+      }
 	  }
   
     $: if ($viewport) {

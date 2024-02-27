@@ -210,26 +210,6 @@ export class ClusterLeaf extends AbstractClusterComposite {
         this.manager.eventUpdate(this.children, points);
     }
 
-    // TODO: fix number of octopi tentacles when any cluster is split
-    // TODO: This function is a not so great crutch. Changing representation
-    // should be the direct responsibility of the caller!!!
-    // I especially dont like that change here must also accompany
-    // change in other places
-    changeRepresentation(visualizationType: string, points: vec3[]) {
-        if (visualizationType == "Sphere") {
-            this.setVisualisation(SphereClusterVisualisation, points);
-        } else if (visualizationType == "Hedgehog") {
-            this.setVisualisation(HedgehogClusterVisualisation, points);
-        } else if (visualizationType == "Cones") {
-            this.setVisualisation(PCAClusterVisualisation, points);
-        } else if (visualizationType == "SignedDistanceGrid") {
-            this.setVisualisation(SDGClusterVisualisation, points);
-        } else if (visualizationType == "Pathline") {
-            this.setVisualisation(PathlineClusterVisualization, points);
-        }
-        this.updatePoints(points);
-    }
-
     rayIntersection(ray: Graphics.Ray): Graphics.Intersection | null {
         if (!this.isLeaf) {
             return null;
