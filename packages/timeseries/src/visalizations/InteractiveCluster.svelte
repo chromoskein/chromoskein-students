@@ -46,6 +46,12 @@
           event.preventDefault();
           onElementRightButtonClick(event);
         });
+
+        canvas?.addEventListener('auxclick', function(e) {
+          if (e.button == 1) {
+            clusterObjects.createConnectors();
+          }
+        });
       }
     }
   

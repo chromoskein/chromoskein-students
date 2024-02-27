@@ -59,6 +59,14 @@ export class InteractiveClusters {
         }
     }
 
+    createConnectors() {
+        let inorder: AbstractClusterComposite[] = this.root.getInorder();
+        for (let i = 0; i < inorder.length - 1; i++) {
+            console.log("Create connector");
+            let connector = new ClusterConnector(inorder[i] as ClusterLeaf, inorder[i + 1] as ClusterLeaf, this.viewport);
+        }
+    }
+
     delete() {
         let inorder = this.root.getInorder();
         inorder.forEach((x : AbstractClusterComposite) => x.deleteVisualization());
@@ -100,6 +108,9 @@ export class ClusterLeaf extends AbstractClusterComposite {
     viewport: Viewport3D;
     manager: InteractiveClusters;
 
+    inConnector: ClusterConnector = null;
+    outConnector: ClusterConnector = null;
+
     visualisation: AbstractClusterVisualisation;
 
     constructor(cluster: ClusterNode, points: vec3[], viewport: Viewport3D,  parent: AbstractClusterComposite, manager: InteractiveClusters) {
@@ -117,6 +128,18 @@ export class ClusterLeaf extends AbstractClusterComposite {
     setVisualisation<T extends AbstractClusterVisualisation>(visualisationType: new(manager: InteractiveClusters, points: vec3[], cluster: ClusterNode, viewport: Viewport3D) => T, points: vec3[]) {
         this.deleteVisualization();
         this.visualisation = new visualisationType(this.manager, points, this.cluster, this.viewport);
+    }
+
+    setInConnector(connector: ClusterConnector) {
+        this.inConnector = connector;
+    }
+
+    setOutConnector(connector: ClusterConnector) {
+        this.outConnector = connector;
+    }
+
+    getCenter(): vec3 {
+        return this.visualisation.getCenter();
     }
 
     getInorder() {
@@ -140,6 +163,10 @@ export class ClusterLeaf extends AbstractClusterComposite {
     updatePoints(points: vec3[]) {
         if (this.isLeaf && this.visualisation)
             this.visualisation.updatePoints(points);
+            // This causes double updates on all connectors during major update
+            // but im currently too lazy to do it correctly
+            if (this.inConnector) this.inConnector.update();
+            if (this.outConnector) this.outConnector.update();
     }
 
     eventUpdate(points: vec3[]) {
@@ -170,6 +197,14 @@ export class ClusterLeaf extends AbstractClusterComposite {
         for (let child of this.children) {
             child.setVisualisation(visualizationType, points)
             child.updatePoints(points);
+        }
+
+        if (this.inConnector) {
+            this.inConnector.setEnd(this.children[0] as ClusterLeaf)
+        }
+
+        if (this.outConnector) {
+            this.outConnector.setStart(this.children[this.children.length - 1] as ClusterLeaf);
         }
 
         this.manager.eventUpdate(this.children, points);
@@ -214,6 +249,7 @@ export class ClusterLeaf extends AbstractClusterComposite {
 
 export abstract class AbstractClusterVisualisation {
     manager: InteractiveClusters;
+    center: vec3 = vec3.fromValues(0, 0, 0);
 
     constructor(manager: InteractiveClusters, points: vec3[], cluster: ClusterNode, viewport: Viewport3D) {
         this.manager = manager;
@@ -225,6 +261,8 @@ export abstract class AbstractClusterVisualisation {
     abstract delete(viewport: Viewport3D);
     abstract setColor(color: vec3);
     abstract getConstructor();  
+
+    getCenter(): vec3 { return this.center; }
     eventUpdate(points: vec3[]) { /* For most subclasses this is unnecessary */ }
 }
 
@@ -252,6 +290,7 @@ export class SphereClusterVisualisation extends AbstractClusterVisualisation {
         // just to calculate the mean position of a bunch of points...
         let bb = Graphics.boundingBoxFromPoints(objectPoints);
         this.sphere.properties.center = [bb.center[0], bb.center[1], bb.center[2]];
+        this.center = bb.center;
         this.sphere.properties.radius = objectPoints.length / 1000.0 * 2;
 
         this.sphere.setDirtyCPU();
@@ -309,6 +348,7 @@ export class HedgehogClusterVisualisation extends AbstractClusterVisualisation {
         }
         let box = Graphics.boundingBoxFromPoints(points.slice(this.cluster.from, this.cluster.to + 1))
         let coneCenter = box.center;
+        this.center = box.center;
 
         // Would be faster if there was some way to get cluster centers efficiently
         let nearbyDirections = this.getDirections(coneCenter, centers);
@@ -440,6 +480,7 @@ export class PCAClusterVisualisation extends AbstractClusterVisualisation {
     updatePoints(points: vec3[]) {
         let blob = blobFromPoints(points.slice(this.cluster.from, this.cluster.to + 1))
         let result = PCA.getEigenVectors(blob.normalizedPoints);
+        this.center = blob.center;
        
         const coneHeight = result[0].eigenvalue / 40.0 + 0.1;
         const coneOrientation = vec3.fromValues(result[0].vector[0], result[0].vector[1], result[0].vector[2]);
@@ -524,6 +565,7 @@ export class SDGClusterVisualisation extends AbstractClusterVisualisation {
 
     updatePoints(points: vec3[]) {
         let blob = blobFromPoints(points.slice(this.cluster.from, this.cluster.to + 1))
+        this.center = blob.center;
         this.sdgObject.translate([blob.center[0], blob.center[1], blob.center[2]], 0);
         this.sdgObject.scale(blob.scale, 0);
         this.sdgObject.fromPoints(this.manager.getDevice(), [blob.normalizedPoints], [0.03]);
@@ -576,6 +618,10 @@ export class PathlineClusterVisualization extends AbstractClusterVisualisation {
 
     updatePoints(points: vec3[]) {
         let clusterPoints = points.slice(this.cluster.from, this.cluster.to + 1);
+        
+        // Again here the really inefficient way to get center of points
+        let box = Graphics.boundingBoxFromPoints(clusterPoints)
+        this.center = box.center;
 
         if (this.pathlineID == null || this.n_instances != clusterPoints.length - 1) {
             this.delete(this.viewport);
@@ -628,5 +674,58 @@ export class PathlineClusterVisualization extends AbstractClusterVisualisation {
     getConstructor() {
         return PathlineClusterVisualization;
     }
+}
 
+export class ClusterConnector {
+    start: ClusterLeaf;
+    end: ClusterLeaf;
+
+    cone: Graphics.RoundedCone;
+    coneID: number | null = null;
+
+    constructor(start: ClusterLeaf, end: ClusterLeaf, viewport: Viewport3D) {
+        this.start = start;
+        this.end = end;
+
+        start.setOutConnector(this);
+        end.setInConnector(this);
+
+        [this.cone, this.coneID] = viewport.scene.addObject(Graphics.RoundedCone);
+        this.cone.properties.startRadius = 0.02;
+        this.cone.properties.endRadius = 0.02;
+        this.setColor(vec3.fromValues(0.9, 0.9, 0.9));
+        this.update();
+    }
+
+    update() {
+        let start = this.start.getCenter();
+        let end = this.end.getCenter();
+
+        this.cone.properties.start = [start[0], start[1], start[2]];
+        this.cone.properties.end = [end[0], end[1], end[2]];
+        this.cone.setDirtyCPU();
+    }
+
+    setColor(color: vec3) {
+        this.cone.properties.color = [color[0], color[1], color[2], 1];
+        this.cone.setDirtyCPU();
+    }
+
+    setStart(start: ClusterLeaf) {
+        this.start = start;
+        this.update();
+    }
+
+    setEnd (end: ClusterLeaf) {
+        this.end = end;
+        this.update();
+    }
+
+    destroy(viewport: Viewport3D) {
+        viewport.scene.removeObjectByID(this.coneID);
+        this.coneID = null;
+        this.cone = null;
+        this.start.setOutConnector(null);
+        this.end.setInConnector(null);
+    }
 }
