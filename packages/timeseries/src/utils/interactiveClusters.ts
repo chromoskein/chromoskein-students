@@ -62,14 +62,24 @@ export class InteractiveClusters {
     createConnectors() {
         let inorder: AbstractClusterComposite[] = this.root.getInorder();
         for (let i = 0; i < inorder.length - 1; i++) {
-            console.log("Create connector");
-            let connector = new ClusterConnector(inorder[i] as ClusterLeaf, inorder[i + 1] as ClusterLeaf, this.viewport);
+            let cluster = inorder[i] as ClusterLeaf;
+            cluster.outConnector?.destroy(this.viewport);
+            cluster.inConnector?.destroy(this.viewport);
+        }
+
+        for (let i = 0; i < inorder.length - 1; i++) {
+            new ClusterConnector(inorder[i] as ClusterLeaf, inorder[i + 1] as ClusterLeaf, this.viewport);
         }
     }
 
     delete() {
         let inorder = this.root.getInorder();
-        inorder.forEach((x : AbstractClusterComposite) => x.deleteVisualization());
+        inorder.forEach((x : AbstractClusterComposite) => { 
+            let cluster = x as ClusterLeaf;
+            cluster.outConnector?.destroy(this.viewport);
+            cluster.inConnector?.destroy(this.viewport);
+            x.deleteVisualization()
+        });
     }
 
     getViewport() {
@@ -199,11 +209,11 @@ export class ClusterLeaf extends AbstractClusterComposite {
             child.updatePoints(points);
         }
 
-        if (this.inConnector) {
+        if (this.inConnector != null) {
             this.inConnector.setEnd(this.children[0] as ClusterLeaf)
         }
 
-        if (this.outConnector) {
+        if (this.outConnector != null) {
             this.outConnector.setStart(this.children[this.children.length - 1] as ClusterLeaf);
         }
 
