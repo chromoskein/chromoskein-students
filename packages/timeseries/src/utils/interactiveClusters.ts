@@ -6,9 +6,9 @@ import { blobFromPoints } from "./main";
 import PCA from 'pca-js';
 
 export class InteractiveClusters {
-    root: ClusterLeaf;
-    device: GPUDevice;
-    viewport: Viewport3D;
+    private root: ClusterLeaf;
+    private device: GPUDevice;
+    private viewport: Viewport3D;
 
     constructor(clustersGivenK: ClusterNode[][], points: vec3[], viewport: Viewport3D, device: GPUDevice) {
         this.root = new ClusterLeaf(clustersGivenK[1][0], points, viewport, null, this);
@@ -17,7 +17,7 @@ export class InteractiveClusters {
         this.device = device;
     }
 
-    rayIntersection(ray: Graphics.Ray): ClusterLeaf {
+    public rayIntersection(ray: Graphics.Ray): ClusterLeaf {
         let inorder = this.root.getInorder();
 
         let bestDistance = Infinity;
@@ -33,14 +33,14 @@ export class InteractiveClusters {
         return closestCluster;
     }
 
-    updateClusters(points: vec3[], clustersGivenK: ClusterNode[][]) {
+    public updateClusters(points: vec3[], clustersGivenK: ClusterNode[][]) {
         let inorder = this.root.getInorder();
         for (let cluster of inorder) {
             cluster.updateCluster(clustersGivenK, points);
         }
     }
 
-    updatePoints(points: vec3[]) {
+    public updatePoints(points: vec3[]) {
         let inorder = this.root.getInorder();
         for (let cluster of inorder) {
             cluster.updatePoints(points);
@@ -48,7 +48,7 @@ export class InteractiveClusters {
     }
 
     // Used for notifying other clusters of changed elsewhere in the tree
-    eventUpdate(newNodes: AbstractClusterComposite[], points: vec3[]) {
+    public eventUpdate(newNodes: AbstractClusterComposite[], points: vec3[]) {
         let inorder: AbstractClusterComposite[] = this.root.getInorder();
 
         for (let i = 0; i < inorder.length; i++) {
@@ -59,7 +59,7 @@ export class InteractiveClusters {
         }
     }
 
-    createConnectors() {
+    public createConnectors() {
         let inorder: AbstractClusterComposite[] = this.root.getInorder();
         for (let i = 0; i < inorder.length - 1; i++) {
             let cluster = inorder[i] as ClusterLeaf;
@@ -72,7 +72,7 @@ export class InteractiveClusters {
         }
     }
 
-    delete() {
+    public delete() {
         let inorder = this.root.getInorder();
         inorder.forEach((x : AbstractClusterComposite) => { 
             let cluster = x as ClusterLeaf;
@@ -82,21 +82,21 @@ export class InteractiveClusters {
         });
     }
 
-    getViewport() {
+    public getViewport() {
         return this.viewport
     }
 
-    getDevice() {
+    public getDevice() {
         return this.device;
     }
 
-    getClusters() {
+    public getClusters() {
         return this.root.getInorder().map((c: ClusterLeaf) => c.cluster);
     }
 }
 
 export abstract class AbstractClusterComposite {
-    parent: AbstractClusterComposite;
+    protected parent: AbstractClusterComposite;
 
     constructor() {
         this.parent = null;
@@ -112,16 +112,17 @@ export abstract class AbstractClusterComposite {
 }
 
 export class ClusterLeaf extends AbstractClusterComposite {
-    cluster: ClusterNode;
-    children: AbstractClusterComposite[];
-    isLeaf: boolean;
-    viewport: Viewport3D;
-    manager: InteractiveClusters;
+    public cluster: ClusterNode;
+    private children: AbstractClusterComposite[];
+    private isLeaf: boolean;
+    private viewport: Viewport3D;
+    private manager: InteractiveClusters;
 
-    inConnector: ClusterConnector = null;
-    outConnector: ClusterConnector = null;
+    // TODO: Remove this teribleness
+    public inConnector: ClusterConnector = null;
+    public outConnector: ClusterConnector = null;
 
-    visualisation: AbstractClusterVisualisation;
+    private visualisation: AbstractClusterVisualisation;
 
     constructor(cluster: ClusterNode, points: vec3[], viewport: Viewport3D,  parent: AbstractClusterComposite, manager: InteractiveClusters) {
         super();
@@ -135,24 +136,24 @@ export class ClusterLeaf extends AbstractClusterComposite {
         this.setVisualisation(SphereClusterVisualisation, points);
     }
 
-    setVisualisation<T extends AbstractClusterVisualisation>(visualisationType: new(manager: InteractiveClusters, points: vec3[], cluster: ClusterNode, viewport: Viewport3D) => T, points: vec3[]) {
+    public setVisualisation<T extends AbstractClusterVisualisation>(visualisationType: new(manager: InteractiveClusters, points: vec3[], cluster: ClusterNode, viewport: Viewport3D) => T, points: vec3[]) {
         this.deleteVisualization();
         this.visualisation = new visualisationType(this.manager, points, this.cluster, this.viewport);
     }
 
-    setInConnector(connector: ClusterConnector) {
+    public setInConnector(connector: ClusterConnector) {
         this.inConnector = connector;
     }
 
-    setOutConnector(connector: ClusterConnector) {
+    public setOutConnector(connector: ClusterConnector) {
         this.outConnector = connector;
     }
 
-    getCenter(): vec3 {
+    public getCenter(): vec3 {
         return this.visualisation.getCenter();
     }
 
-    getInorder() {
+    public getInorder() {
         if (this.isLeaf) {
             return [this];
         }
@@ -164,13 +165,13 @@ export class ClusterLeaf extends AbstractClusterComposite {
         return inorder;
     }
 
-    updateCluster(clustersGivenK: ClusterNode[][]) {
+    public updateCluster(clustersGivenK: ClusterNode[][]) {
         this.cluster = clustersGivenK[this.cluster.k][this.cluster.i];
         if (this.isLeaf && this.visualisation) 
             this.visualisation.updateCluster(this.cluster);        
     }
 
-    updatePoints(points: vec3[]) {
+    public updatePoints(points: vec3[]) {
         if (this.isLeaf && this.visualisation)
             this.visualisation.updatePoints(points);
             // This causes double updates on all connectors during major update
@@ -179,12 +180,12 @@ export class ClusterLeaf extends AbstractClusterComposite {
             if (this.outConnector) this.outConnector.update();
     }
 
-    eventUpdate(points: vec3[]) {
+    public eventUpdate(points: vec3[]) {
         if (this.isLeaf && this.visualisation)
             this.visualisation.eventUpdate(points);
     }
 
-    split(clustersGivenK: ClusterNode[][], points: vec3[]) {
+    public split(clustersGivenK: ClusterNode[][], points: vec3[]) {
         if (!this.isLeaf || this.cluster.k + 1 >= clustersGivenK.length) return;
 
         let k = this.cluster.k;
@@ -220,7 +221,7 @@ export class ClusterLeaf extends AbstractClusterComposite {
         this.manager.eventUpdate(this.children, points);
     }
 
-    rayIntersection(ray: Graphics.Ray): Graphics.Intersection | null {
+    public rayIntersection(ray: Graphics.Ray): Graphics.Intersection | null {
         if (!this.isLeaf) {
             return null;
         }
@@ -228,7 +229,7 @@ export class ClusterLeaf extends AbstractClusterComposite {
         return this.visualisation.rayIntersection(ray);
     }
 
-    deleteVisualization() {
+    public deleteVisualization() {
         if (this.visualisation) {
             this.visualisation.delete(this.viewport);
             this.visualisation = null;
@@ -238,8 +239,8 @@ export class ClusterLeaf extends AbstractClusterComposite {
 
 
 export abstract class AbstractClusterVisualisation {
-    manager: InteractiveClusters;
-    center: vec3 = vec3.fromValues(0, 0, 0);
+    protected manager: InteractiveClusters;
+    protected center: vec3 = vec3.fromValues(0, 0, 0);
 
     constructor(manager: InteractiveClusters, points: vec3[], cluster: ClusterNode, viewport: Viewport3D) {
         this.manager = manager;
@@ -252,15 +253,15 @@ export abstract class AbstractClusterVisualisation {
     abstract setColor(color: vec3);
     abstract getConstructor();  
 
-    getCenter(): vec3 { return this.center; }
-    eventUpdate(points: vec3[]) { /* For most subclasses this is unnecessary */ }
+    public getCenter(): vec3 { return this.center; }
+    public eventUpdate(points: vec3[]) { /* For most subclasses this is unnecessary */ }
 }
 
 
 export class SphereClusterVisualisation extends AbstractClusterVisualisation {
-    sphere: Graphics.Sphere;
-    sphereID: number;
-    cluster: ClusterNode;
+    private sphere: Graphics.Sphere;
+    private sphereID: number;
+    private cluster: ClusterNode;
 
     constructor(manager: InteractiveClusters, points: vec3[], cluster: ClusterNode, viewport: Viewport3D) {
         super(manager, points, cluster, viewport);
@@ -270,11 +271,11 @@ export class SphereClusterVisualisation extends AbstractClusterVisualisation {
         this.setColor(cluster.color.rgb);
     }
 
-    updateCluster(cluster: ClusterNode) {
+    public updateCluster(cluster: ClusterNode) {
         this.cluster = cluster;
     }
 
-    updatePoints(points: vec3[]) {
+    public updatePoints(points: vec3[]) {
         let objectPoints = points.slice(this.cluster.from, this.cluster.to + 1);
         // It is rather inefficient to create an entire axis aligned bounding box
         // just to calculate the mean position of a bunch of points...
@@ -286,33 +287,33 @@ export class SphereClusterVisualisation extends AbstractClusterVisualisation {
         this.sphere.setDirtyCPU();
     }
 
-    setColor(color: vec3) {
+    public setColor(color: vec3) {
         this.sphere.properties.color = [color[0], color[1], color[2], 1];
         this.sphere.setDirtyCPU();
     }
 
-    rayIntersection(ray: Graphics.Ray): Graphics.Intersection {
+    public rayIntersection(ray: Graphics.Ray): Graphics.Intersection {
         return this.sphere.rayIntersection(ray);
     }
     
-    delete(viewport: Graphics.Viewport3D) {
+    public delete(viewport: Graphics.Viewport3D) {
         viewport.scene.removeObjectByID(this.sphereID);
         this.sphereID = null;
         this.sphere = null;
     }
 
-    getConstructor() {
+    public getConstructor() {
         return SphereClusterVisualisation;
     }
 }
 
 export class HedgehogClusterVisualisation extends AbstractClusterVisualisation {
-    cluster: ClusterNode;
-    viewport: Viewport3D;
-    cones: Graphics.RoundedCone[] = [];
-    conesIDs: number[] = [];
-    sphere: Graphics.Sphere = null;
-    sphereID: number = null;
+    private cluster: ClusterNode;
+    private viewport: Viewport3D;
+    private cones: Graphics.RoundedCone[] = [];
+    private conesIDs: number[] = [];
+    private sphere: Graphics.Sphere = null;
+    private sphereID: number = null;
 
     constructor(manager: InteractiveClusters, points: vec3[], cluster: ClusterNode, viewport: Viewport3D) {
         super(manager, points, cluster, viewport);
@@ -323,11 +324,11 @@ export class HedgehogClusterVisualisation extends AbstractClusterVisualisation {
         this.setColor(cluster.color.rgb);
     }
 
-    updateCluster(cluster: ClusterNode) {
+    public updateCluster(cluster: ClusterNode) {
         this.cluster = cluster;
     }
 
-    updatePoints(points: vec3[]) {
+    public updatePoints(points: vec3[]) {
         let clusters: ClusterNode[] = this.manager.getClusters();
         let centers = [];
         for (let cluster of clusters) {
@@ -372,11 +373,11 @@ export class HedgehogClusterVisualisation extends AbstractClusterVisualisation {
         this.setColor(this.cluster.color.rgb);
     }
 
-    eventUpdate(points: vec3[]): void {
+    public eventUpdate(points: vec3[]): void {
         this.updatePoints(points);
     }
 
-    getDirections(center: vec3, otherCenters: vec3[]): vec3[] {
+    private getDirections(center: vec3, otherCenters: vec3[]): vec3[] {
         let directions = [];
         for (let otherCenter of otherCenters) {
             let direction = vec3.sub(vec3.fromValues(0, 0, 0), otherCenter, center);
@@ -391,7 +392,7 @@ export class HedgehogClusterVisualisation extends AbstractClusterVisualisation {
         return directions;
     }
 
-    setColor(color: vec3) {
+    public setColor(color: vec3) {
         for (let i = 0; i < this.cones.length; i++) {
             this.cones[i].properties.color = [color[0], color[1], color[2], 1.0];
             this.cones[i].setDirtyCPU();
@@ -403,7 +404,7 @@ export class HedgehogClusterVisualisation extends AbstractClusterVisualisation {
         }
     }
 
-    rayIntersection(ray: Graphics.Ray): Graphics.Intersection {
+    public rayIntersection(ray: Graphics.Ray): Graphics.Intersection {
         if (this.sphereID != null) {
             return this.sphere.rayIntersection(ray);
         }
@@ -421,7 +422,7 @@ export class HedgehogClusterVisualisation extends AbstractClusterVisualisation {
         return bestIntersection;
     }
     
-    delete(viewport: Graphics.Viewport3D) {
+    public delete(viewport: Graphics.Viewport3D) {
         for (let i = 0; i < this.conesIDs.length; i++) {
             viewport.scene.removeObjectByID(this.conesIDs[i]);
         } 
@@ -435,23 +436,20 @@ export class HedgehogClusterVisualisation extends AbstractClusterVisualisation {
         }
     }
 
-    getConstructor() {
+    public getConstructor() {
         return HedgehogClusterVisualisation;
     }
 }
 
 export class PCAClusterVisualisation extends AbstractClusterVisualisation {
-    cluster: ClusterNode;
-    viewport: Viewport3D;
-    coneUp: Graphics.RoundedCone;
-    coneUpID: number | null = null;
-    coneDown: Graphics.RoundedCone;
-    coneDownID: number | null = null;
+    private cluster: ClusterNode;
+    private coneUp: Graphics.RoundedCone;
+    private coneUpID: number | null = null;
+    private coneDown: Graphics.RoundedCone;
+    private coneDownID: number | null = null;
 
     constructor(manager: InteractiveClusters, points: vec3[], cluster: ClusterNode, viewport: Viewport3D) {
         super(manager, points, cluster, viewport);
-
-        this.viewport = viewport;
 
         [this.coneUp, this.coneUpID] = viewport.scene.addObject(Graphics.RoundedCone);
         this.coneUp.setDirtyCPU();
@@ -463,11 +461,11 @@ export class PCAClusterVisualisation extends AbstractClusterVisualisation {
         this.setColor(cluster.color.rgb);
     }
 
-    updateCluster(cluster: ClusterNode) {
+    public updateCluster(cluster: ClusterNode) {
         this.cluster = cluster;
     }
 
-    updatePoints(points: vec3[]) {
+    public updatePoints(points: vec3[]) {
         let blob = blobFromPoints(points.slice(this.cluster.from, this.cluster.to + 1))
         let result = PCA.getEigenVectors(blob.normalizedPoints);
         this.center = blob.center;
@@ -497,7 +495,7 @@ export class PCAClusterVisualisation extends AbstractClusterVisualisation {
         this.coneDown.setDirtyCPU();
     }
 
-    setColor(color: vec3) {
+    public setColor(color: vec3) {
         if (this.coneDownID && this.coneUpID) {
             this.coneUp.properties.color = [color[0], color[1], color[2], 1.0];
             this.coneDown.properties.color = [color[0], color[1], color[2], 1.0];
@@ -506,7 +504,7 @@ export class PCAClusterVisualisation extends AbstractClusterVisualisation {
         }
     }
 
-    rayIntersection(ray: Graphics.Ray): Graphics.Intersection {
+    public rayIntersection(ray: Graphics.Ray): Graphics.Intersection {
         let upIntersection = this.coneDown.rayIntersection(ray);
         let downIntersection = this.coneUp.rayIntersection(ray);
 
@@ -517,7 +515,7 @@ export class PCAClusterVisualisation extends AbstractClusterVisualisation {
         return (downIntersection == null || upIntersection.t < downIntersection.t) ? upIntersection : downIntersection;
     }
     
-    delete(viewport: Graphics.Viewport3D) {
+    public delete(viewport: Graphics.Viewport3D) {
         if (this.coneDownID && this.coneUpID) {
             viewport.scene.removeObjectByID(this.coneUpID);
             viewport.scene.removeObjectByID(this.coneDownID);
@@ -529,15 +527,15 @@ export class PCAClusterVisualisation extends AbstractClusterVisualisation {
         }
     }
 
-    getConstructor() {
+    public getConstructor() {
         return PCAClusterVisualisation;
     }
 }
 
 export class SDGClusterVisualisation extends AbstractClusterVisualisation {
-    cluster: ClusterNode;
-    sdgObject: Graphics.SignedDistanceGrid;
-    sdgObjectID: number | null = null;
+    private cluster: ClusterNode;
+    private sdgObject: Graphics.SignedDistanceGrid;
+    private sdgObjectID: number | null = null;
 
     constructor(manager: InteractiveClusters, points: vec3[], cluster: ClusterNode, viewport: Viewport3D) {
         super(manager, points, cluster, viewport);
@@ -549,11 +547,11 @@ export class SDGClusterVisualisation extends AbstractClusterVisualisation {
         this.setColor(cluster.color.rgb);
     }
 
-    updateCluster(cluster: ClusterNode) {
+    public updateCluster(cluster: ClusterNode) {
         this.cluster = cluster;
     }
 
-    updatePoints(points: vec3[]) {
+    public updatePoints(points: vec3[]) {
         let blob = blobFromPoints(points.slice(this.cluster.from, this.cluster.to + 1))
         this.center = blob.center;
         this.sdgObject.translate([blob.center[0], blob.center[1], blob.center[2]], 0);
@@ -562,18 +560,18 @@ export class SDGClusterVisualisation extends AbstractClusterVisualisation {
         this.sdgObject.setDirtyCPU();
     }
 
-    setColor(color: vec3) {
+    public setColor(color: vec3) {
         if (this.sdgObjectID) {
             this.sdgObject.properties[0].color = [color[0], color[1], color[2], 1.0];
             this.sdgObject.setDirtyCPU();
         }
     }
 
-    rayIntersection(ray: Graphics.Ray): Graphics.Intersection {
+    public rayIntersection(ray: Graphics.Ray): Graphics.Intersection {
         return this.sdgObject.rayIntersection(ray);
     }
     
-    delete(viewport: Graphics.Viewport3D) {
+    public delete(viewport: Graphics.Viewport3D) {
         if (this.sdgObjectID) {
             viewport.scene.removeObjectByID(this.sdgObjectID);
             
@@ -582,18 +580,18 @@ export class SDGClusterVisualisation extends AbstractClusterVisualisation {
         }
     }
 
-    getConstructor() {
+    public getConstructor() {
         return SDGClusterVisualisation;
     }
 
 }
 
 export class PathlineClusterVisualization extends AbstractClusterVisualisation {
-    cluster: ClusterNode;
-    viewport: Viewport3D;
-    pathline: Graphics.RoundedConeInstanced;
-    pathlineID: number | null = null;
-    n_instances: number = 0;
+    private cluster: ClusterNode;
+    private viewport: Viewport3D;
+    private pathline: Graphics.RoundedConeInstanced;
+    private pathlineID: number | null = null;
+    private n_instances: number = 0;
 
     constructor(manager: InteractiveClusters, points: vec3[], cluster: ClusterNode, viewport: Viewport3D) {
         super(manager, points, cluster, viewport);
@@ -602,11 +600,11 @@ export class PathlineClusterVisualization extends AbstractClusterVisualisation {
         this.updateCluster(cluster);
     }
 
-    updateCluster(cluster: ClusterNode) {
+    public updateCluster(cluster: ClusterNode) {
         this.cluster = cluster;
     }
 
-    updatePoints(points: vec3[]) {
+    public updatePoints(points: vec3[]) {
         let clusterPoints = points.slice(this.cluster.from, this.cluster.to + 1);
         
         // Again here the really inefficient way to get center of points
@@ -638,7 +636,7 @@ export class PathlineClusterVisualization extends AbstractClusterVisualisation {
           this.pathline.setDirtyCPU();
     }
 
-    setColor(color: vec3) {
+    public setColor(color: vec3) {
         if (this.pathlineID) {
             for (let i = 0; i < this.n_instances - 1; i++) {
                 this.pathline.properties[i].startColor = [color[0], color[1], color[2], 1.0];
@@ -648,11 +646,11 @@ export class PathlineClusterVisualization extends AbstractClusterVisualisation {
         }
     }
 
-    rayIntersection(ray: Graphics.Ray): Graphics.Intersection {
+    public rayIntersection(ray: Graphics.Ray): Graphics.Intersection {
         return this.pathline.rayIntersection(ray);
     }
     
-    delete(viewport: Graphics.Viewport3D) {
+    public delete(viewport: Graphics.Viewport3D) {
         if (this.pathlineID) {
             viewport.scene.removeObjectByID(this.pathlineID);
             
@@ -661,17 +659,17 @@ export class PathlineClusterVisualization extends AbstractClusterVisualisation {
         }
     }
 
-    getConstructor() {
+    public getConstructor() {
         return PathlineClusterVisualization;
     }
 }
 
 export class ClusterConnector {
-    start: ClusterLeaf;
-    end: ClusterLeaf;
+    private start: ClusterLeaf;
+    private end: ClusterLeaf;
 
-    cone: Graphics.RoundedCone;
-    coneID: number | null = null;
+    private cone: Graphics.RoundedCone;
+    private coneID: number | null = null;
 
     constructor(start: ClusterLeaf, end: ClusterLeaf, viewport: Viewport3D) {
         this.start = start;
@@ -687,7 +685,7 @@ export class ClusterConnector {
         this.update();
     }
 
-    update() {
+    public update() {
         let start = this.start.getCenter();
         let end = this.end.getCenter();
 
@@ -696,22 +694,22 @@ export class ClusterConnector {
         this.cone.setDirtyCPU();
     }
 
-    setColor(color: vec3) {
+    public setColor(color: vec3) {
         this.cone.properties.color = [color[0], color[1], color[2], 1];
         this.cone.setDirtyCPU();
     }
 
-    setStart(start: ClusterLeaf) {
+    public setStart(start: ClusterLeaf) {
         this.start = start;
         this.update();
     }
 
-    setEnd (end: ClusterLeaf) {
+    public setEnd (end: ClusterLeaf) {
         this.end = end;
         this.update();
     }
 
-    destroy(viewport: Viewport3D) {
+    public destroy(viewport: Viewport3D) {
         viewport.scene.removeObjectByID(this.coneID);
         this.coneID = null;
         this.cone = null;
