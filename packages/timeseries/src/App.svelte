@@ -59,31 +59,25 @@
   let dataTimesteps: vec3[][] = null;  
   let dataClustersByTimestep: ClusterNode[][] = [];
 
-  $: if (visualizationSelected == "Clustering" && selectedTimestep && dataTimesteps) {
-    dataClustersByTimestep = clusterTimestep(dataTimesteps[selectedTimestep]).slice(0, 16);
-    treeColor(dataClustersByTimestep);
-  }
 
   let dataClusteredTimestep: ClusterBlob[] = [];
   let dataClusteredTimestepDelimiters: number[][] = [];
 
-  $: if (dataClustersByTimestep && dataClustersByTimestep[blobsAmount] && dataTimesteps) {
+  
+  $: if (timestepClustering) {
+    dataClustersGivenK = clusterTimestep(dataTimesteps[selectedTimestep]).slice(0, 16);
+  }
 
-    dataClusteredTimestep = [];
-    dataClusteredTimestepDelimiters =[];
-    for (const [clusterIndex, cluster] of dataClustersByTimestep[blobsAmount].entries()) {
-      //dataTimesteps[selectedTimestep].filter((val, idx) => cluster.indexes[idx]);
-      //dataClusteredTimestep[clusterIndex] = blobFromPoints(dataTimesteps[selectedTimestep].filter((val, idx) => cluster.indexes[idx]));
-      dataClusteredTimestep[clusterIndex] = blobFromPoints(cluster.points);
-      dataClusteredTimestepDelimiters[clusterIndex] = cluster.delimiters;
-    }
-
+  $: if (!timestepClustering) {
+    dataClustersGivenK = staticDataClustersGivenK;
   }
 
   // [pathline][timestep]
   $: dataPathlines = dataTimesteps && timestepsToPathlines(dataTimesteps);
 
   // Load precomputed clusters of pathlines
+  let timestepClustering = false;
+  let staticDataClustersGivenK: ClusterNode[][] | null = null;
   let dataClustersGivenK: ClusterNode[][] | null = null;
 
   $: dataClustersGivenK && treeColor(dataClustersGivenK);
@@ -122,8 +116,10 @@
     dataTimesteps = normalizePointClouds(timesteps);
     // dataTimesteps = normalizePointClouds(timesteps);
     dataPathlines = timestepsToPathlines(dataTimesteps);
-    dataClustersGivenK = await clusterPathlines(dataPathlines);
-    dataClustersGivenK = dataClustersGivenK.slice(0, 16);
+    staticDataClustersGivenK = await clusterPathlines(dataPathlines);
+    staticDataClustersGivenK = staticDataClustersGivenK.slice(0, 16);
+    dataClustersGivenK = staticDataClustersGivenK;
+    treeColor(staticDataClustersGivenK);
 
     // const bytes = new TextEncoder().encode(JSON.stringify(clusterPathlines(dataPathlines)));
     // const blob = new Blob([bytes], {
@@ -332,19 +328,6 @@
               />
             {/each}
           {/if}
-          {#if dataClusteredTimestep && visualizationSelected == "Clustering"}
-            {#each dataClusteredTimestep as blob, i}
-              <SignedDistanceGridArbitrary
-                points={blob.normalizedPoints}
-                delimiters={dataClusteredTimestepDelimiters[i]}
-                translate={blob.center}
-                scale={blob.scale}
-                radius={blobsRadius}
-                visible={blobsVisible}
-                color={blobsColored ? dataClustersByTimestep[blobsAmount][i].color.rgb : vec3.fromValues(1.0, 1.0, 1.0)}
-              />
-            {/each}
-          {/if}
           {#if blobs[selectedTimestep] && visualizationSelected == "Spheres"}
             {#each blobs[selectedTimestep] as blob, i}
               <ConnectedSpheres
@@ -420,7 +403,6 @@
             <Select size="sm" inline labelText="Visualization:" bind:selected={visualizationSelected}>
               <SelectItem value="None" />
               <SelectItem value="Default" />
-              <SelectItem value="Clustering" />
               <SelectItem value="Matryoshka" />
               <SelectItem value="Spheres" />
               <SelectItem value="Cones" />
@@ -440,6 +422,7 @@
 
             <Checkbox labelText="Colored" bind:checked={blobsColored} />
             <Checkbox labelText="Experimental colors" bind:checked={experimentalColors} />
+            <Checkbox labelText="Cluster at timestep" bind:checked={timestepClustering} />
 
             {#if visualizationSelected != "Matryoshka"}
             <Slider labelText="Amount" fullWidth min={1} max={15} bind:value={blobsAmount} />
