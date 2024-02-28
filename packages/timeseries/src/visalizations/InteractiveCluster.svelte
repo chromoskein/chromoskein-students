@@ -1,7 +1,8 @@
 <script lang="ts">
     import type { ClusterNode } from "../utils/main";
-    import { InteractiveClusters, ClusterLeaf, HedgehogClusterVisualisation, SphereClusterVisualisation,
-    PCAClusterVisualisation, SDGClusterVisualisation, PathlineClusterVisualization } from "../utils/interactiveClusters";
+    import { InteractiveClusters } from "../interactiveClusters/interactiveClusters";
+    import type { ClusterLeaf } from "../interactiveClusters/clusterNode";
+    import { HedgehogClusterVisualisation, SphereClusterVisualisation, PCAClusterVisualisation, SDGClusterVisualisation, PathlineClusterVisualization } from "../interactiveClusters/visualisations/index";
     import { getContext, onMount } from "svelte";
     import type { Writable } from "svelte/store";
     import type { Viewport3D } from "lib-graphics";
