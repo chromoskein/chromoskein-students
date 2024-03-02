@@ -10,6 +10,7 @@ export class InteractiveClusters {
     private root: ClusterLeaf;
     private device: GPUDevice;
     private viewport: Viewport3D;
+    private showConnectors: Boolean = false;
 
     constructor(clustersGivenK: ClusterNode[][], points: vec3[], viewport: Viewport3D, device: GPUDevice) {
         this.root = new ClusterLeaf(clustersGivenK[1][0], points, viewport, null, this);
@@ -60,16 +61,20 @@ export class InteractiveClusters {
         }
     }
 
-    public createConnectors() {
+    private createConnectors() {
+        // This assumes that the connectors do not exist on nodes
+        let inorder: AbstractClusterComposite[] = this.root.getInorder();
+        for (let i = 0; i < inorder.length - 1; i++) {
+            new ClusterConnector(inorder[i] as ClusterLeaf, inorder[i + 1] as ClusterLeaf, this.viewport);
+        }
+    }
+
+    private destroyConnectors() {
         let inorder: AbstractClusterComposite[] = this.root.getInorder();
         for (let i = 0; i < inorder.length - 1; i++) {
             let cluster = inorder[i] as ClusterLeaf;
             cluster.outConnector?.destroy(this.viewport);
             cluster.inConnector?.destroy(this.viewport);
-        }
-
-        for (let i = 0; i < inorder.length - 1; i++) {
-            new ClusterConnector(inorder[i] as ClusterLeaf, inorder[i + 1] as ClusterLeaf, this.viewport);
         }
     }
 
@@ -81,6 +86,23 @@ export class InteractiveClusters {
             cluster.inConnector?.destroy(this.viewport);
             x.deleteVisualization()
         });
+    }
+
+    public getShowConnectors() {
+        return this.showConnectors;
+    }
+
+    public setShowConnectors(show: Boolean) {
+        let previousValue = this.showConnectors;
+        this.showConnectors = show;
+
+        // Handling code when connectors were hidden and are being shown
+        if (!previousValue && this.showConnectors) {
+            this.createConnectors();
+        }
+        else if (previousValue && !this.showConnectors) {
+            this.destroyConnectors();
+        }
     }
 
     public getViewport() {

@@ -1,10 +1,10 @@
-import type { vec3 } from "gl-matrix";
+import { vec3 } from "gl-matrix";
 import type * as Graphics from "lib-graphics";
 import type { Viewport3D } from "lib-graphics";
 import type { ClusterNode } from "../utils/main";
 import type { AbstractClusterVisualisation } from "./visualisations/abstractVisualization";
 import type { InteractiveClusters } from "./interactiveClusters";
-import type { ClusterConnector } from "./clusterConnector";
+import { ClusterConnector } from "./clusterConnector";
 import { SphereClusterVisualisation } from "./visualisations/sphereClusterVisualisation";
 
 export abstract class AbstractClusterComposite {
@@ -62,7 +62,9 @@ export class ClusterLeaf extends AbstractClusterComposite {
     }
 
     public getCenter(): vec3 {
-        return this.visualisation.getCenter();
+        if (this.visualisation) 
+            return this.visualisation.getCenter(); 
+        return vec3.fromValues(0, 0, 0);
     }
 
     public getInorder() {
@@ -121,13 +123,16 @@ export class ClusterLeaf extends AbstractClusterComposite {
             child.setVisualisation(visualizationType, points)
             child.updatePoints(points);
         }
-
-        if (this.inConnector != null) {
-            this.inConnector.setEnd(this.children[0] as ClusterLeaf)
-        }
-
-        if (this.outConnector != null) {
-            this.outConnector.setStart(this.children[this.children.length - 1] as ClusterLeaf);
+        
+        this.inConnector?.setEnd(this.children[0] as ClusterLeaf)
+        this.outConnector?.setStart(this.children[this.children.length - 1] as ClusterLeaf);
+        this.inConnector = null;
+        this.outConnector = null;
+        // Create new connectors between all created nodes
+        if (this.manager.getShowConnectors()) {
+            for (let i = 0; i < this.children.length - 1; i++) {
+                new ClusterConnector(this.children[i] as ClusterLeaf, this.children[i + 1] as ClusterLeaf, this.viewport);
+            }
         }
 
         this.manager.eventUpdate(this.children, points);

@@ -16,6 +16,7 @@
     export let dataClustersGivenK: ClusterNode[][] | null = null;
     export let points: vec3[] = [];
     export let clusterVisualization: string;
+    export let showConnections: Boolean = false;
 
     let clusterObjects: InteractiveClusters = null;
     let canvas: HTMLElement | null = null;
@@ -61,15 +62,13 @@
           event.preventDefault();
           onElementRightButtonClick(event);
         });
-
-        canvas?.addEventListener('auxclick', function(e) {
-          if (e.button == 1) {
-            clusterObjects.createConnectors();
-          }
-        });
       }
     }
-  
+
+    $: if (clusterObjects) {
+      clusterObjects.setShowConnectors(showConnections);
+    }
+
     $: if ($viewport && points) {
       clusterObjects.updatePoints(points);
     }
@@ -87,7 +86,6 @@
     }
 
     $: if ($viewport && dataClustersGivenK) {
-      console.log("Update clusters also");
       updateClusters(dataClustersGivenK);
     } 
 

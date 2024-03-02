@@ -40,11 +40,13 @@ export class ClusterConnector {
 
     public setStart(start: ClusterLeaf) {
         this.start = start;
+        start.setOutConnector(this);
         this.update();
     }
 
     public setEnd (end: ClusterLeaf) {
         this.end = end;
+        end.setInConnector(this);
         this.update();
     }
 
