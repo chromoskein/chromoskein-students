@@ -1,4 +1,4 @@
-import { vec3 } from "gl-matrix";
+import type { vec3 } from "gl-matrix";
 import type * as Graphics from "lib-graphics";
 import type { Viewport3D } from "lib-graphics";
 import type { ClusterNode } from "../utils/main";
@@ -61,10 +61,8 @@ export class ClusterLeaf extends AbstractClusterComposite {
         this.outConnector = connector;
     }
 
-    public getCenter(): vec3 {
-        if (this.visualisation) 
-            return this.visualisation.getCenter(); 
-        return vec3.fromValues(0, 0, 0);
+    public getVisualisation() {
+        return this.visualisation;
     }
 
     public getInorder() {

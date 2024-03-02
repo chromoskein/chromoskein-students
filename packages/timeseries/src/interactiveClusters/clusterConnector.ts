@@ -25,8 +25,8 @@ export class ClusterConnector {
     }
 
     public update() {
-        let start = this.start.getCenter();
-        let end = this.end.getCenter();
+        let start = this.start.getVisualisation().getOutConnectionPoint();
+        let end = this.end.getVisualisation().getInConnectionPoint();
 
         this.cone.properties.start = [start[0], start[1], start[2]];
         this.cone.properties.end = [end[0], end[1], end[2]];

@@ -13,6 +13,7 @@ export class PCAClusterVisualisation extends AbstractClusterVisualisation {
     private coneUpID: number | null = null;
     private coneDown: Graphics.RoundedCone;
     private coneDownID: number | null = null;
+    private center: vec3 = vec3.fromValues(0, 0, 0);
 
     constructor(manager: InteractiveClusters, points: vec3[], cluster: ClusterNode, viewport: Viewport3D) {
         super(manager, points, cluster, viewport);
@@ -91,6 +92,14 @@ export class PCAClusterVisualisation extends AbstractClusterVisualisation {
             this.coneUpID = null;
             this.coneUp = null;
         }
+    }
+
+    public getInConnectionPoint() {
+        return this.center;
+    }
+
+    public getOutConnectionPoint() {
+        return this.center;
     }
 
     public getConstructor() {

@@ -12,6 +12,7 @@ export class HedgehogClusterVisualisation extends AbstractClusterVisualisation {
     private conesIDs: number[] = [];
     private sphere: Graphics.Sphere = null;
     private sphereID: number = null;
+    private center: vec3 = vec3.fromValues(0, 0, 0);
 
     constructor(manager: InteractiveClusters, points: vec3[], cluster: ClusterNode, viewport: Viewport3D) {
         super(manager, points, cluster, viewport);
@@ -132,6 +133,14 @@ export class HedgehogClusterVisualisation extends AbstractClusterVisualisation {
             this.sphereID = null;
             this.sphere = null;
         }
+    }
+
+    public getInConnectionPoint() {
+        return this.center;
+    }
+
+    public getOutConnectionPoint() {
+        return this.center;
     }
 
     public getConstructor() {

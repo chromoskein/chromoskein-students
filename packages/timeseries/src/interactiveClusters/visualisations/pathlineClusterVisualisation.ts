@@ -1,4 +1,4 @@
-import type { vec3 } from "gl-matrix";
+import { vec3 } from "gl-matrix";
 import * as Graphics from "lib-graphics";
 import type { Viewport3D } from "lib-graphics";
 import type { ClusterNode } from "../../utils/main";
@@ -11,6 +11,8 @@ export class PathlineClusterVisualization extends AbstractClusterVisualisation {
     private pathline: Graphics.RoundedConeInstanced;
     private pathlineID: number | null = null;
     private n_instances: number = 0;
+    private startPoint: vec3 = vec3.fromValues(0, 0, 0);
+    private endPoint: vec3 = vec3.fromValues(0, 0, 0);
 
     constructor(manager: InteractiveClusters, points: vec3[], cluster: ClusterNode, viewport: Viewport3D) {
         super(manager, points, cluster, viewport);
@@ -25,10 +27,8 @@ export class PathlineClusterVisualization extends AbstractClusterVisualisation {
 
     public updatePoints(points: vec3[]) {
         let clusterPoints = points.slice(this.cluster.from, this.cluster.to + 1);
-        
-        // Again here the really inefficient way to get center of points
-        let box = Graphics.boundingBoxFromPoints(clusterPoints)
-        this.center = box.center;
+        this.startPoint = clusterPoints[0];
+        this.endPoint = clusterPoints[clusterPoints.length - 1];
 
         if (this.pathlineID == null || this.n_instances != clusterPoints.length - 1) {
             this.delete(this.viewport);
@@ -76,6 +76,14 @@ export class PathlineClusterVisualization extends AbstractClusterVisualisation {
             this.pathlineID = null;
             this.pathline = null;
         }
+    }
+
+    public getInConnectionPoint() {
+        return this.startPoint;
+    }
+
+    public getOutConnectionPoint() {
+        return this.endPoint;
     }
 
     public getConstructor() {
