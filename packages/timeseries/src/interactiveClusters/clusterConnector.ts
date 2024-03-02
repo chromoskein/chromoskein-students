@@ -1,16 +1,16 @@
 import { vec3 } from "gl-matrix";
 import * as Graphics from "lib-graphics";
 import type { Viewport3D } from "lib-graphics";
-import type { ClusterLeaf } from "./clusterNode";
+import type { ClusterComposite } from "./clusterComposite";
 
 export class ClusterConnector {
-    private start: ClusterLeaf;
-    private end: ClusterLeaf;
+    private start: ClusterComposite;
+    private end: ClusterComposite;
 
     private cone: Graphics.RoundedCone;
     private coneID: number | null = null;
 
-    constructor(start: ClusterLeaf, end: ClusterLeaf, viewport: Viewport3D) {
+    constructor(start: ClusterComposite, end: ClusterComposite, viewport: Viewport3D) {
         this.start = start;
         this.end = end;
 
@@ -38,13 +38,13 @@ export class ClusterConnector {
         this.cone.setDirtyCPU();
     }
 
-    public setStart(start: ClusterLeaf) {
+    public setStart(start: ClusterComposite) {
         this.start = start;
         start.setOutConnector(this);
         this.update();
     }
 
-    public setEnd (end: ClusterLeaf) {
+    public setEnd (end: ClusterComposite) {
         this.end = end;
         end.setInConnector(this);
         this.update();

@@ -1,7 +1,7 @@
 <script lang="ts">
     import type { ClusterNode } from "../utils/main";
     import { InteractiveClusters } from "../interactiveClusters/interactiveClusters";
-    import type { ClusterLeaf } from "../interactiveClusters/clusterNode";
+    import type { ClusterComposite } from "../interactiveClusters/clusterComposite";
     import { HedgehogClusterVisualisation, SphereClusterVisualisation, PCAClusterVisualisation, SDGClusterVisualisation, PathlineClusterVisualization } from "../interactiveClusters/visualisations/index";
     import { getContext, onMount } from "svelte";
     import type { Writable } from "svelte/store";
@@ -33,7 +33,7 @@
 		  let rect = canvas.getBoundingClientRect(); // abs. size of element    
       let ray = Graphics.screenSpaceToRay(vec2.fromValues((event.clientX - rect.left) / rect.width, (event.clientY - rect.top) / rect.height), $viewport.camera);
 
-      let hitCluster: ClusterLeaf = clusterObjects.rayIntersection(ray);
+      let hitCluster: ClusterComposite = clusterObjects.rayIntersection(ray);
       if (hitCluster != null) hitCluster.split(dataClustersGivenK, points);
     }
 
@@ -42,13 +42,21 @@
 		  let rect = canvas.getBoundingClientRect(); 
       let ray = Graphics.screenSpaceToRay(vec2.fromValues((event.clientX - rect.left) / rect.width, (event.clientY - rect.top) / rect.height), $viewport.camera);
 
-      let hitCluster: ClusterLeaf = clusterObjects.rayIntersection(ray);
+      let hitCluster: ClusterComposite = clusterObjects.rayIntersection(ray);
       if (hitCluster != null) {
         let chosenRepresentation = representations[clusterVisualization];
         hitCluster.setVisualisation(chosenRepresentation, points);
         hitCluster.updatePoints(points);
       }
 	  }
+
+    function onElementMiddleButtonClick(event) {
+		  let rect = canvas.getBoundingClientRect(); // abs. size of element    
+      let ray = Graphics.screenSpaceToRay(vec2.fromValues((event.clientX - rect.left) / rect.width, (event.clientY - rect.top) / rect.height), $viewport.camera);
+
+      let hitCluster: ClusterComposite = clusterObjects.rayIntersection(ray);
+      if (hitCluster != null) hitCluster.merge(dataClustersGivenK, points);
+    }
   
     $: if ($viewport) {
       if (clusterObjects == null) {
@@ -61,6 +69,11 @@
         canvas?.addEventListener("contextmenu", (event) => { // right click for mouse
           event.preventDefault();
           onElementRightButtonClick(event);
+        });
+        canvas?.addEventListener('auxclick', function(event) {
+          if (event.button == 1) {
+            onElementMiddleButtonClick(event);
+          }
         });
       }
     }
