@@ -30,13 +30,13 @@ export class PathlineClusterVisualization extends AbstractClusterVisualisation {
         this.startPoint = clusterPoints[0];
         this.endPoint = clusterPoints[clusterPoints.length - 1];
 
-        if (this.pathlineID == null || this.n_instances != clusterPoints.length - 1) {
+        if (this.pathlineID == null || this.n_instances != clusterPoints.length) {
             this.delete(this.viewport);
             [this.pathline, this.pathlineID] = this.viewport.scene.addObjectInstanced(
                 Graphics.RoundedConeInstanced,
-                clusterPoints.length - 1
+                clusterPoints.length
             );
-            this.n_instances = clusterPoints.length - 1;
+            this.n_instances = clusterPoints.length;
             this.setColor(this.cluster.color.rgb);
         }
 
