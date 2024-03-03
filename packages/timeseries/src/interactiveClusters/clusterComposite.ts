@@ -9,14 +9,14 @@ import { SphereClusterVisualisation } from "./visualisations/sphereClusterVisual
 
 
 export class ClusterComposite {
-    private parent: ClusterComposite = null;
-    public cluster: ClusterNode;
     private children: ClusterComposite[];
     private isLeaf: boolean;
     private viewport: Viewport3D;
     private manager: InteractiveClusters;
-
+    
     // TODO: This should probably not be public
+    public parent: ClusterComposite = null;
+    public cluster: ClusterNode;
     public inConnector: ClusterConnector = null;
     public outConnector: ClusterConnector = null;
 

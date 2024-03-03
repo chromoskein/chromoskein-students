@@ -10,6 +10,7 @@ export class InteractiveClusters {
     private device: GPUDevice;
     private viewport: Viewport3D;
     private showConnectors: Boolean = false;
+    private highlightedClusters: ClusterComposite[] = [];
 
     constructor(clustersGivenK: ClusterNode[][], points: vec3[], viewport: Viewport3D, device: GPUDevice) {
         this.root = new ClusterComposite(clustersGivenK[1][0], points, viewport, null, this);

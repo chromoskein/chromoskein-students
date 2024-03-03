@@ -9,9 +9,11 @@
     import type { vec3 } from "gl-matrix";
     import * as Graphics from "lib-graphics";
     import { vec2 } from "gl-matrix";
+    import { ClusterHighlighter } from "../interactiveClusters/clusterHighlighter";
 
     let viewport: Writable<Viewport3D | null> = getContext("viewport");
     let device: Writable<GPUDevice> = getContext("device");
+    let clusterHighlighter: ClusterHighlighter = new ClusterHighlighter();
 
     export let dataClustersGivenK: ClusterNode[][] | null = null;
     export let points: vec3[] = [];
@@ -75,6 +77,13 @@
             onElementMiddleButtonClick(event);
           }
         });
+        canvas?.addEventListener("mousemove", function(event) {
+          let rect = canvas.getBoundingClientRect(); // abs. size of element    
+          let ray = Graphics.screenSpaceToRay(vec2.fromValues((event.clientX - rect.left) / rect.width, (event.clientY - rect.top) / rect.height), $viewport.camera);
+          let hitCluster: ClusterComposite = clusterObjects.rayIntersection(ray);
+          clusterHighlighter.updateHighlightedClusters(hitCluster, "Merge");
+        });
+
       }
     }
 

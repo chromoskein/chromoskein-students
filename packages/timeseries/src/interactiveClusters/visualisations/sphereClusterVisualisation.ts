@@ -36,7 +36,13 @@ export class SphereClusterVisualisation extends AbstractClusterVisualisation {
     }
 
     public setColor(color: vec3) {
-        this.sphere.properties.color = [color[0], color[1], color[2], 1];
+        this.color = color;
+        let c = vec3.copy(vec3.create(), this.color);
+        if (this.highlighted) {
+            vec3.scale(c, c, 1.8);
+        }
+
+        this.sphere.properties.color = [c[0], c[1], c[2], 1];
         this.sphere.setDirtyCPU();
     }
 

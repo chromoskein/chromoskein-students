@@ -56,10 +56,16 @@ export class PathlineClusterVisualization extends AbstractClusterVisualisation {
     }
 
     public setColor(color: vec3) {
+        this.color = color;
+        let c = vec3.copy(vec3.create(), this.color);
+        if (this.highlighted) {
+            vec3.scale(c, c, 1.8);
+        }
+
         if (this.pathlineID) {
             for (let i = 0; i < this.n_instances - 1; i++) {
-                this.pathline.properties[i].startColor = [color[0], color[1], color[2], 1.0];
-                this.pathline.properties[i].endColor = [color[0], color[1], color[2], 1.0];
+                this.pathline.properties[i].startColor = [c[0], c[1], c[2], 1.0];
+                this.pathline.properties[i].endColor = [c[0], c[1], c[2], 1.0];
             }
             this.pathline.setDirtyCPU();
         }
