@@ -128,9 +128,11 @@ export class ClusterComposite {
         }
 
         if (this.manager.getShowConnectors()) {
+            inorderChildren[0].outConnector?.destroy(this.viewport);
+            inorderChildren[inorderChildren.length - 1].inConnector?.destroy(this.viewport);
             for (let i = 1; i < inorderChildren.length - 1; i++) {
-                this.children[i].inConnector?.destroy(this.viewport);
-                this.children[i].outConnector?.destroy(this.viewport);
+                inorderChildren[i].inConnector?.destroy(this.viewport);
+                inorderChildren[i].outConnector?.destroy(this.viewport);
             }
         }
 
