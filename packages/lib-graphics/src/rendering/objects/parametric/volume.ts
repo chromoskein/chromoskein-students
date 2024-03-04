@@ -3,7 +3,6 @@ import type { BoundingBox, Ray } from "../../../shared";
 import { IParametricObject } from "./shared";
 import * as r from "restructure";
 import { mat4, vec3, vec4 } from "gl-matrix";
-import { padVolume } from "./volumeHelpers";
 import { volumeFromPathlines } from "./volumeFromPathlines";
 
 class Pipelines {
@@ -58,13 +57,9 @@ class Pipelines {
                 buffer: { type: "read-only-storage" },
             },
             {
-                binding: 6,
+                binding: 7,
                 visibility: GPUShaderStage.COMPUTE,
-                storageTexture: {
-                    format: "rgba8unorm",
-                    access: "write-only",
-                    viewDimension: "3d"
-                }
+                buffer: { type: "storage" },
             }]
         });
 
@@ -145,12 +140,6 @@ export class Volume extends IParametricObject {
                 visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
                 buffer: { type: "read-only-storage" },
             }, {
-                binding: 1,
-                visibility: GPUShaderStage.FRAGMENT,
-                texture: {
-                    viewDimension: "3d"
-                }
-            }, {
                 binding: 2,
                 visibility: GPUShaderStage.FRAGMENT,
                 sampler: {
@@ -168,13 +157,18 @@ export class Volume extends IParametricObject {
                 texture: { sampleType: "unfilterable-float", viewDimension: "2d" }
             },
             {
-                binding: 5,
+                binding: 5,    
                 visibility: GPUShaderStage.FRAGMENT,
                 storageTexture: {
                     // Would be great to have read-write back
                     access: "write-only",
                     format: "rgba32float"
                 }
+            },
+            {
+                binding: 6,
+                visibility: GPUShaderStage.FRAGMENT,
+                buffer: { type: "read-only-storage" }  
             }]
         }),
         device.createBindGroupLayout({
@@ -209,11 +203,11 @@ export class Volume extends IParametricObject {
         };
         
         @group(1) @binding(0) var<storage, read> ${this.variableName}: array<${this.typeName}>;
-        @group(1) @binding(1) var ${this.variableName}Texture: texture_3d<f32>;
         @group(1) @binding(2) var linearSampler: sampler;
         @group(1) @binding(3) var colormap: texture_2d<f32>;
         @group(1) @binding(4) var accum_buffer_in: texture_2d<f32>;
         @group(1) @binding(5) var accum_buffer_out: texture_storage_2d<rgba32float, write>;
+        @group(1) @binding(6) var<storage, read> arrayGrid: array<array<array<array<vec2<f32>, ${VolumeTextureSize}>, ${VolumeTextureSize}>, ${VolumeTextureSize}>>;
 
         const M_PI: f32 = 3.14159265358979323846;
     `;
@@ -222,6 +216,34 @@ export class Volume extends IParametricObject {
     public static gpuCodeGetObjectUntypedArray = "";
 
     static gpuCodeIntersectionTest = /* wgsl */`
+        fn sampleGrid(tex_coord: vec3<f32>, i: u32) -> vec2<f32> {
+            var coords = ${VolumeTextureSize} * tex_coord;
+            let coordsU32 = vec3<u32>(floor(coords));
+            let coordsFract = fract(coords);
+            let tx = coordsFract.x;
+            let ty = coordsFract.y;       
+            let tz = coordsFract.z;
+
+            let c000 = arrayGrid[i][coordsU32.x][coordsU32.y][coordsU32.z];
+            let c100 = arrayGrid[i][coordsU32.x + 1][coordsU32.y][coordsU32.z];
+            let c010 = arrayGrid[i][coordsU32.x][coordsU32.y + 1][coordsU32.z];
+            let c110 = arrayGrid[i][coordsU32.x + 1][coordsU32.y + 1][coordsU32.z];
+            let c001 = arrayGrid[i][coordsU32.x][coordsU32.y][coordsU32.z + 1];
+            let c101 = arrayGrid[i][coordsU32.x + 1][coordsU32.y][coordsU32.z + 1];
+            let c011 = arrayGrid[i][coordsU32.x][coordsU32.y + 1][coordsU32.z + 1];
+            let c111 = arrayGrid[i][coordsU32.x + 1][coordsU32.y + 1][coordsU32.z + 1];
+
+            return 
+                (1.0 - tx) * (1.0 - ty) * (1.0 - tz) * c000 + 
+                tx * (1.0 - ty) * (1.0 - tz) * c100 + 
+                (1.0 - tx) * ty * (1.0 - tz) * c010 + 
+                tx * ty * (1.0 - tz) * c110 + 
+                (1.0 - tx) * (1.0 - ty) * tz * c001 + 
+                tx * (1.0 - ty) * tz * c101 + 
+                (1.0 - tx) * ty * tz * c011 + 
+                tx * ty * tz * c111; 
+        }    
+    
         fn rayUnitBoxIntersection(ray: Ray) -> vec2<f32> {
             let tMin = (vec3<f32>(-1.0) - ray.origin) / ray.direction;
             let tMax = (vec3<f32>(1.0) - ray.origin) / ray.direction;
@@ -313,13 +335,7 @@ export class Volume extends IParametricObject {
                         // Note that here we don't use the opacity from the transfer function,
                         // and just use the sample value as the opacity
                         let p = rayOriginLocalSpace + t * rayDirectionLocalSpace;
-                        let tex_coord = 0.5 * p + vec3(0.5);
-                        
-                        let pp_tex = vec3<u32>(floor(${VolumeTextureSize} * tex_coord));     
-                        
-                        var p_tex = tex_coord;
-                        p_tex.z = p_tex.z / f32(arrayLength(&${this.variableName}));
-                        var p_tex_ofset = 1.0 / f32(arrayLength(&${this.variableName}));
+                        let tex_coord = 0.5 * p + vec3(0.5);                        
 
                         var val_color = vec4(0.0, 0.0, 0.0, 0.0);
                         var value = 0.0;
@@ -327,18 +343,11 @@ export class Volume extends IParametricObject {
                         var j = 0.0;
                         for(var i: u32 = 0; i < arrayLength(&${this.variableName}); i++) {
                             var texValue = 0.0;
+                            var val = sampleGrid(tex_coord, i);
                             if (${this.variableName}[0].func == 0) { 
-                                if (${this.variableName}[0].transparency > 0.3) {
-                                    texValue = textureLoad(${this.variableName}Texture, pp_tex + vec3<u32>(0, 0, i * ${VolumeTextureSize}), 0).g;
-                                } else {
-                                    texValue = textureSampleLevel(${this.variableName}Texture, linearSampler, p_tex + vec3<f32>(0.0, 0.0, j * p_tex_ofset), 0.0).g;
-                                }
+                                texValue = val.r;
                             } else {
-                                if (${this.variableName}[0].transparency > 0.3) {
-                                    texValue = textureLoad(${this.variableName}Texture, pp_tex + vec3<u32>(0, 0, i * ${VolumeTextureSize}), 0).b;
-                                } else {
-                                    texValue = textureSampleLevel(${this.variableName}Texture, linearSampler, p_tex + vec3<f32>(0.0, 0.0, j * p_tex_ofset), 0.0).b;
-                                }
+                                texValue = val.g;
                             }
 
                             value += texValue;
@@ -437,9 +446,9 @@ export class Volume extends IParametricObject {
         return [];
     }
 
-    private _textureSize: number = VolumeTextureSize;
-    private _texture: GPUTexture | null = null;
     private _colorMap: GPUTexture | null = null;
+    private _array: GPUBuffer;
+    private _arraySize: number = 0;
 
     constructor(id: number, graphicsLibrary: GraphicsLibrary, allocator: Allocator, instances: number = 1) {
         super(id, graphicsLibrary, allocator);
@@ -447,6 +456,8 @@ export class Volume extends IParametricObject {
         this._pipelines = Pipelines.getInstance(graphicsLibrary);
 
         this._allocation = allocator.allocate(VolumeUniformSize * instances);
+        this._array = this._graphicsLibrary.device.createBuffer({ size: VolumeTextureSize * VolumeTextureSize * VolumeTextureSize * instances * 4 * 2, usage: GPUBufferUsage.COPY_SRC | GPUBufferUsage.STORAGE });
+        this._arraySize = VolumeTextureSize * VolumeTextureSize * VolumeTextureSize * instances * 4 * 2;
 
         this.properties = new r.Array(VolumeUniformSize, instances);
         for (let i = 0; i < instances; i++){
@@ -463,6 +474,7 @@ export class Volume extends IParametricObject {
     }
 
     public fromCPUGrid(grid: Uint8Array, size: number) {
+        /*
         this._textureSize = size;
 
         this._texture = this._graphicsLibrary.device.createTexture({
@@ -498,6 +510,7 @@ export class Volume extends IParametricObject {
 
         this.setDirtyCPU();
         this.onAllocationMoved();
+        */
     }
 
     public fromPointArrays(device: GPUDevice, points: vec3[][][], radius: number[]) {
@@ -507,20 +520,6 @@ export class Volume extends IParametricObject {
         if (!pipeline || !bgl) {
             return;
         }
-
-        this._textureSize = VolumeTextureSize;
-
-        this._texture = this._graphicsLibrary.device.createTexture({
-            size: {
-                width: this._textureSize,
-                height: this._textureSize,
-                depthOrArrayLayers: this._textureSize * points.length,
-            },
-            mipLevelCount: 1,
-            dimension: "3d",
-            format: "rgba8unorm",
-            usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
-        });
 
         const delimitersCPUBuffer = new Uint32Array(points.length);
         const timestepCountCPUBuffer = new Uint32Array(points.length);
@@ -577,8 +576,8 @@ export class Volume extends IParametricObject {
                 binding: 5,
                 resource: { buffer: radiiBuffer }
             }, {
-                binding: 6,
-                resource: this._texture.createView()
+                binding: 7,
+                resource: { buffer: this._array }
             }]
         });
 
@@ -592,7 +591,8 @@ export class Volume extends IParametricObject {
         const computePass = commandEncoder.beginComputePass();
         computePass.setPipeline(pipeline);
         computePass.setBindGroup(0, bindGroup);
-        computePass.dispatchWorkgroups(16, 16, 16 * points.length);
+        const workgroups = VolumeTextureSize  / 4;
+        computePass.dispatchWorkgroups(workgroups, workgroups, workgroups * points.length);
         computePass.end();
 
         device.queue.submit([commandEncoder.finish()]);
@@ -696,7 +696,7 @@ export class Volume extends IParametricObject {
     }
 
     public onAllocationMoved(): void {
-        if (!this._allocation || !Volume.bindGroupLayouts[0] || !this._texture || !this._colorMap) {
+        if (!this._allocation || !Volume.bindGroupLayouts[0] || !this._array || !this._colorMap) {
             return;
         }
 
@@ -726,7 +726,7 @@ export class Volume extends IParametricObject {
     }
 
     public record(encoder: GPURenderPassEncoder, bindGroupLayoutsOffset = 1, frameID: number): void {
-        if (!this._allocation || !this._texture || !this._colorMap || !Volume.accumulationTextures) {
+        if (!this._allocation || !this._array || !this._colorMap || !Volume.accumulationTextures) {
             return;
         }
 
@@ -750,9 +750,6 @@ export class Volume extends IParametricObject {
                     },
                 },
                 {
-                    binding: 1, resource: this._texture.createView()
-                },
-                {
                     binding: 2, resource: this._graphicsLibrary.linearSampler
                 },
                 {
@@ -763,6 +760,13 @@ export class Volume extends IParametricObject {
                 },
                 {
                     binding: 5, resource: Volume.accumulationTextures[(frameID + 1) % 2].createView(),
+                },
+                {
+                    binding: 6, resource: {
+                        buffer: this._array,
+                        offset: 0,
+                        size: this._arraySize,
+                    },
                 }
             ]
         });

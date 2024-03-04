@@ -1,7 +1,7 @@
 <script lang="ts">
     import type { ClusterNode } from "../utils/main";
     import { InteractiveClusters } from "../interactiveClusters/interactiveClusters";
-    import type { ClusterLeaf } from "../interactiveClusters/clusterNode";
+    import type { ClusterComposite } from "../interactiveClusters/clusterComposite";
     import { HedgehogClusterVisualisation, SphereClusterVisualisation, PCAClusterVisualisation, SDGClusterVisualisation, PathlineClusterVisualization } from "../interactiveClusters/visualisations/index";
     import { getContext, onMount } from "svelte";
     import type { Writable } from "svelte/store";
@@ -9,13 +9,16 @@
     import type { vec3 } from "gl-matrix";
     import * as Graphics from "lib-graphics";
     import { vec2 } from "gl-matrix";
+    import { ClusterHighlighter } from "../interactiveClusters/clusterHighlighter";
 
     let viewport: Writable<Viewport3D | null> = getContext("viewport");
     let device: Writable<GPUDevice> = getContext("device");
+    let clusterHighlighter: ClusterHighlighter = new ClusterHighlighter();
 
     export let dataClustersGivenK: ClusterNode[][] | null = null;
     export let points: vec3[] = [];
     export let clusterVisualization: string;
+    export let showConnections: Boolean = false;
 
     let clusterObjects: InteractiveClusters = null;
     let canvas: HTMLElement | null = null;
@@ -32,7 +35,7 @@
 		  let rect = canvas.getBoundingClientRect(); // abs. size of element    
       let ray = Graphics.screenSpaceToRay(vec2.fromValues((event.clientX - rect.left) / rect.width, (event.clientY - rect.top) / rect.height), $viewport.camera);
 
-      let hitCluster: ClusterLeaf = clusterObjects.rayIntersection(ray);
+      let hitCluster: ClusterComposite = clusterObjects.rayIntersection(ray);
       if (hitCluster != null) hitCluster.split(dataClustersGivenK, points);
     }
 
@@ -41,13 +44,21 @@
 		  let rect = canvas.getBoundingClientRect(); 
       let ray = Graphics.screenSpaceToRay(vec2.fromValues((event.clientX - rect.left) / rect.width, (event.clientY - rect.top) / rect.height), $viewport.camera);
 
-      let hitCluster: ClusterLeaf = clusterObjects.rayIntersection(ray);
+      let hitCluster: ClusterComposite = clusterObjects.rayIntersection(ray);
       if (hitCluster != null) {
         let chosenRepresentation = representations[clusterVisualization];
         hitCluster.setVisualisation(chosenRepresentation, points);
         hitCluster.updatePoints(points);
       }
 	  }
+
+    function onElementMiddleButtonClick(event) {
+		  let rect = canvas.getBoundingClientRect(); // abs. size of element    
+      let ray = Graphics.screenSpaceToRay(vec2.fromValues((event.clientX - rect.left) / rect.width, (event.clientY - rect.top) / rect.height), $viewport.camera);
+
+      let hitCluster: ClusterComposite = clusterObjects.rayIntersection(ray);
+      if (hitCluster != null) hitCluster.merge(dataClustersGivenK, points);
+    }
   
     $: if ($viewport) {
       if (clusterObjects == null) {
@@ -61,15 +72,25 @@
           event.preventDefault();
           onElementRightButtonClick(event);
         });
-
-        canvas?.addEventListener('auxclick', function(e) {
-          if (e.button == 1) {
-            clusterObjects.createConnectors();
+        canvas?.addEventListener('auxclick', function(event) {
+          if (event.button == 1) {
+            onElementMiddleButtonClick(event);
           }
         });
+        canvas?.addEventListener("mousemove", function(event) {
+          let rect = canvas.getBoundingClientRect(); // abs. size of element    
+          let ray = Graphics.screenSpaceToRay(vec2.fromValues((event.clientX - rect.left) / rect.width, (event.clientY - rect.top) / rect.height), $viewport.camera);
+          let hitCluster: ClusterComposite = clusterObjects.rayIntersection(ray);
+          clusterHighlighter.updateHighlightedClusters(hitCluster, "Merge");
+        });
+
       }
     }
-  
+
+    $: if (clusterObjects) {
+      clusterObjects.setShowConnectors(showConnections);
+    }
+
     $: if ($viewport && points) {
       clusterObjects.updatePoints(points);
     }
@@ -87,7 +108,6 @@
     }
 
     $: if ($viewport && dataClustersGivenK) {
-      console.log("Update clusters also");
       updateClusters(dataClustersGivenK);
     } 
 

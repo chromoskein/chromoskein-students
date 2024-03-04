@@ -1,4 +1,4 @@
-import type { vec3 } from "gl-matrix";
+import { vec3 } from "gl-matrix";
 import * as Graphics from "lib-graphics";
 import type { Viewport3D } from "lib-graphics";
 import type { ClusterNode } from "../../utils/main";
@@ -9,6 +9,7 @@ export class SphereClusterVisualisation extends AbstractClusterVisualisation {
     private sphere: Graphics.Sphere;
     private sphereID: number;
     private cluster: ClusterNode;
+    private center: vec3 = vec3.fromValues(0, 0, 0);
 
     constructor(manager: InteractiveClusters, points: vec3[], cluster: ClusterNode, viewport: Viewport3D) {
         super(manager, points, cluster, viewport);
@@ -35,7 +36,13 @@ export class SphereClusterVisualisation extends AbstractClusterVisualisation {
     }
 
     public setColor(color: vec3) {
-        this.sphere.properties.color = [color[0], color[1], color[2], 1];
+        this.color = color;
+        let c = vec3.copy(vec3.create(), this.color);
+        if (this.highlighted) {
+            vec3.scale(c, c, 1.8);
+        }
+
+        this.sphere.properties.color = [c[0], c[1], c[2], 1];
         this.sphere.setDirtyCPU();
     }
 
@@ -47,6 +54,14 @@ export class SphereClusterVisualisation extends AbstractClusterVisualisation {
         viewport.scene.removeObjectByID(this.sphereID);
         this.sphereID = null;
         this.sphere = null;
+    }
+
+    public getInConnectionPoint() {
+        return this.center;
+    }
+
+    public getOutConnectionPoint() {
+        return this.center;
     }
 
     public getConstructor() {

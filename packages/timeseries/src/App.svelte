@@ -210,6 +210,7 @@
 
 
   let visualizationSelected = "Default"
+  let showConnectors = false;
   let selectedTimestep = 0; 
 
   let matryoshkaBlobsVisible = [false, true, false, true, false, false, false, false, false, false, false, false, false, false];
@@ -313,6 +314,7 @@
               dataClustersGivenK={dataClustersGivenK}
               points={dataPathlines.map((pathline) => pathline[selectedTimestep])}
               clusterVisualization={clusterVisualization}
+              showConnections={showConnectors}
             />
           {/if}
 
@@ -417,7 +419,9 @@
               <SelectItem value="Cones" />
               <SelectItem value="SignedDistanceGrid" />
               <SelectItem value="Pathline" />
-            </Select>           
+            </Select>   
+            
+            <Checkbox labelText="Show cluster connections" bind:checked={showConnectors} />
             {/if}
 
             <Checkbox labelText="Colored" bind:checked={blobsColored} />

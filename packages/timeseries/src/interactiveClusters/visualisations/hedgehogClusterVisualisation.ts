@@ -12,6 +12,7 @@ export class HedgehogClusterVisualisation extends AbstractClusterVisualisation {
     private conesIDs: number[] = [];
     private sphere: Graphics.Sphere = null;
     private sphereID: number = null;
+    private center: vec3 = vec3.fromValues(0, 0, 0);
 
     constructor(manager: InteractiveClusters, points: vec3[], cluster: ClusterNode, viewport: Viewport3D) {
         super(manager, points, cluster, viewport);
@@ -91,13 +92,19 @@ export class HedgehogClusterVisualisation extends AbstractClusterVisualisation {
     }
 
     public setColor(color: vec3) {
+        this.color = color;
+        let c = vec3.copy(vec3.create(), this.color);
+        if (this.highlighted) {
+            vec3.scale(c, c, 1.8);
+        }
+
         for (let i = 0; i < this.cones.length; i++) {
-            this.cones[i].properties.color = [color[0], color[1], color[2], 1.0];
+            this.cones[i].properties.color = [c[0], c[1], c[2], 1.0];
             this.cones[i].setDirtyCPU();
         }
 
         if (this.sphereID) {
-            this.sphere.properties.color = [color[0], color[1], color[2], 1.0];
+            this.sphere.properties.color = [c[0], c[1], c[2], 1.0];
             this.sphere.setDirtyCPU();
         }
     }
@@ -132,6 +139,14 @@ export class HedgehogClusterVisualisation extends AbstractClusterVisualisation {
             this.sphereID = null;
             this.sphere = null;
         }
+    }
+
+    public getInConnectionPoint() {
+        return this.center;
+    }
+
+    public getOutConnectionPoint() {
+        return this.center;
     }
 
     public getConstructor() {

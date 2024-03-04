@@ -34,7 +34,8 @@ struct GlobalsStruct {
 @group(0) @binding(3) var<storage, read> timestep_counts: array<u32>; // Amount of timesteps
 @group(0) @binding(4) var<storage, read> point_counts: array<u32>; // Amount of points inside a timestep
 @group(0) @binding(5) var<storage, read> radii: array<f32>; // Amount of points inside a timestep
-@group(0) @binding(6) var grid: texture_storage_3d<rgba8unorm, write>;
+
+@group(0) @binding(7) var<storage, read_write> arrayGrid: array<array<array<array<vec2<f32>, ${VolumeTextureSize}>, ${VolumeTextureSize}>, ${VolumeTextureSize}>>;
 
 @compute @workgroup_size(4, 4, 4) fn main(@builtin(global_invocation_id) GlobalInvocationID: vec3<u32>) {
     let positionNDC = (1.0 / ${VolumeTextureSize}) * vec3<f32>(GlobalInvocationID.xyz % ${VolumeTextureSize}) + vec3<f32>(1.0 / ${2 * VolumeTextureSize});
@@ -84,7 +85,7 @@ struct GlobalsStruct {
         lastSdf = min(lastSdf, sdf);
     }
 
-    textureStore(grid, GlobalInvocationID, vec4<f32>(finalValue, f32(lastTimestep) / f32(timestepCount), f32(countTimesteps) / f32(timestepCount), 0.0));
+    arrayGrid[objectId][GlobalInvocationID.x][GlobalInvocationID.y][GlobalInvocationID.z % ${VolumeTextureSize}] = vec2<f32>(f32(lastTimestep) / f32(timestepCount), f32(countTimesteps) / f32(timestepCount));
 }
 `};
 

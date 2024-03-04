@@ -4,40 +4,25 @@ import type { Viewport3D } from "lib-graphics";
 import type { ClusterNode } from "../utils/main";
 import type { AbstractClusterVisualisation } from "./visualisations/abstractVisualization";
 import type { InteractiveClusters } from "./interactiveClusters";
-import type { ClusterConnector } from "./clusterConnector";
+import { ClusterConnector } from "./clusterConnector";
 import { SphereClusterVisualisation } from "./visualisations/sphereClusterVisualisation";
 
-export abstract class AbstractClusterComposite {
-    protected parent: AbstractClusterComposite;
 
-    constructor() {
-        this.parent = null;
-    }
-
-    abstract rayIntersection(ray: Graphics.Ray) : Graphics.Intersection;
-    abstract updateCluster(clustersGivenK: ClusterNode[][], points: vec3[]);
-    abstract updatePoints(points: vec3[]);
-    abstract setVisualisation<T extends AbstractClusterVisualisation>(visualisationType: new(manager: InteractiveClusters, points: vec3[], cluster: ClusterNode, viewport: Viewport3D) => T, points: vec3[]);
-    abstract eventUpdate(points: vec3[]);
-    abstract deleteVisualization();
-    abstract getInorder(): AbstractClusterComposite[];
-}
-
-export class ClusterLeaf extends AbstractClusterComposite {
-    public cluster: ClusterNode;
-    private children: AbstractClusterComposite[];
+export class ClusterComposite {
+    private children: ClusterComposite[];
     private isLeaf: boolean;
     private viewport: Viewport3D;
     private manager: InteractiveClusters;
-
-    // TODO: Remove this teribleness
+    
+    // TODO: This should probably not be public
+    public parent: ClusterComposite = null;
+    public cluster: ClusterNode;
     public inConnector: ClusterConnector = null;
     public outConnector: ClusterConnector = null;
 
     private visualisation: AbstractClusterVisualisation;
 
-    constructor(cluster: ClusterNode, points: vec3[], viewport: Viewport3D,  parent: AbstractClusterComposite, manager: InteractiveClusters) {
-        super();
+    constructor(cluster: ClusterNode, points: vec3[], viewport: Viewport3D,  parent: ClusterComposite, manager: InteractiveClusters) {
         this.parent = parent;
         this.cluster = cluster;
         this.children = [];
@@ -61,8 +46,8 @@ export class ClusterLeaf extends AbstractClusterComposite {
         this.outConnector = connector;
     }
 
-    public getCenter(): vec3 {
-        return this.visualisation.getCenter();
+    public getVisualisation() {
+        return this.visualisation;
     }
 
     public getInorder() {
@@ -70,7 +55,7 @@ export class ClusterLeaf extends AbstractClusterComposite {
             return [this];
         }
 
-        let inorder: AbstractClusterComposite[] = this.children[0].getInorder();
+        let inorder: ClusterComposite[] = this.children[0].getInorder();
         for (let i = 1; i < this.children.length; i++) {
             inorder = inorder.concat(this.children[i].getInorder());
         }
@@ -114,23 +99,58 @@ export class ClusterLeaf extends AbstractClusterComposite {
         this.deleteVisualization();
         
         for (let clusterIdx of clustersGivenK[k][i].children) {
-            this.children.push(new ClusterLeaf(clustersGivenK[k + 1][clusterIdx], points, this.viewport, this, this.manager));
+            this.children.push(new ClusterComposite(clustersGivenK[k + 1][clusterIdx], points, this.viewport, this, this.manager));
         }
 
         for (let child of this.children) {
             child.setVisualisation(visualizationType, points)
             child.updatePoints(points);
         }
-
-        if (this.inConnector != null) {
-            this.inConnector.setEnd(this.children[0] as ClusterLeaf)
-        }
-
-        if (this.outConnector != null) {
-            this.outConnector.setStart(this.children[this.children.length - 1] as ClusterLeaf);
+        
+        this.inConnector?.setEnd(this.children[0])
+        this.outConnector?.setStart(this.children[this.children.length - 1]);
+        this.inConnector = null;
+        this.outConnector = null;
+        // Create new connectors between all created nodes
+        if (this.manager.getShowConnectors()) {
+            for (let i = 0; i < this.children.length - 1; i++) {
+                new ClusterConnector(this.children[i], this.children[i + 1], this.viewport);
+            }
         }
 
         this.manager.eventUpdate(this.children, points);
+    }
+
+    private mergeWithVisualization<T extends AbstractClusterVisualisation>(visualisationType: new(manager: InteractiveClusters, points: vec3[], cluster: ClusterNode, viewport: Viewport3D) => T, clustersGivenK: ClusterNode[][], points: vec3[]) {
+        let inorderChildren = this.getInorder();
+        for (let child of inorderChildren) {
+            child.deleteVisualization();
+        }
+
+        if (this.manager.getShowConnectors()) {
+            inorderChildren[0].outConnector?.destroy(this.viewport);
+            inorderChildren[inorderChildren.length - 1].inConnector?.destroy(this.viewport);
+            for (let i = 1; i < inorderChildren.length - 1; i++) {
+                inorderChildren[i].inConnector?.destroy(this.viewport);
+                inorderChildren[i].outConnector?.destroy(this.viewport);
+            }
+        }
+
+        this.isLeaf = true;
+        this.updateCluster(clustersGivenK);
+        this.setVisualisation(visualisationType, points);
+        this.updatePoints(points);
+        this.setInConnector(inorderChildren[0].inConnector);
+        this.setOutConnector(inorderChildren[inorderChildren.length - 1].outConnector);
+        this.inConnector?.setEnd(this)
+        this.outConnector?.setStart(this);
+        this.children = [];
+    }
+
+    public merge(clustersGivenK: ClusterNode[][], points: vec3[]) {
+        if (this.isLeaf && this.parent != null) {
+            this.parent.mergeWithVisualization(this.visualisation?.getConstructor(), clustersGivenK, points);
+        }
     }
 
     public rayIntersection(ray: Graphics.Ray): Graphics.Intersection | null {

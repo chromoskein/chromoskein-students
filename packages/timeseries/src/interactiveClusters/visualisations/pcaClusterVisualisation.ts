@@ -13,6 +13,7 @@ export class PCAClusterVisualisation extends AbstractClusterVisualisation {
     private coneUpID: number | null = null;
     private coneDown: Graphics.RoundedCone;
     private coneDownID: number | null = null;
+    private center: vec3 = vec3.fromValues(0, 0, 0);
 
     constructor(manager: InteractiveClusters, points: vec3[], cluster: ClusterNode, viewport: Viewport3D) {
         super(manager, points, cluster, viewport);
@@ -62,9 +63,15 @@ export class PCAClusterVisualisation extends AbstractClusterVisualisation {
     }
 
     public setColor(color: vec3) {
+        this.color = color;
+        let c = vec3.copy(vec3.create(), this.color);
+        if (this.highlighted) {
+            vec3.scale(c, c, 1.8);
+        }
+
         if (this.coneDownID && this.coneUpID) {
-            this.coneUp.properties.color = [color[0], color[1], color[2], 1.0];
-            this.coneDown.properties.color = [color[0], color[1], color[2], 1.0];
+            this.coneUp.properties.color = [c[0], c[1], c[2], 1.0];
+            this.coneDown.properties.color = [c[0], c[1], c[2], 1.0];
             this.coneUp.setDirtyCPU();
             this.coneDown.setDirtyCPU();
         }
@@ -91,6 +98,14 @@ export class PCAClusterVisualisation extends AbstractClusterVisualisation {
             this.coneUpID = null;
             this.coneUp = null;
         }
+    }
+
+    public getInConnectionPoint() {
+        return this.center;
+    }
+
+    public getOutConnectionPoint() {
+        return this.center;
     }
 
     public getConstructor() {
