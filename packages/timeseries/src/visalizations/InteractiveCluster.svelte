@@ -19,6 +19,8 @@
     export let points: vec3[] = [];
     export let clusterVisualization: string;
     export let showConnections: Boolean = false;
+    export let clustersUpdated;
+    export let updateClustersUpdated;
 
     let clusterObjects: InteractiveClusters = null;
     let canvas: HTMLElement | null = null;
@@ -37,6 +39,7 @@
 
       let hitCluster: ClusterComposite = clusterObjects.rayIntersection(ray);
       if (hitCluster != null) hitCluster.split(dataClustersGivenK, points);
+      updateClustersUpdated(!clustersUpdated);
     }
 
     // TODO: fix number of octopi tentacles when any cluster is split

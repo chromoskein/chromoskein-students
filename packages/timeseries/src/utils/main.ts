@@ -295,6 +295,8 @@ export type ClusterNode = {
     }
     
     children: number[];
+
+    visible: boolean;
 }
 
 
@@ -328,6 +330,7 @@ export function clusterPathlines(pathlines: vec3[][]): ClusterNode[][] {
                 children: [],
                 delimiters: [],
                 points: [],
+                visible: false,
             };
         }
         kClustersRanges[k].sort((a, b) => a.from - b.from);
@@ -387,6 +390,7 @@ export function clusterTimestep(timestep: vec3[]): ClusterNode[][] {
                 children: [],
                 delimiters: delimiters,
                 points: points,
+                visible: false,
             };
         }
         kClustersRanges[k].sort((a, b) => a.from - b.from);

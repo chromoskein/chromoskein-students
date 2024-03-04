@@ -31,6 +31,7 @@ export class ClusterComposite {
         this.manager = manager;
 
         this.setVisualisation(SphereClusterVisualisation, points);
+        this.setVisible(true);
     }
 
     public setVisualisation<T extends AbstractClusterVisualisation>(visualisationType: new(manager: InteractiveClusters, points: vec3[], cluster: ClusterNode, viewport: Viewport3D) => T, points: vec3[]) {
@@ -44,6 +45,10 @@ export class ClusterComposite {
 
     public setOutConnector(connector: ClusterConnector) {
         this.outConnector = connector;
+    }
+
+    public setVisible(visible: boolean) {
+        this.cluster.visible = visible;
     }
 
     public getVisualisation() {
@@ -105,6 +110,7 @@ export class ClusterComposite {
         for (let child of this.children) {
             child.setVisualisation(visualizationType, points)
             child.updatePoints(points);
+            child.setVisible(true);
         }
         
         this.inConnector?.setEnd(this.children[0])
@@ -119,6 +125,7 @@ export class ClusterComposite {
         }
 
         this.manager.eventUpdate(this.children, points);
+        this.setVisible(false);
     }
 
     private mergeWithVisualization<T extends AbstractClusterVisualisation>(visualisationType: new(manager: InteractiveClusters, points: vec3[], cluster: ClusterNode, viewport: Viewport3D) => T, clustersGivenK: ClusterNode[][], points: vec3[]) {

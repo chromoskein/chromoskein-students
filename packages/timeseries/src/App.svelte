@@ -251,6 +251,12 @@
     // TODO
   });
 
+  let clustersUpdated = false;
+
+  function updateClustersUpdated(newClustersUpdated) {
+    clustersUpdated = newClustersUpdated;
+  }
+
   //#endregion Configuration
 </script>
 
@@ -315,6 +321,8 @@
               points={dataPathlines.map((pathline) => pathline[selectedTimestep])}
               clusterVisualization={clusterVisualization}
               showConnections={showConnectors}
+              clustersUpdated={clustersUpdated}
+              updateClustersUpdated={updateClustersUpdated}
             />
           {/if}
 
@@ -424,14 +432,16 @@
             <Checkbox labelText="Show cluster connections" bind:checked={showConnectors} />
             {/if}
 
+            {#if visualizationSelected != "Composite"}
             <Checkbox labelText="Colored" bind:checked={blobsColored} />
             <Checkbox labelText="Experimental colors" bind:checked={experimentalColors} />
             <Checkbox labelText="Cluster at timestep" bind:checked={timestepClustering} />
+            {/if}
 
-            {#if visualizationSelected != "Matryoshka"}
+            {#if visualizationSelected != "Matryoshka" && visualizationSelected != "Composite"}
             <Slider labelText="Amount" fullWidth min={1} max={15} bind:value={blobsAmount} />
             {/if}
-            {#if visualizationSelected != "Spheres" && visualizationSelected != "Cones"}
+            {#if visualizationSelected != "Spheres" && visualizationSelected != "Cones" && visualizationSelected != "Composite"}
               <Slider labelText="Radius" fullWidth min={0.01} max={0.1} step={0.01} bind:value={blobsRadius} />
             {/if}
             {#if visualizationSelected == "Matryoshka"}
@@ -460,6 +470,25 @@
                 {/each}
               </div>
             {/if}
+            {#key clustersUpdated}
+            {#if dataClustersGivenK && visualizationSelected == "Composite"}
+                <div class="cluster-dendogram">
+                  {#each dataClustersGivenK.slice(1, 16) as clustersAtLevel, clusterLevel}
+                    <div class="cluster-dendogram-row">
+                      {#each clustersAtLevel as cluster, i}
+                        <div
+                          style={`
+                            width: ${100.0 * ((cluster.to - cluster.from + 1) / dataPathlines.length)}%;
+                            background-color: rgb(${(!experimentalColors) ? 255 * cluster.color.rgb[0] : 255 * staticColors[i % staticColors.length][0]} ${(!experimentalColors) ? 255 * cluster.color.rgb[1] : 255 * staticColors[i % staticColors.length][1]} ${(!experimentalColors) ? 255 * cluster.color.rgb[2] : 255 * staticColors[i % staticColors.length][2]});
+                            border: 2px solid ${cluster.visible ? "white" : "black"}
+                          `}
+                        />
+                      {/each}
+                    </div>
+                  {/each}
+                </div>
+              {/if}
+              {/key}
           </AccordionItem>
 
           <!-- <AccordionItem title="Pathlines" /> -->
