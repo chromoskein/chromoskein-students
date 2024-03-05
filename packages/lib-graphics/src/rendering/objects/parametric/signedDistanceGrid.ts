@@ -695,7 +695,7 @@ export class SignedDistanceGrid extends IParametricObject {
         this.toBuffer(this._allocation.cpuBuffer.inner, this._allocation.allocationRange.offset);
     }
 
-    public record(encoder: GPURenderPassEncoder, bindGroupLayoutsOffset = 1): void {
+    public record(encoder: GPURenderPassEncoder, bindGroupLayoutsOffset = 1): void {        
         if (!this._bindGroup || this.hidden) {
             return;
         }

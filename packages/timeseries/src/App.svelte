@@ -37,6 +37,7 @@
   import MatryoshkaClusters from "./visalizations/MatryoshkaClusters.svelte";
   import Hedgehog from "./objects/Hedgehog.svelte";
   import InteractiveCluster from "./visalizations/InteractiveCluster.svelte";
+    import TestDynamicVolume from "./objects/TestDynamicVolume.svelte";
 
   export const saveAs = (blob, name) => {
     // Namespace is used to prevent conflict w/ Chrome Poper Blocker extension (Issue https://github.com/eligrey/FileSaver.js/issues/561)
@@ -301,6 +302,17 @@
               transparency={volumeTransparency}
               func={volumeFunction}
               colormap={volumeColormap}
+            />
+          {/if}
+          {#if visualizationSelected == "None"}
+            <TestDynamicVolume
+              visible={true}
+              blobs={blobs}
+              transparency={volumeTransparency}
+              radius={volumeRadius}
+              colormap={volumeColormap}
+              func={volumeFunction}
+              color={blobColors[0]}
             />
           {/if}
           {#if visualizationSelected == "Matryoshka"}

@@ -446,7 +446,7 @@ export class Volume extends IParametricObject {
         return [];
     }
 
-    private _colorMap: GPUTexture | null = null;
+    protected _colorMap: GPUTexture | null = null;
     private _array: GPUBuffer;
     private _arraySize: number = 0;
 

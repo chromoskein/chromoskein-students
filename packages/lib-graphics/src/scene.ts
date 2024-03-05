@@ -7,6 +7,7 @@ import { BasicAllocator } from "./allocation/index";
 import { ConcreteObject, IObject, IParametricObject, Volume } from "./rendering";
 import { Mesh } from "./rendering/objects/mesh";
 import { vec3 } from "gl-matrix";
+import { DynamicVolume, DynamicVolumeUnit } from "./rendering/objects/parametric/dynamicVolume";
 
 export enum RenderObjects {
     Transparent,
@@ -17,6 +18,7 @@ export class Scene {
     private graphicsLibrary: GraphicsLibrary;
 
     private _objects: IObject[] = [];
+    private _dynamicVolume: DynamicVolume | null = null;
     private _lastObjectID = 0;
 
     private _allocator: BasicAllocator;
@@ -155,6 +157,29 @@ export class Scene {
         this._version++;
 
         return [object, objectID];
+    }
+
+    public addDynamicVolume<T extends DynamicVolumeUnit>(objectType: new (id: number, graphicsLibrary: GraphicsLibrary, dynamicVolume: DynamicVolume) => T): [T, number] {
+        if (!this._dynamicVolume) {
+            const dynamicVolumeID = this._lastObjectID++;
+            this._dynamicVolume = new DynamicVolume(dynamicVolumeID, this.graphicsLibrary, this._allocator);
+            this.objects.push(this._dynamicVolume);
+        }
+
+        this._version++;
+        return this._dynamicVolume.addVolume(objectType);
+    }
+
+    public removeDynamicVolumeByID(volumeID: number) : void {
+        if (!this._dynamicVolume) {
+            return;
+        }
+
+        this._dynamicVolume.removeVolumeByID(volumeID);
+        if (this._dynamicVolume.isEmpty()) {
+            this.removeObjectByID(this._dynamicVolume.id);
+            this._dynamicVolume = null;
+        }
     }
 
     public addMesh<T extends Mesh>(objectType: new (id: number, graphicsLibrary: GraphicsLibrary, allocator: Allocator, trianglesCount: number) => T, trianglesCount = 1): [T, number] {
