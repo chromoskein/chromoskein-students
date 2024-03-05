@@ -132,6 +132,7 @@ export class ClusterComposite {
         let inorderChildren = this.getInorder();
         for (let child of inorderChildren) {
             child.deleteVisualization();
+            child.setVisible(false);
         }
 
         if (this.manager.getShowConnectors()) {
@@ -157,6 +158,7 @@ export class ClusterComposite {
     public merge(clustersGivenK: ClusterNode[][], points: vec3[]) {
         if (this.isLeaf && this.parent != null) {
             this.parent.mergeWithVisualization(this.visualisation?.getConstructor(), clustersGivenK, points);
+            this.parent.setVisible(true);
         }
     }
 

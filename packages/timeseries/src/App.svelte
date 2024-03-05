@@ -262,9 +262,14 @@
   let interactiveClusterRef;
 
   function callSplitClusters(cluster) {
-    if (action == "Split") {
-      cluster = interactiveClusterRef.getClusterComposite(cluster);
-      interactiveClusterRef.splitClusters(cluster);
+    switch (action) {
+      case "Split":
+        cluster = interactiveClusterRef.getClusterComposite(cluster);
+        interactiveClusterRef.splitClusters(cluster);
+        break;
+      case "Merge":
+        cluster = interactiveClusterRef.getClusterComposite(cluster);
+        interactiveClusterRef.mergeClusters(cluster);
     }
   }
 
@@ -450,8 +455,6 @@
               <SelectItem value="Split" />
               <SelectItem value="Merge" />
             </Select>
-            
-            <Checkbox labelText="Show cluster connections" bind:checked={showConnectors} />
             {/if}
 
             {#if visualizationSelected == "Composite" && action == "Change representation"}
@@ -462,6 +465,10 @@
               <SelectItem value="SignedDistanceGrid" />
               <SelectItem value="Pathline" />
             </Select>
+            {/if}
+
+            {#if visualizationSelected == "Composite"}
+            <Checkbox labelText="Show cluster connections" bind:checked={showConnectors} />
             {/if}
 
             {#if visualizationSelected != "Composite"}

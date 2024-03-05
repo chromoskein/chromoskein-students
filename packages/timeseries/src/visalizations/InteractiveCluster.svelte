@@ -45,9 +45,12 @@
     }
 
     export function splitClusters(hitCluster) {
-      if (hitCluster != null) {
-        hitCluster.split(dataClustersGivenK, points);
-      }
+      hitCluster.split(dataClustersGivenK, points);
+      updateClustersUpdated(!clustersUpdated);
+    }
+
+    export function mergeClusters(hitCluster) {
+      hitCluster.merge(dataClustersGivenK, points);
       updateClustersUpdated(!clustersUpdated);
     }
 
@@ -68,7 +71,7 @@
             splitClusters(hitCluster);
             break;
           case "Merge":
-            hitCluster.merge(dataClustersGivenK, points);
+            mergeClusters(hitCluster);
             break;
         }
       }
