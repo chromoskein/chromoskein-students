@@ -33,13 +33,29 @@
       "Pathline": PathlineClusterVisualization
     };
 
+    export function getClusterComposite(cluster) {
+      let root = clusterObjects.getRoot();
+      let allClusters = root.getInorder();
+      for (let i = 0; i < allClusters.length; i++) {
+        if (allClusters[i].cluster.k == cluster.k && allClusters[i].cluster.i == cluster.i) {
+          return allClusters[i];
+        }
+      }
+    }
+
+    export function splitClusters(hitCluster) {
+      if (hitCluster != null) {
+        hitCluster.split(dataClustersGivenK, points);
+      }
+      updateClustersUpdated(!clustersUpdated);
+    }
+
     function onElementRightButtonClick(event) {
 		  let rect = canvas.getBoundingClientRect(); // abs. size of element    
       let ray = Graphics.screenSpaceToRay(vec2.fromValues((event.clientX - rect.left) / rect.width, (event.clientY - rect.top) / rect.height), $viewport.camera);
 
       let hitCluster: ClusterComposite = clusterObjects.rayIntersection(ray);
-      if (hitCluster != null) hitCluster.split(dataClustersGivenK, points);
-      updateClustersUpdated(!clustersUpdated);
+      splitClusters(hitCluster);
     }
 
     // TODO: fix number of octopi tentacles when any cluster is split

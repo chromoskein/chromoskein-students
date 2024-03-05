@@ -19,6 +19,10 @@ export class InteractiveClusters {
         this.device = device;
     }
 
+    public getRoot() {
+        return this.root;
+    }
+
     public rayIntersection(ray: Graphics.Ray): ClusterComposite {
         let inorder = this.root.getInorder();
 
