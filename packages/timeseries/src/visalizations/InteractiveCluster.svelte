@@ -21,6 +21,7 @@
     export let showConnections: Boolean = false;
     export let clustersUpdated;
     export let updateClustersUpdated;
+    export let action;
 
     let clusterObjects: InteractiveClusters = null;
     let canvas: HTMLElement | null = null;
@@ -50,14 +51,6 @@
       updateClustersUpdated(!clustersUpdated);
     }
 
-    function onElementRightButtonClick(event) {
-		  let rect = canvas.getBoundingClientRect(); // abs. size of element    
-      let ray = Graphics.screenSpaceToRay(vec2.fromValues((event.clientX - rect.left) / rect.width, (event.clientY - rect.top) / rect.height), $viewport.camera);
-
-      let hitCluster: ClusterComposite = clusterObjects.rayIntersection(ray);
-      splitClusters(hitCluster);
-    }
-
     // TODO: fix number of octopi tentacles when any cluster is split
     function onElementLeftButtonClick(event) {
 		  let rect = canvas.getBoundingClientRect(); 
@@ -65,20 +58,22 @@
 
       let hitCluster: ClusterComposite = clusterObjects.rayIntersection(ray);
       if (hitCluster != null) {
-        let chosenRepresentation = representations[clusterVisualization];
-        hitCluster.setVisualisation(chosenRepresentation, points);
-        hitCluster.updatePoints(points);
+        switch(action) {
+          case "Change representation":
+            let chosenRepresentation = representations[clusterVisualization];
+            hitCluster.setVisualisation(chosenRepresentation, points);
+            hitCluster.updatePoints(points);
+            break;
+          case "Split":
+            splitClusters(hitCluster);
+            break;
+          case "Merge":
+            hitCluster.merge(dataClustersGivenK, points);
+            break;
+        }
       }
 	  }
 
-    function onElementMiddleButtonClick(event) {
-		  let rect = canvas.getBoundingClientRect(); // abs. size of element    
-      let ray = Graphics.screenSpaceToRay(vec2.fromValues((event.clientX - rect.left) / rect.width, (event.clientY - rect.top) / rect.height), $viewport.camera);
-
-      let hitCluster: ClusterComposite = clusterObjects.rayIntersection(ray);
-      if (hitCluster != null) hitCluster.merge(dataClustersGivenK, points);
-    }
-  
     $: if ($viewport) {
       if (clusterObjects == null) {
         clusterObjects = new InteractiveClusters(dataClustersGivenK, points, $viewport, $device);
@@ -87,15 +82,6 @@
           if (event.button == 0) { // left click for mouse
               onElementLeftButtonClick(event);
           }});
-        canvas?.addEventListener("contextmenu", (event) => { // right click for mouse
-          event.preventDefault();
-          onElementRightButtonClick(event);
-        });
-        canvas?.addEventListener('auxclick', function(event) {
-          if (event.button == 1) {
-            onElementMiddleButtonClick(event);
-          }
-        });
         canvas?.addEventListener("mousemove", function(event) {
           let rect = canvas.getBoundingClientRect(); // abs. size of element    
           let ray = Graphics.screenSpaceToRay(vec2.fromValues((event.clientX - rect.left) / rect.width, (event.clientY - rect.top) / rect.height), $viewport.camera);

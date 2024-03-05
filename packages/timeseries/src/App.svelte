@@ -243,6 +243,7 @@
   }
 
   let clusterVisualization = "Sphere";
+  let action = "Change representation";
 
   // fixed for now
   let filename = "./timeseries/tmpfile.bed";
@@ -261,8 +262,10 @@
   let interactiveClusterRef;
 
   function callSplitClusters(cluster) {
-    cluster = interactiveClusterRef.getClusterComposite(cluster);
-    interactiveClusterRef.splitClusters(cluster);
+    if (action == "Split") {
+      cluster = interactiveClusterRef.getClusterComposite(cluster);
+      interactiveClusterRef.splitClusters(cluster);
+    }
   }
 
   //#endregion Configuration
@@ -342,6 +345,7 @@
               showConnections={showConnectors}
               clustersUpdated={clustersUpdated}
               updateClustersUpdated={updateClustersUpdated}
+              action={action}
               bind:this={interactiveClusterRef}
             />
           {/if}
@@ -441,15 +445,23 @@
             </Select>
 
             {#if visualizationSelected == "Composite"}
+            <Select size="sm" inline labelText="Action" bind:selected={action}>
+              <SelectItem value="Change representation" />
+              <SelectItem value="Split" />
+              <SelectItem value="Merge" />
+            </Select>
+            
+            <Checkbox labelText="Show cluster connections" bind:checked={showConnectors} />
+            {/if}
+
+            {#if visualizationSelected == "Composite" && action == "Change representation"}
             <Select size="sm" inline labelText="Visualization type:" bind:selected={clusterVisualization}>
               <SelectItem value="Sphere" />
               <SelectItem value="Hedgehog" />
               <SelectItem value="Cones" />
               <SelectItem value="SignedDistanceGrid" />
               <SelectItem value="Pathline" />
-            </Select>   
-            
-            <Checkbox labelText="Show cluster connections" bind:checked={showConnectors} />
+            </Select>
             {/if}
 
             {#if visualizationSelected != "Composite"}
