@@ -14,8 +14,8 @@ export class HedgehogClusterVisualisation extends AbstractClusterVisualisation {
     private sphereID: number = null;
     private center: vec3 = vec3.fromValues(0, 0, 0);
 
-    constructor(manager: InteractiveClusters, points: vec3[], cluster: ClusterNode, viewport: Viewport3D) {
-        super(manager, points, cluster, viewport);
+    constructor(manager: InteractiveClusters, cluster: ClusterNode, viewport: Viewport3D) {
+        super(manager, cluster, viewport);
 
         this.viewport = viewport;
 
@@ -27,16 +27,16 @@ export class HedgehogClusterVisualisation extends AbstractClusterVisualisation {
         this.cluster = cluster;
     }
 
-    public updatePoints(points: vec3[]) {
+    public updatePoints(pointsAtTimestep: vec3[][], selectedTimestep: number) {
         let clusters: ClusterNode[] = this.manager.getClusters();
         let centers = [];
         for (let cluster of clusters) {
             if (cluster != this.cluster) {
-                let bb = Graphics.boundingBoxFromPoints(points.slice(cluster.from, cluster.to + 1))
+                let bb = Graphics.boundingBoxFromPoints(pointsAtTimestep[selectedTimestep].slice(cluster.from, cluster.to + 1))
                 centers.push(bb.center);
             }
         }
-        let box = Graphics.boundingBoxFromPoints(points.slice(this.cluster.from, this.cluster.to + 1))
+        let box = Graphics.boundingBoxFromPoints(pointsAtTimestep[selectedTimestep].slice(this.cluster.from, this.cluster.to + 1))
         let coneCenter = box.center;
         this.center = box.center;
 
@@ -72,8 +72,8 @@ export class HedgehogClusterVisualisation extends AbstractClusterVisualisation {
         this.setColor(this.cluster.color.rgb);
     }
 
-    public eventUpdate(points: vec3[]): void {
-        this.updatePoints(points);
+    public eventUpdate(pointsAtTimestep: vec3[][], selectedTimestep: number): void {
+        this.updatePoints(pointsAtTimestep, selectedTimestep);
     }
 
     private getDirections(center: vec3, otherCenters: vec3[]): vec3[] {

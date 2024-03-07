@@ -345,7 +345,8 @@
           {#if visualizationSelected == "Composite"}
             <InteractiveCluster
               dataClustersGivenK={dataClustersGivenK}
-              points={dataPathlines.map((pathline) => pathline[selectedTimestep])}
+              pointsAtTimesteps={dataTimesteps}
+              selectedTimestep={selectedTimestep}
               clusterVisualization={clusterVisualization}
               showConnections={showConnectors}
               clustersUpdated={clustersUpdated}

@@ -16,7 +16,8 @@
     let clusterHighlighter: ClusterHighlighter = new ClusterHighlighter();
 
     export let dataClustersGivenK: ClusterNode[][] | null = null;
-    export let points: vec3[] = [];
+    export let pointsAtTimesteps: vec3[][] = [];
+    export let selectedTimestep = 0;
     export let clusterVisualization: string;
     export let showConnections: Boolean = false;
     export let clustersUpdated;
@@ -45,12 +46,12 @@
     }
 
     export function splitClusters(hitCluster) {
-      hitCluster.split(dataClustersGivenK, points);
+      hitCluster.split(dataClustersGivenK, pointsAtTimesteps, selectedTimestep);
       updateClustersUpdated(!clustersUpdated);
     }
 
     export function mergeClusters(hitCluster) {
-      hitCluster.merge(dataClustersGivenK, points);
+      hitCluster.merge(dataClustersGivenK, pointsAtTimesteps, selectedTimestep);
       updateClustersUpdated(!clustersUpdated);
     }
 
@@ -64,8 +65,8 @@
         switch(action) {
           case "Change representation":
             let chosenRepresentation = representations[clusterVisualization];
-            hitCluster.setVisualisation(chosenRepresentation, points);
-            hitCluster.updatePoints(points);
+            hitCluster.setVisualisation(chosenRepresentation);
+            hitCluster.updatePoints(pointsAtTimesteps, selectedTimestep);
             break;
           case "Split":
             splitClusters(hitCluster);
@@ -79,7 +80,7 @@
 
     $: if ($viewport) {
       if (clusterObjects == null) {
-        clusterObjects = new InteractiveClusters(dataClustersGivenK, points, $viewport, $device);
+        clusterObjects = new InteractiveClusters(dataClustersGivenK, pointsAtTimesteps, selectedTimestep, $viewport, $device);
         canvas = document.getElementById("canvas");
         canvas?.addEventListener("mousedown", event => {
           if (event.button == 0) { // left click for mouse
@@ -99,8 +100,8 @@
       clusterObjects.setShowConnectors(showConnections);
     }
 
-    $: if ($viewport && points) {
-      clusterObjects.updatePoints(points);
+    $: if ($viewport && pointsAtTimesteps && selectedTimestep) {
+      clusterObjects.updatePoints(pointsAtTimesteps, selectedTimestep);
     }
 
     /*
@@ -109,9 +110,9 @@
       fire in case clustersGivenK is updated
     */
     function updateClusters(dataClustersByK: ClusterNode[][]) {
-      if (clusterObjects && points) {
-        clusterObjects.updateClusters(points, dataClustersByK);
-        clusterObjects.updatePoints(points);
+      if (clusterObjects && pointsAtTimesteps && selectedTimestep) {
+        clusterObjects.updateClusters(dataClustersByK);
+        clusterObjects.updatePoints(pointsAtTimesteps, selectedTimestep);
       }
     }
 

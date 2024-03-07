@@ -12,9 +12,9 @@ export class InteractiveClusters {
     private showConnectors: Boolean = false;
     private highlightedClusters: ClusterComposite[] = [];
 
-    constructor(clustersGivenK: ClusterNode[][], points: vec3[], viewport: Viewport3D, device: GPUDevice) {
-        this.root = new ClusterComposite(clustersGivenK[1][0], points, viewport, null, this);
-        this.root.updatePoints(points);
+    constructor(clustersGivenK: ClusterNode[][], pointsAtTimeStep: vec3[][], selectedTimestep: number, viewport: Viewport3D, device: GPUDevice) {
+        this.root = new ClusterComposite(clustersGivenK[1][0], viewport, null, this);
+        this.root.updatePoints(pointsAtTimeStep, selectedTimestep);
         this.viewport = viewport;
         this.device = device;
     }
@@ -39,28 +39,28 @@ export class InteractiveClusters {
         return closestCluster;
     }
 
-    public updateClusters(points: vec3[], clustersGivenK: ClusterNode[][]) {
+    public updateClusters(clustersGivenK: ClusterNode[][]) {
         let inorder = this.root.getInorder();
         for (let cluster of inorder) {
             cluster.updateCluster(clustersGivenK);
         }
     }
 
-    public updatePoints(points: vec3[]) {
+    public updatePoints(pointsAtTimesteps: vec3[][], selectedTimestep: number) {
         let inorder = this.root.getInorder();
         for (let cluster of inorder) {
-            cluster.updatePoints(points);
+            cluster.updatePoints(pointsAtTimesteps, selectedTimestep);
         }
     }
 
     // Used for notifying other clusters of changed elsewhere in the tree
-    public eventUpdate(newNodes: ClusterComposite[], points: vec3[]) {
+    public eventUpdate(newNodes: ClusterComposite[], pointsAtTimestep: vec3[][], selectedTimestep: number) {
         let inorder: ClusterComposite[] = this.root.getInorder();
 
         for (let i = 0; i < inorder.length; i++) {
             let cluster: ClusterComposite = inorder[i];
             if (!newNodes.includes(cluster)) {
-                cluster.eventUpdate(points);
+                cluster.eventUpdate(pointsAtTimestep, selectedTimestep);
             }
         }
     }
