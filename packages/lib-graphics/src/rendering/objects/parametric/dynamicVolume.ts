@@ -1,4 +1,4 @@
-import { Volume, type Allocator, type GraphicsLibrary, type Intersection } from "../../..";
+import { type Allocator, type GraphicsLibrary, type Intersection, IParametricObject } from "../../..";
 import type { BoundingBox, Ray } from "../../../shared";
 import * as r from "restructure";
 import { mat4, vec3, vec4 } from "gl-matrix";
@@ -104,7 +104,7 @@ export const DynamicVolumeStruct = new r.Struct({
 
 export const DynamicVolumeTextureSize: number = 64;
 
-export class DynamicVolume extends Volume {
+export class DynamicVolume extends IParametricObject {
     public static variableName = "dynamicVolume";
     public static typeName = "DynamicVolume";
 
@@ -134,19 +134,11 @@ export class DynamicVolume extends Volume {
             }, {
                 binding: 3,
                 visibility: GPUShaderStage.FRAGMENT,
-                texture: { sampleType: "unfilterable-float", viewDimension: "2d" }
+                buffer: { type: "read-only-storage" },
             }, {
-                binding: 4,    
+                binding: 4,
                 visibility: GPUShaderStage.FRAGMENT,
-                storageTexture: {
-                    // Would be great to have read-write back
-                    access: "write-only",
-                    format: "rgba32float"
-                }
-            }, {
-                binding: 6,
-                visibility: GPUShaderStage.FRAGMENT,
-                buffer: { type: "read-only-storage" }  
+                buffer: { type: "read-only-storage" },
             }]
         }),
         device.createBindGroupLayout({
@@ -193,7 +185,7 @@ export class DynamicVolume extends Volume {
 
 
     static gpuCodeIntersectionTest = /* wgsl */`
-        fn sampleGrid(tex_coord: vec3<f32>, i: u32) -> vec2<f32> {
+        fn sampleLastTimestepGrid(tex_coord: vec3<f32>, i: u32) -> f32 {
             var coords = ${DynamicVolumeTextureSize} * tex_coord;
             let coordsU32 = vec3<u32>(floor(coords));
             let coordsFract = fract(coords);
@@ -201,14 +193,14 @@ export class DynamicVolume extends Volume {
             let ty = coordsFract.y;       
             let tz = coordsFract.z;
 
-            let c000 = arrayGrid[i][coordsU32.x][coordsU32.y][coordsU32.z];
-            let c100 = arrayGrid[i][coordsU32.x + 1][coordsU32.y][coordsU32.z];
-            let c010 = arrayGrid[i][coordsU32.x][coordsU32.y + 1][coordsU32.z];
-            let c110 = arrayGrid[i][coordsU32.x + 1][coordsU32.y + 1][coordsU32.z];
-            let c001 = arrayGrid[i][coordsU32.x][coordsU32.y][coordsU32.z + 1];
-            let c101 = arrayGrid[i][coordsU32.x + 1][coordsU32.y][coordsU32.z + 1];
-            let c011 = arrayGrid[i][coordsU32.x][coordsU32.y + 1][coordsU32.z + 1];
-            let c111 = arrayGrid[i][coordsU32.x + 1][coordsU32.y + 1][coordsU32.z + 1];
+            let c000 = lastTimestepGrids[i][coordsU32.x][coordsU32.y][coordsU32.z];
+            let c100 = lastTimestepGrids[i][coordsU32.x + 1][coordsU32.y][coordsU32.z];
+            let c010 = lastTimestepGrids[i][coordsU32.x][coordsU32.y + 1][coordsU32.z];
+            let c110 = lastTimestepGrids[i][coordsU32.x + 1][coordsU32.y + 1][coordsU32.z];
+            let c001 = lastTimestepGrids[i][coordsU32.x][coordsU32.y][coordsU32.z + 1];
+            let c101 = lastTimestepGrids[i][coordsU32.x + 1][coordsU32.y][coordsU32.z + 1];
+            let c011 = lastTimestepGrids[i][coordsU32.x][coordsU32.y + 1][coordsU32.z + 1];
+            let c111 = lastTimestepGrids[i][coordsU32.x + 1][coordsU32.y + 1][coordsU32.z + 1];
 
             return 
                 (1.0 - tx) * (1.0 - ty) * (1.0 - tz) * c000 + 
@@ -219,7 +211,35 @@ export class DynamicVolume extends Volume {
                 tx * (1.0 - ty) * tz * c101 + 
                 (1.0 - tx) * ty * tz * c011 + 
                 tx * ty * tz * c111; 
-        }    
+        }  
+    
+        fn sampleNumberOfTimestepsGrid(tex_coord: vec3<f32>, i: u32) -> f32 {
+            var coords = ${DynamicVolumeTextureSize} * tex_coord;
+            let coordsU32 = vec3<u32>(floor(coords));
+            let coordsFract = fract(coords);
+            let tx = coordsFract.x;
+            let ty = coordsFract.y;       
+            let tz = coordsFract.z;
+
+            let c000 = numberOfTimestepGrids[i][coordsU32.x][coordsU32.y][coordsU32.z];
+            let c100 = numberOfTimestepGrids[i][coordsU32.x + 1][coordsU32.y][coordsU32.z];
+            let c010 = numberOfTimestepGrids[i][coordsU32.x][coordsU32.y + 1][coordsU32.z];
+            let c110 = numberOfTimestepGrids[i][coordsU32.x + 1][coordsU32.y + 1][coordsU32.z];
+            let c001 = numberOfTimestepGrids[i][coordsU32.x][coordsU32.y][coordsU32.z + 1];
+            let c101 = numberOfTimestepGrids[i][coordsU32.x + 1][coordsU32.y][coordsU32.z + 1];
+            let c011 = numberOfTimestepGrids[i][coordsU32.x][coordsU32.y + 1][coordsU32.z + 1];
+            let c111 = numberOfTimestepGrids[i][coordsU32.x + 1][coordsU32.y + 1][coordsU32.z + 1];
+
+            return 
+                (1.0 - tx) * (1.0 - ty) * (1.0 - tz) * c000 + 
+                tx * (1.0 - ty) * (1.0 - tz) * c100 + 
+                (1.0 - tx) * ty * (1.0 - tz) * c010 + 
+                tx * ty * (1.0 - tz) * c110 + 
+                (1.0 - tx) * (1.0 - ty) * tz * c001 + 
+                tx * (1.0 - ty) * tz * c101 + 
+                (1.0 - tx) * ty * tz * c011 + 
+                tx * ty * tz * c111; 
+        }  
     
         fn rayUnitBoxIntersection(ray: Ray) -> vec2<f32> {
             let tMin = (vec3<f32>(-1.0) - ray.origin) / ray.direction;
@@ -320,11 +340,10 @@ export class DynamicVolume extends Volume {
                         var j = 0.0;
                         for(var i: u32 = 0; i < arrayLength(&${this.variableName}); i++) {
                             var texValue = 0.0;
-                            var val = sampleGrid(tex_coord, i);
                             if (${this.variableName}[0].func == 0) { 
-                                texValue = val.r;
+                                texValue = sampleLastTimestepGrid(tex_coord, i);
                             } else {
-                                texValue = val.g;
+                                texValue = sampleNumberOfTimestepsGrid(tex_coord, i);
                             }
 
                             value += texValue;
@@ -425,6 +444,7 @@ export class DynamicVolume extends Volume {
 
     //private _colorMap: GPUTexture | null = null;
     private _allocator: Allocator;
+    private _colorMap: GPUTexture | null = null;
     private _volumes: DynamicVolumeUnit[] = [];
     private _lastObjectID: number = 0;
     private _lastTimestepGrids: GPUBuffer | null = null;
@@ -533,8 +553,6 @@ export class DynamicVolume extends Volume {
         if (this.hidden) {
             return;
         }
-
-        console.log(DynamicVolume.bindGroupLayouts[0]);
 
         const bindGroup = this._graphicsLibrary.device.createBindGroup({
             layout: DynamicVolume.bindGroupLayouts[0],

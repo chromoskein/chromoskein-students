@@ -1,6 +1,6 @@
-import { ConcreteObject, GraphicsLibrary, IObject, Mesh, meshShapes, parametricShapes } from "../../..";
+import { ConcreteObject, GraphicsLibrary, IObject, Mesh, meshShapes, parametricShapes, volumetricShapes } from "../../..";
 import type { Scene } from "../../../scene";
-import { IParametricObject, Volume } from "../../objects/parametric";
+import { DynamicVolume, IParametricObject, Volume } from "../../objects/parametric";
 import type { PassRenderSettings } from "../shared";
 import { Pass } from "../shared";
 import { meshShaderTemplate } from "./MeshShaderTemplate";
@@ -181,69 +181,76 @@ class Pipelines {
             }));
         }
 
-        // Volume
-        const shaderCode = volumeShaderTemplate(
-            Volume.variableName,
-            Volume.typeName,
-            Volume.gpuCodeGlobals,
-            Volume.gpuCodeGetObject,
-            Volume.gpuCodeGetBoundingRectangleVertex,
-            Volume.gpuCodeIntersectionTest,
-            {
-                color: Volume.gpuCodeGetOutputValue("color"),
-                normal: Volume.gpuCodeGetOutputValue("normal"),
-                ao: Volume.gpuCodeGetOutputValue("ao")
-            }
-        );
+        for (const ty of volumetricShapes) {
+            const shaderCode = volumeShaderTemplate(
+                ty.variableName,
+                ty.typeName,
+                ty.gpuCodeGlobals,
+                ty.gpuCodeGetObject,
+                ty.gpuCodeGetBoundingRectangleVertex,
+                ty.gpuCodeIntersectionTest,
+                {
+                    color: ty.gpuCodeGetOutputValue("color"),
+                    normal: ty.gpuCodeGetOutputValue("normal"),
+                    ao: ty.gpuCodeGetOutputValue("ao")
+                }
+            );
 
-        const shaderModule = device.createShaderModule({
-            label: "DeferredPass-Volume",
-            code: shaderCode
-        });
-        this.shaderModules.set("DeferredPass-Volume", shaderModule);
+            const passName = `DeferredPass-${ty.typeName}`;
 
-        const pipelineLayout = device.createPipelineLayout({
-            label: "DeferredPass-Volume",
-            bindGroupLayouts: [...[cameraBGL], ...Volume.bindGroupLayouts],
-        });
-        this.pipelineLayouts.set("Volume", pipelineLayout);
+            const shaderModule = device.createShaderModule({
+                label: passName,
+                code: shaderCode
+            });
+            this.shaderModules.set(passName, shaderModule);
 
-        this.renderPipelines.set("DeferredPass-Volume", device.createRenderPipeline({
-            label: "DeferredPass-Volume",
-            layout: pipelineLayout,
-            vertex: {
-                module: shaderModule,
-                entryPoint: "main_vertex",
-            },
-            fragment: {
-                module: shaderModule,
-                entryPoint: "main_fragment",
-                targets: [// Color
-                    {
-                        format: "rgba8unorm",
-                        blend: {
-                            color: {
-                                operation: "add",
-                                srcFactor: "one",
-                                dstFactor: "zero",
+            const pipelineLayout = device.createPipelineLayout({
+                label: passName,
+                bindGroupLayouts: [...[cameraBGL], ...ty.bindGroupLayouts],
+            });
+            this.pipelineLayouts.set(passName, pipelineLayout);
+
+            //if (ty === DynamicVolume) {
+            //    continue;
+            //}
+
+            this.renderPipelines.set(passName, device.createRenderPipeline({
+                label: passName,
+                layout: pipelineLayout,
+                vertex: {
+                    module: shaderModule,
+                    entryPoint: "main_vertex",
+                },
+                fragment: {
+                    module: shaderModule,
+                    entryPoint: "main_fragment",
+                    targets: [// Color
+                        {
+                            format: "rgba8unorm",
+                            blend: {
+                                color: {
+                                    operation: "add",
+                                    srcFactor: "one",
+                                    dstFactor: "zero",
+                                },
+                                alpha: {
+                                    operation: "add",
+                                    srcFactor: "one",
+                                    dstFactor: "zero",
+                                }
                             },
-                            alpha: {
-                                operation: "add",
-                                srcFactor: "one",
-                                dstFactor: "zero",
-                            }
+                            writeMask: GPUColorWrite.ALL
                         },
-                        writeMask: GPUColorWrite.ALL
-                    },
-                ]
+                    ]
 
-            },
-            primitive: {
-                topology: "triangle-strip",
-                stripIndexFormat: "uint32",
-                cullMode: "none",
-            }
-        }));
+                },
+                primitive: {
+                    topology: "triangle-strip",
+                    stripIndexFormat: "uint32",
+                    cullMode: "none",
+                }
+            }));
+        }
 
         for (const ty of meshShapes) {
             const shaderCode = meshShaderTemplate(
@@ -434,7 +441,7 @@ export class DeferredPass extends Pass {
         });
 
         renderPass.setBindGroup(0, cameraBindGroup);
-        const nonTransparentObjects = scene.objects.filter(object => !(object instanceof Volume || (object instanceof ConcreteObject && object.transparent))) as IObject[];
+        const nonTransparentObjects = scene.objects.filter(object => !(object instanceof Volume || object instanceof DynamicVolume || (object instanceof ConcreteObject && object.transparent))) as IObject[];
         for (const object of nonTransparentObjects) {
             if (object instanceof IParametricObject) {
                 const pipeline = this._pipelines.renderPipelines.get(object.getTypeName());
@@ -490,11 +497,6 @@ export class DeferredPass extends Pass {
         transparrentRenderPass.end();
 
         // Volumetric Render Pass
-        const volumePipeline = this._pipelines.renderPipelines.get("DeferredPass-Volume");
-        if (!this.depthTexture || !Volume.bindGroupLayouts[1] || !volumePipeline) {
-            return;
-        }
-
         const volumeRenderPass = encoder.beginRenderPass({
             colorAttachments: [
                 {
@@ -505,6 +507,10 @@ export class DeferredPass extends Pass {
             ]
         });
 
+        if (!this.depthTexture || !Volume.bindGroupLayouts[1]) {
+            return;
+        }
+        
         const depthTextureBindGroup = this._graphicsLibrary.device.createBindGroup({
             layout: Volume.bindGroupLayouts[1],
             entries: [{
@@ -512,16 +518,19 @@ export class DeferredPass extends Pass {
                 resource: this.depthTexture.createView(),
             }]
         });
-
-
-        volumeRenderPass.setPipeline(volumePipeline);
+        
         volumeRenderPass.setBindGroup(0, cameraBindGroup);
         volumeRenderPass.setBindGroup(2, depthTextureBindGroup);
 
-        if (volumePipeline) {
-            const volumeObjects: Volume[] = scene.objects.filter(object => object instanceof Volume) as Volume[];
-            for (const object of volumeObjects) {
+        const volumeObjects: IParametricObject[] = scene.objects.filter(object => (object instanceof Volume || object instanceof DynamicVolume)) as IParametricObject[];
+        for (const object of volumeObjects) {
+            const volumePipeline = this._pipelines.renderPipelines.get(`DeferredPass-${object.getTypeName()}`);
+            
+            if (volumePipeline) {
+                volumeRenderPass.setPipeline(volumePipeline);
                 object.record(volumeRenderPass, 1, frameID);
+            } else {
+                console.log("Cannot find pipeline");
             }
         }
 
