@@ -178,6 +178,10 @@
     volumeColormap = await loadBitmap(path);
   })();
 
+  $: if (volumeColormap && viewport != null) {
+    viewport.scene.setColorMapFromBitmap(volumeColormap);
+  }
+
   //#region Configuration
   // Volume
   let blobsTimeVolumeVisible = false;
@@ -465,6 +469,7 @@
               <SelectItem value="Cones" />
               <SelectItem value="SignedDistanceGrid" />
               <SelectItem value="Pathline" />
+              <SelectItem value="Volume" />
             </Select>
             {/if}
 

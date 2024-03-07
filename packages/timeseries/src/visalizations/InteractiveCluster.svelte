@@ -10,6 +10,7 @@
     import * as Graphics from "lib-graphics";
     import { vec2 } from "gl-matrix";
     import { ClusterHighlighter } from "../interactiveClusters/clusterHighlighter";
+    import { VolumeClusterVisualisation } from "../interactiveClusters/visualisations/volumeClusterVisualisation";
 
     let viewport: Writable<Viewport3D | null> = getContext("viewport");
     let device: Writable<GPUDevice> = getContext("device");
@@ -32,7 +33,8 @@
       "Hedgehog": HedgehogClusterVisualisation,
       "Cones": PCAClusterVisualisation,
       "SignedDistanceGrid": SDGClusterVisualisation,
-      "Pathline": PathlineClusterVisualization
+      "Pathline": PathlineClusterVisualization,
+      "Volume": VolumeClusterVisualisation,
     };
 
     export function getClusterComposite(cluster) {
