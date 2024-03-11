@@ -21,7 +21,7 @@ export class VolumeClusterVisualisation extends AbstractClusterVisualisation {
 
         [this.volumeUnit, this.volumeUnitID] = viewport.scene.addDynamicVolume(Graphics.DynamicVolumeUnit);
         this.updateCluster(cluster);
-        this.volumeUnit.transparency = 0.3;
+        this.volumeUnit.transparency = 0.6;
         this.volumeUnit.func = 1;
         this.setColor(this.cluster.color.rgb);
     }
@@ -45,7 +45,7 @@ export class VolumeClusterVisualisation extends AbstractClusterVisualisation {
         this.volumeCenter = blobFromPoints(centers).center;
 
         let volumePoints: vec3[][] = centers.map(center => [center]);
-        let volumeRadius = slicedPointsAtTimestep[0].length / 1000.0 * 2 + 0.02;
+        let volumeRadius = slicedPointsAtTimestep[0].length / 1000.0 * 2 + 0.05;
         this.volumeUnit.fromPoints(this.manager.getDevice(), volumePoints, volumeRadius);
 
     }
