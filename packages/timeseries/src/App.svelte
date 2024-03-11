@@ -457,7 +457,7 @@
       </Splitpanes>
     </Pane> -->
     <Pane size={25}>
-      <div style="padding: 8px; color:white">
+      <div style="padding: 8px; color:white; overflow: auto; height: calc(90vh);">
         <Accordion>
           <AccordionItem title="Volume">
             <Checkbox labelText="Visible" bind:checked={volumeVisible} />
