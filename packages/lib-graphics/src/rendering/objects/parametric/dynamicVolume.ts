@@ -1,7 +1,7 @@
-import { type Allocator, type GraphicsLibrary, type Intersection, IParametricObject } from "../../..";
+import { type Allocator, type GraphicsLibrary, type Intersection, IParametricObject, boundingBoxFromPoints } from "../../..";
 import type { BoundingBox, Ray } from "../../../shared";
 import * as r from "restructure";
-import { mat4, vec3, vec4 } from "gl-matrix";
+import { mat4, vec2, vec3, vec4 } from "gl-matrix";
 import { dynamicVolumeFromPathlines } from "./dynamicVolumeFromPathlines";
 
 class Pipelines {
@@ -603,7 +603,102 @@ export class DynamicVolume extends IParametricObject {
 }
 
 export class DynamicVolumeUnit {
-    public rayIntersection(ray: Ray): Intersection | null {
+    private opSmoothUnion(d1: number, d2: number, k: number): number {
+        let h = Math.min(Math.max(0.5 + 0.5 * (d2 - d1) / k, 0.0), 1.0);
+        return (d2 * (1.0 - h) + d1 * h) - k*h*(1.0-h);
+    }
+    
+    private sdSphere(p: vec3, c: vec3, s: number ): number
+    {
+      return vec3.dist(p, c) - s;
+    }
+
+    private sdCapsule(p: vec3, a: vec3, b: vec3, r: number ): number
+    {
+      let pa = vec3.sub(vec3.fromValues(0, 0, 0), p, a); // p - a;
+      let ba = vec3.sub(vec3.fromValues(0, 0, 0), b, a);// b - a;
+      
+      let h = Math.min(Math.max(vec3.dot(pa,ba) / vec3.dot(ba,ba), 0.0), 1.0);
+    
+      let temp = vec3.fromValues(pa[0] - ba[0] * h, pa[1] - ba[1] * h, pa[2] - ba[2] * h);
+      return vec3.length(temp) - r;
+    }
+
+    private calculateVolumeGridValue(p: vec3): vec2 {
+        var lastTimestep: number = 0;
+        var countTimesteps: number = 0;
+        var lastSdf: number = 1.0;
+        // Repeat for every timestep
+        for(var step = 0; step < this._steps; step++) {
+    
+            var sdf = 1.0;
+            if (this._sizeOfStep > 1) {
+                // Repeat for every point pair inside timestep
+                for(let i = step * this._sizeOfStep; i < step * this._sizeOfStep + this._sizeOfStep - 1; i++) {
+                    let p1 = this._volumePoints[i];
+                    let p2 = this._volumePoints[i + 1];
+            
+                    let sdf2 = this.sdCapsule(p, p1, p2, this._radius);
+                    sdf = this.opSmoothUnion(sdf, sdf2, 0.1);
+                }
+            } else {
+                let p1 = this._volumePoints[step];
+                let sdf2 = this.sdSphere(p, p1, this._radius);
+                sdf = this.opSmoothUnion(sdf, sdf2, 0.1);
+            }
+    
+            if (sdf < 0.0) {
+                lastTimestep = step;
+                countTimesteps += 1;
+            }
+            
+            lastSdf = Math.min(lastSdf, sdf);
+        }
+    
+        return vec2.fromValues(lastTimestep / this._steps, countTimesteps / this._steps);
+    }
+
+    public rayIntersection(ray: Ray): number | null {
+
+        // The volume object is situated in world space so no need to transform ray
+        const tMin = vec3.div(vec3.create(), vec3.sub(vec3.create(), vec3.fromValues(-1, -1, -1), ray.origin), ray.direction);
+        const tMax = vec3.div(vec3.create(), vec3.sub(vec3.create(), vec3.fromValues( 1,  1,  1), ray.origin), ray.direction);
+
+        const t1 = vec3.min(vec3.create(), tMin, tMax);
+        const t2 = vec3.max(vec3.create(), tMin, tMax);
+
+        const tN = Math.max(Math.max(t1[0], t1[1]), t1[2]);
+        const tF = Math.min(Math.min(t2[0], t2[1]), t2[2]);
+
+        if (tN > tF) {
+            console.log("Discarding");
+            return null;
+        }
+
+        // Step 3: Compute the step size to march through the volume grid
+        let dt = Math.min(Math.abs(ray.direction[0] * (1.0 / DynamicVolumeTextureSize)), Math.min(Math.abs(ray.direction[1] * (1.0 / DynamicVolumeTextureSize)), Math.abs(ray.direction[2] * (1.0 / DynamicVolumeTextureSize))));
+
+        // Step 4: Starting from the entry point, march the ray through the volume
+        // and sample it
+        for (let t = Math.max(tN, 0.0); t < tF; t += dt) {
+            // Step 4.1: Sample the volume, and color it by the transfer function.
+            // Note that here we don't use the opacity from the transfer function,
+            // and just use the sample value as the opacity
+            let intersection: vec3 = vec3.scaleAndAdd(vec3.create(), ray.origin, ray.direction, t);
+
+            var texValue = 0.0;
+            let value = this.calculateVolumeGridValue(intersection);
+            if (this.properties.func == 0) { 
+                texValue = value[0];
+            } else {
+                texValue = value[1];
+            }
+            
+            if (texValue > 0.01) {
+                return t;
+            }
+                     
+        } 
         return null;
     }
 
@@ -618,6 +713,11 @@ export class DynamicVolumeUnit {
     public gridSize: number = 0;
     public id: number;
     private _dynamicVolume: DynamicVolume;
+    private _volumePoints: vec3[] = [];
+    private _bb: BoundingBox | null = null;
+    private _radius: number = 0;
+    private _steps: number = 0;
+    private _sizeOfStep: number = 0;
 
     constructor(id: number, graphicsLibrary: GraphicsLibrary, dynamicVolume: DynamicVolume) {
         this.id = id;
@@ -640,6 +740,10 @@ export class DynamicVolumeUnit {
     }
 
     public fromPoints(device: GPUDevice, points: vec3[][], radius: number) {
+        this._volumePoints = points.flat();
+        this._radius = radius;
+        this._steps = points.length;
+        this._sizeOfStep = points[0].length;
         const pipeline = this._pipelines.computePipelines.get("dynamicVolumeFromPathlines");
         const bgl = this._pipelines.bindGroupLayouts.get("dynamicVolumeFromPathlines");
 

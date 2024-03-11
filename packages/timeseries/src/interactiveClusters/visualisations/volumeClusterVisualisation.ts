@@ -61,7 +61,11 @@ export class VolumeClusterVisualisation extends AbstractClusterVisualisation {
     }
 
     public rayIntersection(ray: Graphics.Ray): Graphics.Intersection {
-        return this.volumeUnit.rayIntersection(ray);
+        let intersection = this.volumeUnit.rayIntersection(ray);
+        if (intersection == null) {
+            return null;
+        }
+        return {bin: 0, object: null, t: intersection}; 
     }
     
     public delete(viewport: Graphics.Viewport3D) {
