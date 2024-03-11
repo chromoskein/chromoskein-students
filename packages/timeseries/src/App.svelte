@@ -273,6 +273,48 @@
     }
   }
 
+  function findNodeWithTwoChildren(node) {
+    while (node.children.length == 1 && node.k + 1 < dataClustersGivenK.length - 1) { 
+      let originalRowIndex = node.k + 1;
+      let originalColumnIndex = node.children[0];
+      node = dataClustersGivenK[originalRowIndex][originalColumnIndex];
+    }
+    return node;
+  }
+
+  function addChildren(list, node, i) {
+    for (let c = 0; c < node.children.length; c++) {
+      let originalRowIndex = node.k + 1;
+      let originalColumnIndex = node.children[c];
+      let child = dataClustersGivenK[originalRowIndex][originalColumnIndex];
+      list[i + 1].push(child);
+    }
+    return list;
+  }
+
+  let sparseDataClustersGivenK: ClusterNode[][] | null = [];
+
+  $: if (dataClustersGivenK) {
+    
+    sparseDataClustersGivenK.push([]);
+    sparseDataClustersGivenK.push(dataClustersGivenK[1]);
+    
+    let i = 1;
+    
+    while (sparseDataClustersGivenK[i][0].k < dataClustersGivenK.length - 1) {
+      sparseDataClustersGivenK.push([]);
+      for(let j = 0; j < sparseDataClustersGivenK[i].length; j++){
+        let node = findNodeWithTwoChildren(sparseDataClustersGivenK[i][j]);
+        if(node.k == dataClustersGivenK.length - 1){
+          sparseDataClustersGivenK[i + 1].push(node);
+          continue;
+        }
+        sparseDataClustersGivenK = addChildren(sparseDataClustersGivenK, node, i);
+      }
+      i++;
+    }
+  }
+
   //#endregion Configuration
 </script>
 
@@ -510,9 +552,9 @@
               </div>
             {/if}
             {#key clustersUpdated}
-            {#if dataClustersGivenK && visualizationSelected == "Composite"}
+            {#if sparseDataClustersGivenK && visualizationSelected == "Composite"}
                 <div class="cluster-dendogram">
-                  {#each dataClustersGivenK.slice(1, 16) as clustersAtLevel, clusterLevel}
+                  {#each sparseDataClustersGivenK.slice(1, 16) as clustersAtLevel, clusterLevel}
                     <div class="cluster-dendogram-row">
                       {#each clustersAtLevel as cluster, i}
                         <div on:click={() => callSplitClusters(cluster)} on:keydown={() => { }}
