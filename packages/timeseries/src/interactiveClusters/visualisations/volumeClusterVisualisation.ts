@@ -10,11 +10,7 @@ export class VolumeClusterVisualisation extends AbstractClusterVisualisation {
     private volumeUnit: Graphics.DynamicVolumeUnit;
     private volumeUnitID: number;
     private volumeCenter: vec3 = vec3.fromValues(0, 0, 0);
-    //private pathline: Graphics.RoundedConeInstanced;
-    //private pathlineID: number | null = null;
-    //private n_instances: number = 0;
-    //private startPoint: vec3 = vec3.fromValues(0, 0, 0);
-    //private endPoint: vec3 = vec3.fromValues(0, 0, 0);
+    private clusterChanged: Boolean = true;
 
     constructor(manager: InteractiveClusters, cluster: ClusterNode, viewport: Viewport3D) {
         super(manager, cluster, viewport);
@@ -28,9 +24,13 @@ export class VolumeClusterVisualisation extends AbstractClusterVisualisation {
 
     public updateCluster(cluster: ClusterNode) {
         this.cluster = cluster;
+        this.clusterChanged = true;
     }
 
     public updatePoints(pointsAtTimestep: vec3[][], selectedTimestep: number) {
+        if (!this.clusterChanged) return;
+        this.clusterChanged = false;
+
         let slicedPointsAtTimestep: vec3[][] = [];
         for (let timestep of pointsAtTimestep) {
             slicedPointsAtTimestep.push(timestep.slice(this.cluster.from, this.cluster.to));
