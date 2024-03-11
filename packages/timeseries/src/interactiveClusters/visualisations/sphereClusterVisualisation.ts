@@ -11,8 +11,8 @@ export class SphereClusterVisualisation extends AbstractClusterVisualisation {
     private cluster: ClusterNode;
     private center: vec3 = vec3.fromValues(0, 0, 0);
 
-    constructor(manager: InteractiveClusters, points: vec3[], cluster: ClusterNode, viewport: Viewport3D) {
-        super(manager, points, cluster, viewport);
+    constructor(manager: InteractiveClusters, cluster: ClusterNode, viewport: Viewport3D) {
+        super(manager, cluster, viewport);
 
         [this.sphere, this.sphereID] = viewport.scene.addObject(Graphics.Sphere);
         this.updateCluster(cluster);
@@ -23,8 +23,8 @@ export class SphereClusterVisualisation extends AbstractClusterVisualisation {
         this.cluster = cluster;
     }
 
-    public updatePoints(points: vec3[]) {
-        let objectPoints = points.slice(this.cluster.from, this.cluster.to + 1);
+    public updatePoints(pointsAtTimestep: vec3[][], selectedTimestep: number) {
+        let objectPoints = pointsAtTimestep[selectedTimestep].slice(this.cluster.from, this.cluster.to + 1);
         // It is rather inefficient to create an entire axis aligned bounding box
         // just to calculate the mean position of a bunch of points...
         let bb = Graphics.boundingBoxFromPoints(objectPoints);

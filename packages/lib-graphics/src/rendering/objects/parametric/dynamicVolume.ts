@@ -1,7 +1,7 @@
-import { Volume, type Allocator, type GraphicsLibrary, type Intersection } from "../../..";
+import { type Allocator, type GraphicsLibrary, type Intersection, IParametricObject, boundingBoxFromPoints } from "../../..";
 import type { BoundingBox, Ray } from "../../../shared";
 import * as r from "restructure";
-import { mat4, vec3, vec4 } from "gl-matrix";
+import { mat4, vec2, vec3, vec4 } from "gl-matrix";
 import { dynamicVolumeFromPathlines } from "./dynamicVolumeFromPathlines";
 
 class Pipelines {
@@ -104,7 +104,7 @@ export const DynamicVolumeStruct = new r.Struct({
 
 export const DynamicVolumeTextureSize: number = 64;
 
-export class DynamicVolume extends Volume {
+export class DynamicVolume extends IParametricObject {
     public static variableName = "dynamicVolume";
     public static typeName = "DynamicVolume";
 
@@ -134,19 +134,11 @@ export class DynamicVolume extends Volume {
             }, {
                 binding: 3,
                 visibility: GPUShaderStage.FRAGMENT,
-                texture: { sampleType: "unfilterable-float", viewDimension: "2d" }
+                buffer: { type: "read-only-storage" },
             }, {
-                binding: 4,    
+                binding: 4,
                 visibility: GPUShaderStage.FRAGMENT,
-                storageTexture: {
-                    // Would be great to have read-write back
-                    access: "write-only",
-                    format: "rgba32float"
-                }
-            }, {
-                binding: 6,
-                visibility: GPUShaderStage.FRAGMENT,
-                buffer: { type: "read-only-storage" }  
+                buffer: { type: "read-only-storage" },
             }]
         }),
         device.createBindGroupLayout({
@@ -193,7 +185,7 @@ export class DynamicVolume extends Volume {
 
 
     static gpuCodeIntersectionTest = /* wgsl */`
-        fn sampleGrid(tex_coord: vec3<f32>, i: u32) -> vec2<f32> {
+        fn sampleLastTimestepGrid(tex_coord: vec3<f32>, i: u32) -> f32 {
             var coords = ${DynamicVolumeTextureSize} * tex_coord;
             let coordsU32 = vec3<u32>(floor(coords));
             let coordsFract = fract(coords);
@@ -201,14 +193,14 @@ export class DynamicVolume extends Volume {
             let ty = coordsFract.y;       
             let tz = coordsFract.z;
 
-            let c000 = arrayGrid[i][coordsU32.x][coordsU32.y][coordsU32.z];
-            let c100 = arrayGrid[i][coordsU32.x + 1][coordsU32.y][coordsU32.z];
-            let c010 = arrayGrid[i][coordsU32.x][coordsU32.y + 1][coordsU32.z];
-            let c110 = arrayGrid[i][coordsU32.x + 1][coordsU32.y + 1][coordsU32.z];
-            let c001 = arrayGrid[i][coordsU32.x][coordsU32.y][coordsU32.z + 1];
-            let c101 = arrayGrid[i][coordsU32.x + 1][coordsU32.y][coordsU32.z + 1];
-            let c011 = arrayGrid[i][coordsU32.x][coordsU32.y + 1][coordsU32.z + 1];
-            let c111 = arrayGrid[i][coordsU32.x + 1][coordsU32.y + 1][coordsU32.z + 1];
+            let c000 = lastTimestepGrids[i][coordsU32.x][coordsU32.y][coordsU32.z];
+            let c100 = lastTimestepGrids[i][coordsU32.x + 1][coordsU32.y][coordsU32.z];
+            let c010 = lastTimestepGrids[i][coordsU32.x][coordsU32.y + 1][coordsU32.z];
+            let c110 = lastTimestepGrids[i][coordsU32.x + 1][coordsU32.y + 1][coordsU32.z];
+            let c001 = lastTimestepGrids[i][coordsU32.x][coordsU32.y][coordsU32.z + 1];
+            let c101 = lastTimestepGrids[i][coordsU32.x + 1][coordsU32.y][coordsU32.z + 1];
+            let c011 = lastTimestepGrids[i][coordsU32.x][coordsU32.y + 1][coordsU32.z + 1];
+            let c111 = lastTimestepGrids[i][coordsU32.x + 1][coordsU32.y + 1][coordsU32.z + 1];
 
             return 
                 (1.0 - tx) * (1.0 - ty) * (1.0 - tz) * c000 + 
@@ -219,7 +211,35 @@ export class DynamicVolume extends Volume {
                 tx * (1.0 - ty) * tz * c101 + 
                 (1.0 - tx) * ty * tz * c011 + 
                 tx * ty * tz * c111; 
-        }    
+        }  
+    
+        fn sampleNumberOfTimestepsGrid(tex_coord: vec3<f32>, i: u32) -> f32 {
+            var coords = ${DynamicVolumeTextureSize} * tex_coord;
+            let coordsU32 = vec3<u32>(floor(coords));
+            let coordsFract = fract(coords);
+            let tx = coordsFract.x;
+            let ty = coordsFract.y;       
+            let tz = coordsFract.z;
+
+            let c000 = numberOfTimestepGrids[i][coordsU32.x][coordsU32.y][coordsU32.z];
+            let c100 = numberOfTimestepGrids[i][coordsU32.x + 1][coordsU32.y][coordsU32.z];
+            let c010 = numberOfTimestepGrids[i][coordsU32.x][coordsU32.y + 1][coordsU32.z];
+            let c110 = numberOfTimestepGrids[i][coordsU32.x + 1][coordsU32.y + 1][coordsU32.z];
+            let c001 = numberOfTimestepGrids[i][coordsU32.x][coordsU32.y][coordsU32.z + 1];
+            let c101 = numberOfTimestepGrids[i][coordsU32.x + 1][coordsU32.y][coordsU32.z + 1];
+            let c011 = numberOfTimestepGrids[i][coordsU32.x][coordsU32.y + 1][coordsU32.z + 1];
+            let c111 = numberOfTimestepGrids[i][coordsU32.x + 1][coordsU32.y + 1][coordsU32.z + 1];
+
+            return 
+                (1.0 - tx) * (1.0 - ty) * (1.0 - tz) * c000 + 
+                tx * (1.0 - ty) * (1.0 - tz) * c100 + 
+                (1.0 - tx) * ty * (1.0 - tz) * c010 + 
+                tx * ty * (1.0 - tz) * c110 + 
+                (1.0 - tx) * (1.0 - ty) * tz * c001 + 
+                tx * (1.0 - ty) * tz * c101 + 
+                (1.0 - tx) * ty * tz * c011 + 
+                tx * ty * tz * c111; 
+        }  
     
         fn rayUnitBoxIntersection(ray: Ray) -> vec2<f32> {
             let tMin = (vec3<f32>(-1.0) - ray.origin) / ray.direction;
@@ -320,11 +340,10 @@ export class DynamicVolume extends Volume {
                         var j = 0.0;
                         for(var i: u32 = 0; i < arrayLength(&${this.variableName}); i++) {
                             var texValue = 0.0;
-                            var val = sampleGrid(tex_coord, i);
                             if (${this.variableName}[0].func == 0) { 
-                                texValue = val.r;
+                                texValue = sampleLastTimestepGrid(tex_coord, i);
                             } else {
-                                texValue = val.g;
+                                texValue = sampleNumberOfTimestepsGrid(tex_coord, i);
                             }
 
                             value += texValue;
@@ -425,8 +444,9 @@ export class DynamicVolume extends Volume {
 
     //private _colorMap: GPUTexture | null = null;
     private _allocator: Allocator;
+    private _colorMap: GPUTexture | null = null;
     private _volumes: DynamicVolumeUnit[] = [];
-    private _lastObjectID: number = 0;
+    private _lastObjectID: number = 42;
     private _lastTimestepGrids: GPUBuffer | null = null;
     private _numberTimestepsGrids: GPUBuffer | null = null;
     private _gridSize: number = 0;
@@ -450,6 +470,8 @@ export class DynamicVolume extends Volume {
         this._volumes.push(object);
         this.recreateBuffers();
         this.recreateAllocation();
+        // There is a potential problem here where adding a volume and not calling 
+        // fromPoints on some volume will cause this to break because the buffers dont get updates
         return [object, objectID];
     }
 
@@ -457,16 +479,12 @@ export class DynamicVolume extends Volume {
         const objectIndex = this._volumes.findIndex((object) => object.id === volumeID);
         const object = this._volumes[objectIndex];
 
-        if (objectIndex >= 0 && object && this._allocator) {
-            //if (object.allocation) {
-            //    this._allocator.deallocate([object.allocation]);
-            //}
-            
+        if (objectIndex >= 0 && object) {
             this._volumes.splice(objectIndex, 1);
             this.recreateBuffers();
             this.recreateAllocation();
+            this.updateGridArrays();
         }
-
     }
 
     public updateGridArrays() {
@@ -534,8 +552,6 @@ export class DynamicVolume extends Volume {
             return;
         }
 
-        console.log(DynamicVolume.bindGroupLayouts[0]);
-
         const bindGroup = this._graphicsLibrary.device.createBindGroup({
             layout: DynamicVolume.bindGroupLayouts[0],
             entries: [
@@ -587,7 +603,104 @@ export class DynamicVolume extends Volume {
 }
 
 export class DynamicVolumeUnit {
-    public rayIntersection(ray: Ray): Intersection | null {
+    private opSmoothUnion(d1: number, d2: number, k: number): number {
+        let h = Math.min(Math.max(0.5 + 0.5 * (d2 - d1) / k, 0.0), 1.0);
+        return (d2 * (1.0 - h) + d1 * h) - k*h*(1.0-h);
+    }
+    
+    private sdSphere(p: vec3, c: vec3, s: number ): number
+    {
+      return vec3.dist(p, c) - s;
+    }
+
+    private sdCapsule(p: vec3, a: vec3, b: vec3, r: number ): number
+    {
+      let pa = vec3.sub(vec3.fromValues(0, 0, 0), p, a); // p - a;
+      let ba = vec3.sub(vec3.fromValues(0, 0, 0), b, a);// b - a;
+      
+      let h = Math.min(Math.max(vec3.dot(pa,ba) / vec3.dot(ba,ba), 0.0), 1.0);
+    
+      let temp = vec3.fromValues(pa[0] - ba[0] * h, pa[1] - ba[1] * h, pa[2] - ba[2] * h);
+      return vec3.length(temp) - r;
+    }
+
+    private calculateVolumeGridValue(p: vec3): vec2 {
+        var lastTimestep: number = 0;
+        var countTimesteps: number = 0;
+        var lastSdf: number = 1.0;
+        // Repeat for every timestep
+        for(var step = 0; step < this._steps; step++) {
+    
+            var sdf = 1.0;
+            if (this._sizeOfStep > 1) {
+                // Repeat for every point pair inside timestep
+                for(let i = step * this._sizeOfStep; i < step * this._sizeOfStep + this._sizeOfStep - 1; i++) {
+                    let p1 = this._volumePoints[i];
+                    let p2 = this._volumePoints[i + 1];
+            
+                    let sdf2 = this.sdCapsule(p, p1, p2, this._radius);
+                    sdf = this.opSmoothUnion(sdf, sdf2, 0.1);
+                }
+            } else {
+                let p1 = this._volumePoints[step];
+                let sdf2 = this.sdSphere(p, p1, this._radius);
+                sdf = this.opSmoothUnion(sdf, sdf2, 0.1);
+            }
+    
+            if (sdf < 0.0) {
+                lastTimestep = step;
+                countTimesteps += 1;
+            }
+            
+            lastSdf = Math.min(lastSdf, sdf);
+        }
+    
+        return vec2.fromValues(lastTimestep / this._steps, countTimesteps / this._steps);
+    }
+
+    public rayIntersection(ray: Ray): number | null {
+        if (this._bb == null) {
+            return null;
+        }
+
+        // The volume object is situated in world space so no need to transform ray
+        const tMin = vec3.div(vec3.create(), vec3.sub(vec3.create(), this._bb.min, ray.origin), ray.direction);
+        const tMax = vec3.div(vec3.create(), vec3.sub(vec3.create(), this._bb.max, ray.origin), ray.direction);
+
+        const t1 = vec3.min(vec3.create(), tMin, tMax);
+        const t2 = vec3.max(vec3.create(), tMin, tMax);
+
+        const tN = Math.max(Math.max(t1[0], t1[1]), t1[2]);
+        const tF = Math.min(Math.min(t2[0], t2[1]), t2[2]);
+
+        if (tN > tF) {
+            return null;
+        }
+
+        // Step 3: Compute the step size to march through the volume grid
+        let dt = Math.min(Math.abs(ray.direction[0] * (1.0 / DynamicVolumeTextureSize)), Math.min(Math.abs(ray.direction[1] * (1.0 / DynamicVolumeTextureSize)), Math.abs(ray.direction[2] * (1.0 / DynamicVolumeTextureSize))));
+
+        // Step 4: Starting from the entry point, march the ray through the volume
+        // and sample it
+        for (let t = Math.max(tN, 0.0); t < tF; t += dt) {
+            // Step 4.1: Sample the volume, and color it by the transfer function.
+            // Note that here we don't use the opacity from the transfer function,
+            // and just use the sample value as the opacity
+            let intersection: vec3 = vec3.scaleAndAdd(vec3.create(), ray.origin, ray.direction, t);
+
+            var texValue = 0.0;
+            let value = this.calculateVolumeGridValue(intersection);
+            if (this.properties.func == 0) { 
+                texValue = value[0];
+            } else {
+                texValue = value[1];
+            }
+            
+            if (texValue > 0.01) {
+                return t;
+            }
+                     
+        } 
         return null;
     }
 
@@ -602,6 +715,11 @@ export class DynamicVolumeUnit {
     public gridSize: number = 0;
     public id: number;
     private _dynamicVolume: DynamicVolume;
+    private _volumePoints: vec3[] = [];
+    private _bb: BoundingBox | null = null;
+    private _radius: number = 0;
+    private _steps: number = 0;
+    private _sizeOfStep: number = 0;
 
     constructor(id: number, graphicsLibrary: GraphicsLibrary, dynamicVolume: DynamicVolume) {
         this.id = id;
@@ -624,6 +742,13 @@ export class DynamicVolumeUnit {
     }
 
     public fromPoints(device: GPUDevice, points: vec3[][], radius: number) {
+        this._volumePoints = points.flat();
+        this._radius = radius;
+        this._bb = boundingBoxFromPoints(this._volumePoints);
+        this._bb.min = vec3.sub(vec3.create(), this._bb.min, vec3.fromValues(radius, radius, radius));
+        this._bb.max = vec3.add(vec3.create(), this._bb.max, vec3.fromValues(radius, radius, radius));
+        this._steps = points.length;
+        this._sizeOfStep = points[0].length;
         const pipeline = this._pipelines.computePipelines.get("dynamicVolumeFromPathlines");
         const bgl = this._pipelines.bindGroupLayouts.get("dynamicVolumeFromPathlines");
 

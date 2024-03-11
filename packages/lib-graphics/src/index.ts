@@ -1,6 +1,6 @@
 import type { Camera3D } from "./cameras/index";
 import { Mesh } from "./rendering/objects/mesh";
-import { Circle, RoundedCone, RoundedConeInstanced, Sphere, Spline, SignedDistanceGrid, Volume, RayObject } from "./rendering/objects/parametric";
+import { Circle, RoundedCone, RoundedConeInstanced, Sphere, Spline, SignedDistanceGrid, Volume, RayObject, DynamicVolume } from "./rendering/objects/parametric";
 import { Scene } from "./scene";
 import { DistanceViewport } from "./viewports/distanceViewport";
 import { Viewport3D } from "./viewports/index";
@@ -19,6 +19,8 @@ export const parametricShapes = [
 ];
 
 export const meshShapes = [Mesh];
+
+export const volumetricShapes = [Volume, DynamicVolume]
 
 export class GraphicsLibrary {
     private _adapter: GPUAdapter;
@@ -52,7 +54,9 @@ export class GraphicsLibrary {
             objectType.createBindGroupLayouts(device);
         }
 
-        Volume.createBindGroupLayouts(device);
+        for (const volumeType of volumetricShapes) {
+            volumeType.createBindGroupLayouts(device);
+        }
 
         for(const objectType of meshShapes) {
             objectType.createBindGroupLayouts(device);

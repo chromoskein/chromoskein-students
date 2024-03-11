@@ -13,8 +13,8 @@ export class SDGClusterVisualisation extends AbstractClusterVisualisation {
     private startPoint: vec3 = vec3.fromValues(0, 0, 0);
     private endPoint: vec3 = vec3.fromValues(0, 0, 0);
 
-    constructor(manager: InteractiveClusters, points: vec3[], cluster: ClusterNode, viewport: Viewport3D) {
-        super(manager, points, cluster, viewport);
+    constructor(manager: InteractiveClusters, cluster: ClusterNode, viewport: Viewport3D) {
+        super(manager, cluster, viewport);
 
         [this.sdgObject, this.sdgObjectID] = viewport.scene.addObject(Graphics.SignedDistanceGrid);
         this.sdgObject.setDirtyCPU();
@@ -27,8 +27,8 @@ export class SDGClusterVisualisation extends AbstractClusterVisualisation {
         this.cluster = cluster;
     }
 
-    public updatePoints(points: vec3[]) {
-        let clusterPoints = points.slice(this.cluster.from, this.cluster.to + 1);
+    public updatePoints(pointsAtTimestep: vec3[][], selectedTimestep: number) {
+        let clusterPoints = pointsAtTimestep[selectedTimestep].slice(this.cluster.from, this.cluster.to + 1);
         this.startPoint = clusterPoints[0];
         this.endPoint = clusterPoints[clusterPoints.length - 1];
         

@@ -19,6 +19,7 @@ export class Scene {
 
     private _objects: IObject[] = [];
     private _dynamicVolume: DynamicVolume | null = null;
+    private colormap: ImageBitmap | null = null;
     private _lastObjectID = 0;
 
     private _allocator: BasicAllocator;
@@ -163,6 +164,9 @@ export class Scene {
         if (!this._dynamicVolume) {
             const dynamicVolumeID = this._lastObjectID++;
             this._dynamicVolume = new DynamicVolume(dynamicVolumeID, this.graphicsLibrary, this._allocator);
+            if (this.colormap) {
+                this._dynamicVolume.setColorMapFromBitmap(this.colormap);
+            }
             this.objects.push(this._dynamicVolume);
         }
 
@@ -181,6 +185,14 @@ export class Scene {
             this._dynamicVolume = null;
         }
     }
+
+    public async setColorMapFromBitmap(bitmap: ImageBitmap) {
+        this.colormap = bitmap;
+        if (this._dynamicVolume) {
+            this._dynamicVolume.setColorMapFromBitmap(bitmap);
+        }
+    }
+
 
     public addMesh<T extends Mesh>(objectType: new (id: number, graphicsLibrary: GraphicsLibrary, allocator: Allocator, trianglesCount: number) => T, trianglesCount = 1): [T, number] {
         const objectID = this._lastObjectID++;

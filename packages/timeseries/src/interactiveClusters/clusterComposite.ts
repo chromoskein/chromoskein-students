@@ -22,7 +22,7 @@ export class ClusterComposite {
 
     private visualisation: AbstractClusterVisualisation;
 
-    constructor(cluster: ClusterNode, points: vec3[], viewport: Viewport3D,  parent: ClusterComposite, manager: InteractiveClusters) {
+    constructor(cluster: ClusterNode, viewport: Viewport3D,  parent: ClusterComposite, manager: InteractiveClusters) {
         this.parent = parent;
         this.cluster = cluster;
         this.children = [];
@@ -30,13 +30,13 @@ export class ClusterComposite {
         this.viewport = viewport;
         this.manager = manager;
 
-        this.setVisualisation(SphereClusterVisualisation, points);
+        this.setVisualisation(SphereClusterVisualisation);
         this.setVisible(true);
     }
 
-    public setVisualisation<T extends AbstractClusterVisualisation>(visualisationType: new(manager: InteractiveClusters, points: vec3[], cluster: ClusterNode, viewport: Viewport3D) => T, points: vec3[]) {
+    public setVisualisation<T extends AbstractClusterVisualisation>(visualisationType: new(manager: InteractiveClusters, cluster: ClusterNode, viewport: Viewport3D) => T) {
         this.deleteVisualization();
-        this.visualisation = new visualisationType(this.manager, points, this.cluster, this.viewport);
+        this.visualisation = new visualisationType(this.manager, this.cluster, this.viewport);
     }
 
     public setInConnector(connector: ClusterConnector) {
@@ -73,21 +73,21 @@ export class ClusterComposite {
             this.visualisation.updateCluster(this.cluster);        
     }
 
-    public updatePoints(points: vec3[]) {
+    public updatePoints(pointsAtTimesteps: vec3[][], selectedTimestep: number) {
         if (this.isLeaf && this.visualisation)
-            this.visualisation.updatePoints(points);
+            this.visualisation.updatePoints(pointsAtTimesteps, selectedTimestep);
             // This causes double updates on all connectors during major update
             // but im currently too lazy to do it correctly
             if (this.inConnector) this.inConnector.update();
             if (this.outConnector) this.outConnector.update();
     }
 
-    public eventUpdate(points: vec3[]) {
+    public eventUpdate(pointsAtTimesteps: vec3[][], selectedTimestep: number) {
         if (this.isLeaf && this.visualisation)
-            this.visualisation.eventUpdate(points);
+            this.visualisation.eventUpdate(pointsAtTimesteps, selectedTimestep);
     }
 
-    public split(clustersGivenK: ClusterNode[][], points: vec3[]) {
+    public split(clustersGivenK: ClusterNode[][], pointsAtTimesteps: vec3[][], selectedTimestep: number) {
         if (!this.isLeaf || this.cluster.k + 1 >= clustersGivenK.length) return;
 
         let k = this.cluster.k;
@@ -104,12 +104,12 @@ export class ClusterComposite {
         this.deleteVisualization();
         
         for (let clusterIdx of clustersGivenK[k][i].children) {
-            this.children.push(new ClusterComposite(clustersGivenK[k + 1][clusterIdx], points, this.viewport, this, this.manager));
+            this.children.push(new ClusterComposite(clustersGivenK[k + 1][clusterIdx], this.viewport, this, this.manager));
         }
 
         for (let child of this.children) {
-            child.setVisualisation(visualizationType, points)
-            child.updatePoints(points);
+            child.setVisualisation(visualizationType);
+            child.updatePoints(pointsAtTimesteps, selectedTimestep);
             child.setVisible(true);
         }
         
@@ -124,11 +124,11 @@ export class ClusterComposite {
             }
         }
 
-        this.manager.eventUpdate(this.children, points);
+        this.manager.eventUpdate(this.children, pointsAtTimesteps, selectedTimestep);
         this.setVisible(false);
     }
 
-    private mergeWithVisualization<T extends AbstractClusterVisualisation>(visualisationType: new(manager: InteractiveClusters, points: vec3[], cluster: ClusterNode, viewport: Viewport3D) => T, clustersGivenK: ClusterNode[][], points: vec3[]) {
+    private mergeWithVisualization<T extends AbstractClusterVisualisation>(visualisationType: new(manager: InteractiveClusters, cluster: ClusterNode, viewport: Viewport3D) => T, clustersGivenK: ClusterNode[][], pointsAtTimesteps: vec3[][], selectedTimestep: number) {
         let inorderChildren = this.getInorder();
         for (let child of inorderChildren) {
             child.deleteVisualization();
@@ -146,18 +146,19 @@ export class ClusterComposite {
 
         this.isLeaf = true;
         this.updateCluster(clustersGivenK);
-        this.setVisualisation(visualisationType, points);
-        this.updatePoints(points);
+        this.setVisualisation(visualisationType);
+        this.updatePoints(pointsAtTimesteps, selectedTimestep);
         this.setInConnector(inorderChildren[0].inConnector);
         this.setOutConnector(inorderChildren[inorderChildren.length - 1].outConnector);
         this.inConnector?.setEnd(this)
         this.outConnector?.setStart(this);
         this.children = [];
+        this.manager.eventUpdate([this], pointsAtTimesteps, selectedTimestep);
     }
 
-    public merge(clustersGivenK: ClusterNode[][], points: vec3[]) {
+    public merge(clustersGivenK: ClusterNode[][],  pointsAtTimesteps: vec3[][], selectedTimestep: number) {
         if (this.isLeaf && this.parent != null) {
-            this.parent.mergeWithVisualization(this.visualisation?.getConstructor(), clustersGivenK, points);
+            this.parent.mergeWithVisualization(this.visualisation?.getConstructor(), clustersGivenK, pointsAtTimesteps, selectedTimestep);
             this.parent.setVisible(true);
         }
     }

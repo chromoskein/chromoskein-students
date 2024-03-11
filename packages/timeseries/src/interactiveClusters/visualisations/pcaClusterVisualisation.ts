@@ -15,8 +15,8 @@ export class PCAClusterVisualisation extends AbstractClusterVisualisation {
     private coneDownID: number | null = null;
     private center: vec3 = vec3.fromValues(0, 0, 0);
 
-    constructor(manager: InteractiveClusters, points: vec3[], cluster: ClusterNode, viewport: Viewport3D) {
-        super(manager, points, cluster, viewport);
+    constructor(manager: InteractiveClusters, cluster: ClusterNode, viewport: Viewport3D) {
+        super(manager, cluster, viewport);
 
         [this.coneUp, this.coneUpID] = viewport.scene.addObject(Graphics.RoundedCone);
         this.coneUp.setDirtyCPU();
@@ -32,8 +32,8 @@ export class PCAClusterVisualisation extends AbstractClusterVisualisation {
         this.cluster = cluster;
     }
 
-    public updatePoints(points: vec3[]) {
-        let blob = blobFromPoints(points.slice(this.cluster.from, this.cluster.to + 1))
+    public updatePoints(pointsAtTimestep: vec3[][], selectedTimestep: number) {
+        let blob = blobFromPoints(pointsAtTimestep[selectedTimestep].slice(this.cluster.from, this.cluster.to + 1))
         let result = PCA.getEigenVectors(blob.normalizedPoints);
         this.center = blob.center;
        

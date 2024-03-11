@@ -9,13 +9,13 @@ export abstract class AbstractClusterVisualisation {
     protected highlighted: Boolean = false;
     protected color: vec3;
 
-    constructor(manager: InteractiveClusters, points: vec3[], cluster: ClusterNode, viewport: Viewport3D) {
+    constructor(manager: InteractiveClusters, cluster: ClusterNode, viewport: Viewport3D) {
         this.manager = manager;
         this.color = cluster.color.rgb;
     }
     
     abstract rayIntersection(ray: Graphics.Ray) : Graphics.Intersection;
-    abstract updatePoints(points: vec3[]);
+    abstract updatePoints(pointsAtTimestep: vec3[][], selectedTimestep: number);
     abstract updateCluster(cluster: ClusterNode);
     abstract delete(viewport: Viewport3D);
     abstract setColor(color: vec3);
@@ -32,5 +32,5 @@ export abstract class AbstractClusterVisualisation {
 
     abstract getInConnectionPoint();
     abstract getOutConnectionPoint();
-    public eventUpdate(points: vec3[]) { /* For most subclasses this is unnecessary */ }
+    public eventUpdate(pointsAtTimestep: vec3[][], selectedTimestep: number) { /* For most subclasses this is unnecessary */ }
 }
