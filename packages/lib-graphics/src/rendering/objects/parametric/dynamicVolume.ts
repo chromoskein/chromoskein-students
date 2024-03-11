@@ -659,10 +659,13 @@ export class DynamicVolumeUnit {
     }
 
     public rayIntersection(ray: Ray): number | null {
+        if (this._bb == null) {
+            return null;
+        }
 
         // The volume object is situated in world space so no need to transform ray
-        const tMin = vec3.div(vec3.create(), vec3.sub(vec3.create(), vec3.fromValues(-1, -1, -1), ray.origin), ray.direction);
-        const tMax = vec3.div(vec3.create(), vec3.sub(vec3.create(), vec3.fromValues( 1,  1,  1), ray.origin), ray.direction);
+        const tMin = vec3.div(vec3.create(), vec3.sub(vec3.create(), this._bb.min, ray.origin), ray.direction);
+        const tMax = vec3.div(vec3.create(), vec3.sub(vec3.create(), this._bb.max, ray.origin), ray.direction);
 
         const t1 = vec3.min(vec3.create(), tMin, tMax);
         const t2 = vec3.max(vec3.create(), tMin, tMax);
@@ -671,7 +674,6 @@ export class DynamicVolumeUnit {
         const tF = Math.min(Math.min(t2[0], t2[1]), t2[2]);
 
         if (tN > tF) {
-            console.log("Discarding");
             return null;
         }
 
@@ -742,6 +744,9 @@ export class DynamicVolumeUnit {
     public fromPoints(device: GPUDevice, points: vec3[][], radius: number) {
         this._volumePoints = points.flat();
         this._radius = radius;
+        this._bb = boundingBoxFromPoints(this._volumePoints);
+        this._bb.min = vec3.sub(vec3.create(), this._bb.min, vec3.fromValues(radius, radius, radius));
+        this._bb.max = vec3.add(vec3.create(), this._bb.max, vec3.fromValues(radius, radius, radius));
         this._steps = points.length;
         this._sizeOfStep = points[0].length;
         const pipeline = this._pipelines.computePipelines.get("dynamicVolumeFromPathlines");
