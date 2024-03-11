@@ -446,7 +446,7 @@ export class DynamicVolume extends IParametricObject {
     private _allocator: Allocator;
     private _colorMap: GPUTexture | null = null;
     private _volumes: DynamicVolumeUnit[] = [];
-    private _lastObjectID: number = 0;
+    private _lastObjectID: number = 42;
     private _lastTimestepGrids: GPUBuffer | null = null;
     private _numberTimestepsGrids: GPUBuffer | null = null;
     private _gridSize: number = 0;
@@ -470,6 +470,8 @@ export class DynamicVolume extends IParametricObject {
         this._volumes.push(object);
         this.recreateBuffers();
         this.recreateAllocation();
+        // There is a potential problem here where adding a volume and not calling 
+        // fromPoints on some volume will cause this to break because the buffers dont get updates
         return [object, objectID];
     }
 
@@ -477,16 +479,12 @@ export class DynamicVolume extends IParametricObject {
         const objectIndex = this._volumes.findIndex((object) => object.id === volumeID);
         const object = this._volumes[objectIndex];
 
-        if (objectIndex >= 0 && object && this._allocator) {
-            //if (object.allocation) {
-            //    this._allocator.deallocate([object.allocation]);
-            //}
-            
+        if (objectIndex >= 0 && object) {
             this._volumes.splice(objectIndex, 1);
             this.recreateBuffers();
             this.recreateAllocation();
+            this.updateGridArrays();
         }
-
     }
 
     public updateGridArrays() {
