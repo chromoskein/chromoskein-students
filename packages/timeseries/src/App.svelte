@@ -508,14 +508,17 @@
 
             {#if visualizationSelected != "Composite"}
             <Checkbox labelText="Colored" bind:checked={blobsColored} />
-            <Checkbox labelText="Experimental colors" bind:checked={experimentalColors} />
             <Checkbox labelText="Cluster at timestep" bind:checked={timestepClustering} />
+            {/if}
+
+            {#if visualizationSelected == "Matryoshka"}
+            <Checkbox labelText="Experimental colors" bind:checked={experimentalColors} />
             {/if}
 
             {#if visualizationSelected != "Matryoshka" && visualizationSelected != "Composite"}
             <Slider labelText="Amount" fullWidth min={1} max={15} bind:value={blobsAmount} />
             {/if}
-            {#if visualizationSelected != "Spheres" && visualizationSelected != "Cones" && visualizationSelected != "Composite"}
+            {#if visualizationSelected != "Spheres" && visualizationSelected != "Cones" && visualizationSelected != "Composite" && visualizationSelected != "Hedgehog"}
               <Slider labelText="Radius" fullWidth min={0.01} max={0.1} step={0.01} bind:value={blobsRadius} />
             {/if}
             {#if visualizationSelected == "Matryoshka"}
