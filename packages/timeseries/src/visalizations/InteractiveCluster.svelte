@@ -92,7 +92,8 @@
           let rect = canvas.getBoundingClientRect(); // abs. size of element    
           let ray = Graphics.screenSpaceToRay(vec2.fromValues((event.clientX - rect.left) / rect.width, (event.clientY - rect.top) / rect.height), $viewport.camera);
           let hitCluster: ClusterComposite = clusterObjects.rayIntersection(ray);
-          clusterHighlighter.updateHighlightedClusters(hitCluster, "Merge");
+          if (action == "Merge") clusterHighlighter.updateHighlightedClusters(hitCluster, "Merge");
+          else clusterHighlighter.updateHighlightedClusters(hitCluster, "Normal");
         });
 
       }
