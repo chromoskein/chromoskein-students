@@ -221,6 +221,10 @@
     blobsAmount = depth + 1;
   }
 
+  function dendrogramClickMatryoshka(depth) {
+    matryoshkaBlobsVisible[depth] = !matryoshkaBlobsVisible[depth];
+  }
+
   let centerPoints: vec3[] = [];
   $: if (blobs[selectedTimestep] && (visualizationSelected == "Spheres"  || visualizationSelected == "Cones" || visualizationSelected == "Hedgehog")) {
     centerPoints = getCenterPoints(blobs, selectedTimestep);
@@ -539,7 +543,7 @@
                         style={`
                           width: ${100.0 * ((cluster.to - cluster.from + 1) / dataPathlines.length)}%;
                           background-color: rgb(${(!experimentalColors) ? 255 * cluster.color.rgb[0] : 255 * staticColors[i % staticColors.length][0]} ${(!experimentalColors) ? 255 * cluster.color.rgb[1] : 255 * staticColors[i % staticColors.length][1]} ${(!experimentalColors) ? 255 * cluster.color.rgb[2] : 255 * staticColors[i % staticColors.length][2]});
-                          border: 2px solid ${(blobsAmount == clusterLevel + 1 ? "white" : "black")}
+                          border: 2px solid ${blobsAmount == clusterLevel + 1 ? "white" : "black"}
                         `}
                       />
                     {/each}
@@ -547,23 +551,40 @@
                 {/each}
               </div>
             {/if}
-            {#key clustersUpdated}
-            {#if sparseDataClustersGivenK && visualizationSelected == "Composite"}
-                <div class="cluster-dendogram">
-                  {#each sparseDataClustersGivenK.slice(1, 16) as clustersAtLevel, clusterLevel}
-                    <div class="cluster-dendogram-row">
-                      {#each clustersAtLevel as cluster, i}
-                        <div on:click={() => callSplitClusters(cluster)} on:keydown={() => { }}
-                          style={`
-                            width: ${100.0 * ((cluster.to - cluster.from + 1) / dataPathlines.length)}%;
-                            background-color: rgb(${(!experimentalColors) ? 255 * cluster.color.rgb[0] : 255 * staticColors[i % staticColors.length][0]} ${(!experimentalColors) ? 255 * cluster.color.rgb[1] : 255 * staticColors[i % staticColors.length][1]} ${(!experimentalColors) ? 255 * cluster.color.rgb[2] : 255 * staticColors[i % staticColors.length][2]});
-                            border: 2px solid ${cluster.visible ? "white" : "black"}
-                          `}
-                        />
-                      {/each}
-                    </div>
+            {#if dataClustersGivenK && visualizationSelected == "Matryoshka"}
+            <div class="cluster-dendogram">
+              {#each dataClustersGivenK.slice(1, 16) as clustersAtLevel, clusterLevel}
+                <div class="cluster-dendogram-row" on:click={() => dendrogramClickMatryoshka(clusterLevel)} on:keydown={() => { }}>
+                  {#each clustersAtLevel as cluster, i}
+                    <div
+                      style={`
+                        width: ${100.0 * ((cluster.to - cluster.from + 1) / dataPathlines.length)}%;
+                        background-color: rgb(${(!experimentalColors) ? 255 * cluster.color.rgb[0] : 255 * staticColors[i % staticColors.length][0]} ${(!experimentalColors) ? 255 * cluster.color.rgb[1] : 255 * staticColors[i % staticColors.length][1]} ${(!experimentalColors) ? 255 * cluster.color.rgb[2] : 255 * staticColors[i % staticColors.length][2]});
+                        border: 2px solid ${matryoshkaBlobsVisible[clusterLevel] ? "white" : "black"}
+                      `}
+                    />
                   {/each}
                 </div>
+              {/each}
+            </div>
+            {/if}
+            {#key clustersUpdated}
+            {#if sparseDataClustersGivenK && visualizationSelected == "Composite"}
+            <div class="cluster-dendogram">
+              {#each sparseDataClustersGivenK.slice(1, 16) as clustersAtLevel, clusterLevel}
+                <div class="cluster-dendogram-row">
+                  {#each clustersAtLevel as cluster, i}
+                    <div on:click={() => callSplitClusters(cluster)} on:keydown={() => { }}
+                      style={`
+                        width: ${100.0 * ((cluster.to - cluster.from + 1) / dataPathlines.length)}%;
+                        background-color: rgb(${(!experimentalColors) ? 255 * cluster.color.rgb[0] : 255 * staticColors[i % staticColors.length][0]} ${(!experimentalColors) ? 255 * cluster.color.rgb[1] : 255 * staticColors[i % staticColors.length][1]} ${(!experimentalColors) ? 255 * cluster.color.rgb[2] : 255 * staticColors[i % staticColors.length][2]});
+                        border: 2px solid ${cluster.visible ? "white" : "black"}
+                      `}
+                    />
+                  {/each}
+                </div>
+              {/each}
+            </div>
               {/if}
               {/key}
           </AccordionItem>
