@@ -5,7 +5,7 @@ import type { ClusterNode } from "../../utils/main";
 import type { InteractiveClusters } from "../interactiveClusters";
 import { AbstractClusterVisualisation } from "./abstractVisualization";
 
-export class SphereClusterVisualisation extends AbstractClusterVisualisation {
+export class SphereSimplificationClusterVisualisation extends AbstractClusterVisualisation {
     private sphere: Graphics.Sphere;
     private sphereID: number;
     private cluster: ClusterNode;
@@ -65,6 +65,6 @@ export class SphereClusterVisualisation extends AbstractClusterVisualisation {
     }
 
     public getConstructor() {
-        return SphereClusterVisualisation;
+        return SphereSimplificationClusterVisualisation;
     }
 }

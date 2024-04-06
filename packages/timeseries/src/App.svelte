@@ -244,7 +244,7 @@
     coneOrient = getConeOrientation(blobs[selectedTimestep], closestBlobs);
   }
 
-  let clusterVisualization = "Sphere";
+  let clusterVisualization = "SphereSimplification";
   let action = "Change representation";
 
   // fixed for now
@@ -493,12 +493,14 @@
 
             {#if visualizationSelected == "Composite" && action == "Change representation"}
             <Select size="sm" inline labelText="Visualization type:" bind:selected={clusterVisualization}>
-              <SelectItem value="Sphere" />
+              <SelectItem value="SphereSimplification" />
               <SelectItem value="Hedgehog" />
               <SelectItem value="Cones" />
               <SelectItem value="SignedDistanceGrid" />
               <SelectItem value="Pathline" />
               <SelectItem value="Volume" />
+              <SelectItem value="Spline" />
+              <SelectItem value="Sphere" />
             </Select>
             {/if}
 
@@ -509,8 +511,8 @@
             {#if visualizationSelected != "Composite"}
             <Checkbox labelText="Colored" bind:checked={blobsColored} />
             <Checkbox labelText="Experimental colors" bind:checked={experimentalColors} />
-            <Checkbox labelText="Cluster at timestep" bind:checked={timestepClustering} />
             {/if}
+            <Checkbox labelText="Cluster at timestep" bind:checked={timestepClustering} />
 
             {#if visualizationSelected != "Matryoshka" && visualizationSelected != "Composite"}
             <Slider labelText="Amount" fullWidth min={1} max={15} bind:value={blobsAmount} />

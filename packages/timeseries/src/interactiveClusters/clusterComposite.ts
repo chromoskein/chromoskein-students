@@ -5,7 +5,7 @@ import type { ClusterNode } from "../utils/main";
 import type { AbstractClusterVisualisation } from "./visualisations/abstractVisualization";
 import type { InteractiveClusters } from "./interactiveClusters";
 import { ClusterConnector } from "./clusterConnector";
-import { SphereClusterVisualisation } from "./visualisations/sphereClusterVisualisation";
+import { SphereSimplificationClusterVisualisation } from "./visualisations/sphereSimplificationClusterVisualisation";
 
 
 export class ClusterComposite {
@@ -30,7 +30,7 @@ export class ClusterComposite {
         this.viewport = viewport;
         this.manager = manager;
 
-        this.setVisualisation(SphereClusterVisualisation);
+        this.setVisualisation(SphereSimplificationClusterVisualisation);
         this.setVisible(true);
     }
 

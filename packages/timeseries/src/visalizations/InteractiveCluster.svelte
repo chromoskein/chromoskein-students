@@ -2,7 +2,7 @@
     import type { ClusterNode } from "../utils/main";
     import { InteractiveClusters } from "../interactiveClusters/interactiveClusters";
     import type { ClusterComposite } from "../interactiveClusters/clusterComposite";
-    import { HedgehogClusterVisualisation, SphereClusterVisualisation, PCAClusterVisualisation, SDGClusterVisualisation, PathlineClusterVisualization } from "../interactiveClusters/visualisations/index";
+    import { HedgehogClusterVisualisation, SphereSimplificationClusterVisualisation, PCAClusterVisualisation, SDGClusterVisualisation, PathlineClusterVisualization } from "../interactiveClusters/visualisations/index";
     import { getContext, onMount } from "svelte";
     import type { Writable } from "svelte/store";
     import type { Viewport3D } from "lib-graphics";
@@ -11,6 +11,8 @@
     import { vec2 } from "gl-matrix";
     import { ClusterHighlighter } from "../interactiveClusters/clusterHighlighter";
     import { VolumeClusterVisualisation } from "../interactiveClusters/visualisations/volumeClusterVisualisation";
+    import { SplineClusterVisualisation } from "../interactiveClusters/visualisations/splineVisualisation";
+    import { SpheresClusterVisualization } from "../interactiveClusters/visualisations/spheresClusterVisualisation";
 
     let viewport: Writable<Viewport3D | null> = getContext("viewport");
     let device: Writable<GPUDevice> = getContext("device");
@@ -29,12 +31,14 @@
     let canvas: HTMLElement | null = null;
 
     const representations = {
-      "Sphere": SphereClusterVisualisation,
+      "SphereSimplification": SphereSimplificationClusterVisualisation,
       "Hedgehog": HedgehogClusterVisualisation,
       "Cones": PCAClusterVisualisation,
       "SignedDistanceGrid": SDGClusterVisualisation,
       "Pathline": PathlineClusterVisualization,
       "Volume": VolumeClusterVisualisation,
+      "Spline": SplineClusterVisualisation,
+      "Sphere": SpheresClusterVisualization,
     };
 
     export function getClusterComposite(cluster) {
