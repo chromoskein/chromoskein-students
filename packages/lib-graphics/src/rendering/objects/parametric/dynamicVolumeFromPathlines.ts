@@ -38,18 +38,13 @@ struct GlobalsStruct {
 @group(0) @binding(3) var<storage, read_write> numberTimestepsGrid: array<array<array<f32, ${DynamicVolumeTextureSize}>, ${DynamicVolumeTextureSize}>, ${DynamicVolumeTextureSize}>;
 
 @compute @workgroup_size(4, 4, 4) fn main(@builtin(global_invocation_id) GlobalInvocationID: vec3<u32>) {
-    let positionNDC = (1.0 / ${DynamicVolumeTextureSize}) * vec3<f32>(GlobalInvocationID.xyz) + vec3<f32>(1.0 / ${2 * DynamicVolumeTextureSize});
+    let positionNDC: vec3<f32> = (1.0 / ${DynamicVolumeTextureSize}) * vec3<f32>(GlobalInvocationID.xyz) + vec3<f32>(1.0 / ${2 * DynamicVolumeTextureSize});
     let p = 2.0 * (positionNDC - vec3<f32>(0.5)); // [-1, 1]
 
-    var finalValue = 0.0;
     var lastTimestep: u32 = 0;
     var countTimesteps: u32 = 0;
-    var lastSdf: f32 = 1.0;
     // Repeat for every timestep
     for(var step: u32 = 0; step < globals.steps; step++) {
-        let factor = (1.0 / f32(globals.steps)) * f32(step);
-        let invFactor = 1.0 - factor;
-
         var sdf = 1.0;
         if (globals.sizeOfStep > 1) {
             // Repeat for every point pair inside timestep
@@ -70,11 +65,6 @@ struct GlobalsStruct {
             lastTimestep = step;
             countTimesteps += 1;
         }
-        if (sdf < 0.0 && lastSdf > 0.0) {
-            finalValue = factor;
-        }
-        
-        lastSdf = min(lastSdf, sdf);
     }
 
     lastTimestepGrid[GlobalInvocationID.x][GlobalInvocationID.y][GlobalInvocationID.z] = f32(lastTimestep) / f32(globals.steps);

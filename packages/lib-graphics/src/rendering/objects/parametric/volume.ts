@@ -306,8 +306,8 @@ export class Volume extends IParametricObject {
                     //let rayOriginLocalSpace = (${this.variableName}[0].modelMatrixInverse * vec4<f32>(ray.origin, 1.0)).xyz;
                     //let rayDirectionLocalSpace = normalize(${this.variableName}[0].modelMatrixInverse * vec4<f32>(ray.direction, 0.0)).xyz;
                     // The volume object is normalized and situated at origin so no need to transform ray
-                    let rayOriginLocalSpace = (vec4<f32>(ray.origin, 1.0)).xyz;
-                    let rayDirectionLocalSpace = normalize(vec4<f32>(ray.direction, 0.0)).xyz;
+                    let rayOriginLocalSpace = (vec4<f32>(ray.origin, 1.0)).xyz * ${this.variableName}[0].scale.x;
+                    let rayDirectionLocalSpace = normalize(vec4<f32>(ray.direction, 0.0)).xyz * ${this.variableName}[0].scale.x;
 
                     let rayLocalSpace = Ray(rayOriginLocalSpace, rayDirectionLocalSpace);
 
@@ -470,6 +470,7 @@ export class Volume extends IParametricObject {
             this.properties[i].func = 0;
             this.properties[i].transparency = 1.0;
         }
+        this.scaleIndex(0.8, 0);
         this.onAllocationMoved();
     }
 
@@ -545,6 +546,7 @@ export class Volume extends IParametricObject {
         const globalsCPUBufferF32 = new Float32Array(globalsCPUBuffer);
         //const globalsCPUBufferU32 = new Uint32Array(globalsCPUBuffer);
         globalsCPUBufferF32[0] = radius[0];
+        globalsCPUBufferF32[1] = 0.8;
         //globalsCPUBufferU32[1] = points.length;
         //globalsCPUBufferU32[2] = points[0].length;
 

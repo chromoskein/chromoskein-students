@@ -26,6 +26,7 @@ fn sdSphere(p: vec3<f32>, c: vec3<f32>, s: f32 ) -> f32
 
 struct GlobalsStruct {
     radius: f32,
+    scale: f32,
 };
 
 @group(0) @binding(0) var<uniform> globals: GlobalsStruct;
@@ -46,7 +47,7 @@ struct GlobalsStruct {
 
     let timestepCount = timestep_counts[objectId];
     let pointCount = point_counts[objectId];
-    let radius = radii[objectId];
+    let radius = radii[objectId] * globals.scale;
 
     var finalValue = 0.0;
     var lastTimestep: u32 = 0;
@@ -61,14 +62,14 @@ struct GlobalsStruct {
         if (pointCount > 1) {
             // Repeat for every point pair inside timestep
             for(var i: u32 = step * pointCount; i < step * pointCount + pointCount - 1; i++) {
-                let p1 = points[delimiters[objectId] + i].xyz;
-                let p2 = points[delimiters[objectId] + i + 1].xyz;
+                let p1 = points[delimiters[objectId] + i].xyz * globals.scale;
+                let p2 = points[delimiters[objectId] + i + 1].xyz * globals.scale;
         
                 let sdf2 = sdCapsule(p, p1, p2, radius);
                 sdf = opSmoothUnion(sdf, sdf2, 0.1);
             }
         } else {
-            let p1 = points[delimiters[objectId] + step].xyz;
+            let p1 = points[delimiters[objectId] + step].xyz * globals.scale;
             let sdf2 = sdSphere(p, p1, radius);
             sdf = opSmoothUnion(sdf, sdf2, 0.1);
         }
