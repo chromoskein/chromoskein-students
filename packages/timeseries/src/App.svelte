@@ -409,7 +409,7 @@
             {#each blobs[selectedTimestep] as blob, i}
               <ConnectedSpheres
                 tubePoints={centerPoints}
-                tubeRadius={(1.0 / centerPoints.length) / 10.0} 
+                tubeRadius={(1.0 / centerPoints.length) / 15.0} 
                 tubeColor={[0.9, 0.9, 0.9]} 
                 tubeMulticolored={false} 
                 sphereRadius={blob.normalizedPoints.length / 1000.0 * 2}

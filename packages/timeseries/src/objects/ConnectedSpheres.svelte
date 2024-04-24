@@ -57,7 +57,8 @@
           tubeColor[1] = 1.0;
         }
   
-        tube.properties[i].color = [tubeColor[0], tubeColor[1], tubeColor[2], 1.0];
+        tube.properties[i].startColor = [tubeColor[0], tubeColor[1], tubeColor[2], 1.0];
+        tube.properties[i].endColor = [tubeColor[0], tubeColor[1], tubeColor[2], 1.0];
       }
       tube.setDirtyCPU();
 
