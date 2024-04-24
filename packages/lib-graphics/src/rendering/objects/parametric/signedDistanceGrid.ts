@@ -42,6 +42,10 @@ class Pipelines {
                 binding: 2,
                 visibility: GPUShaderStage.COMPUTE,
                 buffer: { type: "read-only-storage" },
+            }, {
+                binding: 3,
+                visibility: GPUShaderStage.COMPUTE,
+                buffer: { type: "uniform" },
             }]
         });
 
@@ -107,7 +111,7 @@ export const SignedDistanceGridStruct = new r.Struct({
     scale: new r.Array(r.floatle, 4),
 });
 
-export const GridTextureSize: number = 64;
+export const GridTextureSize: number = 128;
 
 export class SignedDistanceGrid extends IParametricObject {
     private _pipelines: Pipelines;
@@ -517,7 +521,10 @@ export class SignedDistanceGrid extends IParametricObject {
             });
         }
 
-        
+        const globalsCPUBuffer = new ArrayBuffer(64);
+        const globalsCPUBufferF32 = new Float32Array(globalsCPUBuffer);
+        globalsCPUBufferF32[0] = radius[0];
+
         const delimitersCPUBuffer = new Uint32Array(points.length + 1);
         const delimiters = [0];
         let len = 0;
@@ -532,14 +539,15 @@ export class SignedDistanceGrid extends IParametricObject {
         
         let offset = 0;
         for (let j = 0; j < points.length; j++) {
-            const writeRadius = radius[j] * (1.0 / this.properties[j].scale[0]);
+            const scaleValue = this.properties[j].scale[0];
             for(let i = 0; i < points[j].length; i++) {
                 pointsCPUBuffer.set(points[j][i], 4 * i + 4 * offset);
-                pointsCPUBuffer.set([writeRadius], 4 * i + 3 + 4 * offset);
+                pointsCPUBuffer.set([scaleValue], 4 * i + 3 + 4 * offset);
             }
             offset += points[j].length;
         }
 
+        const globalsBuffer = device.createBuffer({ label: "GlobalsComputeBuffer", size: 64, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
         const pointsBuffer = device.createBuffer({ size: Math.max(len * 4 * 4, 1), usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE });
         const delmitersBuffer = device.createBuffer( { size: delimiters.length * 4, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE })
         const bindGroup = device.createBindGroup({
@@ -553,9 +561,13 @@ export class SignedDistanceGrid extends IParametricObject {
             }, {
                 binding: 2,
                 resource: { buffer: delmitersBuffer }
+            }, {
+                binding: 3,
+                resource: { buffer: globalsBuffer }
             }]
         });
 
+        device.queue.writeBuffer(globalsBuffer, 0, globalsCPUBuffer, 0);
         device.queue.writeBuffer(pointsBuffer, 0, pointsCPUBuffer, 0);
         device.queue.writeBuffer(delmitersBuffer, 0, delimitersCPUBuffer, 0);
         const commandEncoder = device.createCommandEncoder();
