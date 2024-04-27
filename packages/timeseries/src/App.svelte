@@ -26,7 +26,7 @@
   import { treeColor, staticColors } from "./utils/treecolors";
   import Sphere from "./objects/Sphere.svelte";
   import {DSVDelimiter, parseBEDString} from "./utils/data-parser";
-  import {computePCA, findClosestBlobs, getCenterPoints, getConeOrientation} from "./utils/abstractClustersUtils";
+  import {computePCA, findClosestBlobsByClosestPoints, getCenterPoints, getConeOrientation} from "./utils/abstractClustersUtils";
 
   import "@carbon/styles/css/styles.css";
   import "@carbon/charts/styles.css";
@@ -243,8 +243,9 @@
   let closestBlobs: vec3[][] = [];
   let coneOrient: vec3[][] = [];
   let maxDistance = 2.0;
-  $: if (blobs[selectedTimestep] && (visualizationSelected == "Hedgehog") && blobsAmount > 1) {
-    closestBlobs = findClosestBlobs(blobs[selectedTimestep], centerPoints, maxDistance);
+  let blobDistance: number[][] = [];
+  $: if (blobs[selectedTimestep] && (visualizationSelected == "Hedgehog" || visualizationSelected == "Default") && blobsAmount > 1) {
+    ({closestBlobs, blobDistance} = findClosestBlobsByClosestPoints(blobs[selectedTimestep], 10000));
     coneOrient = getConeOrientation(blobs[selectedTimestep], closestBlobs);
   }
 
@@ -440,7 +441,7 @@
                 tubeColor={[0.9, 0.9, 0.9]}
                 coneStartRadius={0.1}
                 coneCenter={blob.center}
-                coneHeight={0.5}
+                coneHeight={blobDistance[i]}
                 coneOrientation={coneOrient[i]}
                 coneColor={blobsColored ? [dataClustersGivenK[blobsAmount][i].color.rgb[0], dataClustersGivenK[blobsAmount][i].color.rgb[1], dataClustersGivenK[blobsAmount][i].color.rgb[2]] : [1.0, 1.0, 1.0]}
               />

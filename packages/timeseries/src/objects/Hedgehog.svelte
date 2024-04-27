@@ -12,7 +12,7 @@
     export let tubeColor: vec3 = vec3.fromValues(1.0, 1.0, 1.0);
     export let coneStartRadius = 0.0;
     export let coneCenter: vec3 = vec3.fromValues(0.0, 0.0, 0.0);
-    export let coneHeight = 0.0;
+    export let coneHeight: number[] = [];
     export let coneOrientation: vec3[] = [];
     export let coneColor: vec3 = vec3.fromValues(1.0, 1.0, 1.0);
     
@@ -68,10 +68,11 @@
       for (let i = 0; i < coneOrientation.length; i++) {        
         cones[i].properties.start = [coneCenter[0], coneCenter[1], coneCenter[2]];
         cones[i].properties.end = [
-            coneCenter[0] + coneHeight * coneOrientation[i][0],
-            coneCenter[1] + coneHeight * coneOrientation[i][1],
-            coneCenter[2] + coneHeight * coneOrientation[i][2],
-        ];
+            coneCenter[0] + coneHeight[i] * coneOrientation[i][0],
+            coneCenter[1] + coneHeight[i] * coneOrientation[i][1],
+            coneCenter[2] + coneHeight[i] * coneOrientation[i][2],
+        ]
+        
         cones[i].properties.startRadius = coneStartRadius;
         cones[i].properties.endRadius = 0.0001;
         cones[i].properties.color = [coneColor[0], coneColor[1], coneColor[2], 1.0];

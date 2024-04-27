@@ -1,5 +1,6 @@
 import { vec3 } from "gl-matrix";
 import PCA from 'pca-js';
+import type { ClusterBlob } from "./main";
 
 export interface PCAresult
 {
@@ -56,7 +57,13 @@ export function getCenterPoints(blobs, selectedTimestep) {
 }
 
 function distance(a, b) {
-    return Math.sqrt((b[0] - a[0]) * (b[0] - a[0]) + (b[1] - a[1]) * (b[1] - a[1]) + (b[2] - a[2]) * (b[2] - a[2]));
+    const dx = b[0] - a[0];
+    const dy = b[1] - a[1];
+    const dz = b[2] - a[2];
+
+    const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+    return dist;
 }
 
 function sortedCenters(center, centers, index, maxDistance) {
@@ -78,7 +85,7 @@ function sortedCenters(center, centers, index, maxDistance) {
     return result;
 }
 
-export function findClosestBlobs(blobs, centerPoints, maxDistance) {
+export function findClosestBlobsByCenters(blobs, centerPoints, maxDistance) {
     let closestBlobs: vec3[][] = [];
     for (let i = 0; i < blobs.length; i++) {
         closestBlobs[i] = [];
@@ -93,13 +100,98 @@ export function getConeOrientation(blobs, closestBlobs) {
     for (let i = 0; i < blobs.length; i++) {
         coneOrient[i] = [];
         for (let j = 0; j < closestBlobs[i].length; j++) {
-          coneOrient[i].push(vec3.fromValues(
-            closestBlobs[i][j][0] - blobs[i].center[0],
-            closestBlobs[i][j][1] - blobs[i].center[1],
-            closestBlobs[i][j][2] - blobs[i].center[2]
-          ));
+            let normalizedVector = normalizeVector(vec3.fromValues(
+                closestBlobs[i][j][0] - blobs[i].center[0],
+                closestBlobs[i][j][1] - blobs[i].center[1],
+                closestBlobs[i][j][2] - blobs[i].center[2]
+              ));
+            coneOrient[i].push(normalizedVector);
         }
       }
 
       return coneOrient;
+}
+
+function normalizeVector(vector) {
+    let xx = vector[0] * vector[0];
+    let yy = vector[1] * vector[1];
+    let zz = vector[2] * vector[2];
+
+    let length = Math.sqrt(xx + yy + zz);
+
+    let newX = vector[0] / length;
+    let newY = vector[1] / length;
+    let newZ = vector[2] / length;
+
+    return vec3.fromValues(newX, newY, newZ);
+}
+
+function addPoints(a, b) {
+    let dx = a[0] + b[0];
+    let dy = a[1] + b[1];
+    let dz = a[2] + b[2];
+    
+    return vec3.fromValues(dx,dy,dz);
+}
+
+function findClosestPair(blob1: ClusterBlob, blob2: ClusterBlob): pair {
+    let minDst = Infinity;
+    let closestPair: pair;
+
+    for (let i = 0; i < blob1.normalizedPoints.length; i++) {
+        for (let j = 0; j < blob2.normalizedPoints.length; j++) {
+            let dst = distance(addPoints(blob1.normalizedPoints[i], blob1.center), addPoints(blob2.normalizedPoints[j], blob2.center));
+            if (dst < minDst) {
+                closestPair = {
+                    minDistance: dst,
+                    point1: blob1.normalizedPoints[i],
+                    point2: blob2.normalizedPoints[j]
+                };
+                minDst = dst;
+            }
+        } 
+    }
+    
+    return closestPair;
+
+}
+
+type pair = {
+    minDistance: number;
+    point1: vec3;
+    point2: vec3;   
+}
+
+function findClosestBlobsForOneBlob(blob: ClusterBlob, blobs: ClusterBlob[], maxDistance: number): Map<number, pair> {
+
+    // number in map is the index of the blob
+    let result = new Map<number, pair>();
+
+    for (let i = 0; i < blobs.length; i++) {
+        if (blobs[i] == blob) continue;
+        let closestPair = findClosestPair(blob, blobs[i]);
+        if (closestPair.minDistance > maxDistance) continue;
+        result.set(i, closestPair);
+    }
+
+    return result;
+
+}
+
+export function findClosestBlobsByClosestPoints(blobs: ClusterBlob[], maxDistance: number) {
+    let closestBlobs: vec3[][] = [];
+    let blobDistance: number[][] = [];
+    
+    for (let i = 0; i < blobs.length; i++) {
+        closestBlobs[i] = [];
+        blobDistance[i] = [];
+        let newMap = findClosestBlobsForOneBlob(blobs[i], blobs, maxDistance);
+    
+        for (let [index, pair] of newMap) {
+            closestBlobs[i].push(blobs[index].center);
+            blobDistance[i].push(pair.minDistance);
+        }
+      }
+
+    return {closestBlobs, blobDistance};
 }
