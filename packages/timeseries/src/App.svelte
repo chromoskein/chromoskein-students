@@ -245,7 +245,7 @@
   let maxDistance = 2.0;
   let blobDistance: number[][] = [];
   $: if (blobs[selectedTimestep] && (visualizationSelected == "Hedgehog" || visualizationSelected == "Default") && blobsAmount > 1) {
-    ({closestBlobs, blobDistance} = findClosestBlobsByClosestPoints(blobs[selectedTimestep], 10000));
+    ({closestBlobs, blobDistance} = findClosestBlobsByClosestPoints(blobs[selectedTimestep], maxDistance));
     coneOrient = getConeOrientation(blobs[selectedTimestep], closestBlobs);
   }
 
