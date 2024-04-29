@@ -26,7 +26,7 @@
   import { treeColor, staticColors } from "./utils/treecolors";
   import Sphere from "./objects/Sphere.svelte";
   import {DSVDelimiter, parseBEDString} from "./utils/data-parser";
-  import {computePCA, findClosestBlobs, getCenterPoints, getConeOrientation} from "./utils/abstractClustersUtils";
+  import {computePCA, findClosestBlobsByClosestPoints, getCenterPoints, getConeOrientation} from "./utils/abstractClustersUtils";
 
   import "@carbon/styles/css/styles.css";
   import "@carbon/charts/styles.css";
@@ -243,8 +243,9 @@
   let closestBlobs: vec3[][] = [];
   let coneOrient: vec3[][] = [];
   let maxDistance = 2.0;
-  $: if (blobs[selectedTimestep] && (visualizationSelected == "Hedgehog") && blobsAmount > 1) {
-    closestBlobs = findClosestBlobs(blobs[selectedTimestep], centerPoints, maxDistance);
+  let blobDistance: number[][] = [];
+  $: if (blobs[selectedTimestep] && (visualizationSelected == "Hedgehog" || visualizationSelected == "Default") && blobsAmount > 1) {
+    ({closestBlobs, blobDistance} = findClosestBlobsByClosestPoints(blobs[selectedTimestep], maxDistance));
     coneOrient = getConeOrientation(blobs[selectedTimestep], closestBlobs);
   }
 
@@ -436,11 +437,11 @@
             {#each blobs[selectedTimestep] as blob, i}
               <Hedgehog
                 tubePoints={centerPoints}
-                tubeRadius={(1.0 / centerPoints.length) / 8.0} 
+                tubeRadius={(1.0 / centerPoints.length) / 15.0} 
                 tubeColor={[0.9, 0.9, 0.9]}
                 coneStartRadius={0.1}
                 coneCenter={blob.center}
-                coneHeight={0.5}
+                coneHeight={blobDistance[i]}
                 coneOrientation={coneOrient[i]}
                 coneColor={blobsColored ? [dataClustersGivenK[blobsAmount][i].color.rgb[0], dataClustersGivenK[blobsAmount][i].color.rgb[1], dataClustersGivenK[blobsAmount][i].color.rgb[2]] : [1.0, 1.0, 1.0]}
               />
@@ -488,7 +489,7 @@
             </Select>
 
             {#if visualizationSelected == "Composite"}
-            <Select size="sm" inline labelText="Action" bind:selected={action}>
+            <Select size="sm" inline labelText="Action:" bind:selected={action}>
               <SelectItem value="Change representation" />
               <SelectItem value="Split" />
               <SelectItem value="Merge" />
@@ -497,14 +498,14 @@
 
             {#if visualizationSelected == "Composite" && action == "Change representation"}
             <Select size="sm" inline labelText="Visualization type:" bind:selected={clusterVisualization}>
-              <SelectItem value="SphereSimplification" />
-              <SelectItem value="Hedgehog" />
-              <SelectItem value="Cones" />
-              <SelectItem value="SignedDistanceGrid" />
+              <SelectItem value="Default" />
+              <SelectItem value="Spherical" />
               <SelectItem value="Pathline" />
-              <SelectItem value="Volume" />
               <SelectItem value="Spline" />
               <SelectItem value="Sphere" />
+              <SelectItem value="Cone" />
+              <SelectItem value="Hedgehog" />
+              <SelectItem value="Volume" />
             </Select>
             {/if}
 
@@ -512,19 +513,22 @@
             <Checkbox labelText="Show cluster connections" bind:checked={showConnectors} />
             {/if}
 
-            {#if visualizationSelected != "Composite"}
+            {#if visualizationSelected != "Composite" && visualizationSelected != "None"}
             <Checkbox labelText="Colored" bind:checked={blobsColored} />
             {/if}
+
+            {#if visualizationSelected != "None"}
             <Checkbox labelText="Cluster at timestep" bind:checked={timestepClustering} />
+            {/if}
 
             {#if visualizationSelected == "Matryoshka"}
             <Checkbox labelText="Experimental colors" bind:checked={experimentalColors} />
             {/if}
 
-            {#if visualizationSelected != "Matryoshka" && visualizationSelected != "Composite"}
-            <Slider labelText="Amount" fullWidth min={1} max={15} bind:value={blobsAmount} />
+            {#if visualizationSelected != "Matryoshka" && visualizationSelected != "Composite" && visualizationSelected != "None"}
+            <Slider labelText="Cluster amount" fullWidth min={1} max={15} bind:value={blobsAmount} />
             {/if}
-            {#if visualizationSelected != "Spheres" && visualizationSelected != "Cones" && visualizationSelected != "Composite" && visualizationSelected != "Hedgehog"}
+            {#if visualizationSelected == "Default" || visualizationSelected == "Matryoshka"}
               <Slider labelText="Radius" fullWidth min={0.01} max={0.1} step={0.01} bind:value={blobsRadius} />
             {/if}
             {#if visualizationSelected == "Matryoshka"}
