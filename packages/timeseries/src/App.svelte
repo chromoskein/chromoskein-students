@@ -489,7 +489,7 @@
             </Select>
 
             {#if visualizationSelected == "Composite"}
-            <Select size="sm" inline labelText="Action" bind:selected={action}>
+            <Select size="sm" inline labelText="Action:" bind:selected={action}>
               <SelectItem value="Change representation" />
               <SelectItem value="Split" />
               <SelectItem value="Merge" />
@@ -498,14 +498,14 @@
 
             {#if visualizationSelected == "Composite" && action == "Change representation"}
             <Select size="sm" inline labelText="Visualization type:" bind:selected={clusterVisualization}>
-              <SelectItem value="SphereSimplification" />
-              <SelectItem value="Hedgehog" />
-              <SelectItem value="Cones" />
-              <SelectItem value="SignedDistanceGrid" />
+              <SelectItem value="Default" />
+              <SelectItem value="Spherical" />
               <SelectItem value="Pathline" />
-              <SelectItem value="Volume" />
               <SelectItem value="Spline" />
               <SelectItem value="Sphere" />
+              <SelectItem value="Cone" />
+              <SelectItem value="Hedgehog" />
+              <SelectItem value="Volume" />
             </Select>
             {/if}
 
@@ -513,19 +513,22 @@
             <Checkbox labelText="Show cluster connections" bind:checked={showConnectors} />
             {/if}
 
-            {#if visualizationSelected != "Composite"}
+            {#if visualizationSelected != "Composite" && visualizationSelected != "None"}
             <Checkbox labelText="Colored" bind:checked={blobsColored} />
             {/if}
+
+            {#if visualizationSelected != "None"}
             <Checkbox labelText="Cluster at timestep" bind:checked={timestepClustering} />
+            {/if}
 
             {#if visualizationSelected == "Matryoshka"}
             <Checkbox labelText="Experimental colors" bind:checked={experimentalColors} />
             {/if}
 
-            {#if visualizationSelected != "Matryoshka" && visualizationSelected != "Composite"}
+            {#if visualizationSelected != "Matryoshka" && visualizationSelected != "Composite" && visualizationSelected != "None"}
             <Slider labelText="Cluster amount" fullWidth min={1} max={15} bind:value={blobsAmount} />
             {/if}
-            {#if visualizationSelected != "Spheres" && visualizationSelected != "Cones" && visualizationSelected != "Composite" && visualizationSelected != "Hedgehog"}
+            {#if visualizationSelected == "Default" || visualizationSelected == "Matryoshka"}
               <Slider labelText="Radius" fullWidth min={0.01} max={0.1} step={0.01} bind:value={blobsRadius} />
             {/if}
             {#if visualizationSelected == "Matryoshka"}

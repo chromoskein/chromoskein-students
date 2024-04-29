@@ -31,14 +31,14 @@
     let canvas: HTMLElement | null = null;
 
     const representations = {
-      "SphereSimplification": SphereSimplificationClusterVisualisation,
+      "Sphere": SphereSimplificationClusterVisualisation,
       "Hedgehog": HedgehogClusterVisualisation,
-      "Cones": PCAClusterVisualisation,
-      "SignedDistanceGrid": SDGClusterVisualisation,
+      "Cone": PCAClusterVisualisation,
+      "Default": SDGClusterVisualisation,
       "Pathline": PathlineClusterVisualization,
       "Volume": VolumeClusterVisualisation,
       "Spline": SplineClusterVisualisation,
-      "Sphere": SpheresClusterVisualization,
+      "Spherical": SpheresClusterVisualization,
     };
 
     export function getClusterComposite(cluster) {
