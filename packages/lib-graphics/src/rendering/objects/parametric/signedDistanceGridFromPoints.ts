@@ -4,9 +4,11 @@ export const signedDistanceGridFromPoints = () => {
     return /* wgsl */`
 
 fn opSmoothUnion(d1: f32, d2: f32, k: f32) -> f32 {
-    let h = clamp( 0.5 + 0.5*(d2-d1)/k, 0.0, 1.0 );
+    //let h = clamp( 0.5 + 0.5*(d2-d1)/k, 0.0, 1.0 );
 
-    return mix( d2, d1, h ) - k*h*(1.0-h); 
+    let h = max( k - abs(d1 - d2), 0.0 ) / k;
+    return min(d1, d2) - h * h * k * (1.0 / 4.0);
+    //return mix( d2, d1, h ) - k*h*(1.0-h); 
 }
 
 fn sdCapsule(p: vec3<f32>, a: vec3<f32>, b: vec3<f32>, r: f32 ) -> f32
@@ -41,16 +43,16 @@ struct GlobalsStruct {
     var radius = globals.radius / points[delimiters[begin]].w;
     var scale = points[delimiters[begin]].w;
 
-    var sdf = sdSphere(p, points[delimiters[begin]].xyz, radius);
+    var sdf = sdSphere(p, points[delimiters[begin]].xyz, radius) * scale;
     for(var i: u32 = delimiters[begin]; i < delimiters[begin + 1] - 1; i++) {
         let p1 = points[i].xyz;
         let p2 = points[i + 1].xyz;
 
-        let sdf2 = sdCapsule(p, p1, p2, radius);
-        sdf = opSmoothUnion(sdf, sdf2, 0.1 / scale);
+        let sdf2 = sdCapsule(p, p1, p2, radius) * scale;
+        sdf = opSmoothUnion(sdf, sdf2, 0.1);
     }
-    var sdFinal = sdSphere(p, points[delimiters[begin + 1] - 1].xyz, radius);
-    sdf = opSmoothUnion(sdf, sdFinal, 0.1 / scale);
+    var sdFinal = sdSphere(p, points[delimiters[begin + 1] - 1].xyz, radius) * scale;
+    sdf = opSmoothUnion(sdf, sdFinal, 0.1);
 
     textureStore(grid, GlobalInvocationID, vec4<f32>(sdf));   
 }

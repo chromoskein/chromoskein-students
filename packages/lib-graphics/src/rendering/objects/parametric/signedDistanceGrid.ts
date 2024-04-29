@@ -236,29 +236,24 @@ export class SignedDistanceGrid extends IParametricObject {
                     vec3<f32>(0.0),
                 );
             }
-
-            var normal = vec3<f32>(0.0);
-            if (tN > 0.0) {
-                normal = step(vec3<f32>(tN), t1);
-            } else {
-                normal = step(t2, vec3<f32>(tF));
-            }
-            normal = normal * (-sign(rayDirectionLocalSpace.xyz));
             
             var intersection = vec3<f32>(0.0);
             var t = max(tN, 0.0);
             var distance = 0.0;
             for(var i = 0; i < ${GridTextureSize}; i++) {
                 intersection = rayOriginLocalSpace + t * rayDirectionLocalSpace;
-                distance = sampleGrid(intersection, index);
+                distance = sampleGrid(intersection, index) / ${this.variableName}.scale.x;
 
                 if (abs(distance) <= 0.0005) {
                     break;
                 } 
 
                 if (t > tF) {
-                    t = -1.0;
-                    break;
+                    return Intersection(
+                        -1.0,
+                        vec3<f32>(0.0),
+                        vec3<f32>(0.0),
+                    );
                 }
 
                 t = t + abs(distance);
@@ -523,7 +518,7 @@ export class SignedDistanceGrid extends IParametricObject {
 
         const globalsCPUBuffer = new ArrayBuffer(64);
         const globalsCPUBufferF32 = new Float32Array(globalsCPUBuffer);
-        globalsCPUBufferF32[0] = radius[0];
+        globalsCPUBufferF32[0] = radius[0] + 0.01;
 
         const delimitersCPUBuffer = new Uint32Array(points.length + 1);
         const delimiters = [0];
