@@ -45,6 +45,10 @@ class Pipelines {
             }, {
                 binding: 3,
                 visibility: GPUShaderStage.COMPUTE,
+                buffer: { type: "read-only-storage" },
+            }, {
+                binding: 4,
+                visibility: GPUShaderStage.COMPUTE,
                 buffer: { type: "uniform" },
             }]
         });
@@ -242,7 +246,7 @@ export class SignedDistanceGrid extends IParametricObject {
             var distance = 0.0;
             for(var i = 0; i < ${GridTextureSize}; i++) {
                 intersection = rayOriginLocalSpace + t * rayDirectionLocalSpace;
-                distance = sampleGrid(intersection, index) / ${this.variableName}.scale.x;
+                distance = sampleGrid(intersection, index);
 
                 if (abs(distance) <= 0.0005) {
                     break;
@@ -270,13 +274,13 @@ export class SignedDistanceGrid extends IParametricObject {
         fn findClosestIntersection(ray: Ray, index: i32) -> ObjectIntersection {
             var bestDistance: f32 = 10000.0;
             var found = false;
-            var bestIntersection: Intersection = ray${this.typeName}Intersection(ray, ${this.variableName}[0], 0);
-            var foundIndex: i32 = 0;
+            var bestIntersection: Intersection = Intersection(-1.0, vec3<f32>(0.0), vec3<f32>(0.0));
+            var foundIndex: i32 = -1;
 
             for(var i: u32 = 0; i < arrayLength(&${this.variableName}); i++) {
                 var intersection = ray${this.typeName}Intersection(ray, ${this.variableName}[i], i);
                 var dist = distance(ray.origin, intersection.position);
-                if (intersection.t > 0.0 && !(dist < 0.001 && index == i32(i)) && dist < bestDistance) {
+                if (intersection.t > 0.0 && index != i32(i) && dist < bestDistance) {
                     found = true;
                     bestIntersection = intersection;
                     bestDistance = dist;
@@ -518,9 +522,11 @@ export class SignedDistanceGrid extends IParametricObject {
 
         const globalsCPUBuffer = new ArrayBuffer(64);
         const globalsCPUBufferF32 = new Float32Array(globalsCPUBuffer);
-        globalsCPUBufferF32[0] = radius[0] + 0.01;
+        globalsCPUBufferF32[0] = radius[0];
 
         const delimitersCPUBuffer = new Uint32Array(points.length + 1);
+        const radiiCPUBuffer = new Float32Array(points.length);
+
         const delimiters = [0];
         let len = 0;
         delimitersCPUBuffer.set([0], 0);
@@ -528,6 +534,7 @@ export class SignedDistanceGrid extends IParametricObject {
             len += points[i].length;
             delimiters.push(len);
             delimitersCPUBuffer.set([len], i + 1);
+            radiiCPUBuffer.set([radius[i]], i);
         }
         
         const pointsCPUBuffer = new Float32Array(len * 4);
@@ -545,6 +552,7 @@ export class SignedDistanceGrid extends IParametricObject {
         const globalsBuffer = device.createBuffer({ label: "GlobalsComputeBuffer", size: 64, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
         const pointsBuffer = device.createBuffer({ size: Math.max(len * 4 * 4, 1), usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE });
         const delmitersBuffer = device.createBuffer( { size: delimiters.length * 4, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE })
+        const radiiBuffer = device.createBuffer({ size: points.length * 4, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE });
         const bindGroup = device.createBindGroup({
             layout: bgl,
             entries: [{
@@ -558,6 +566,9 @@ export class SignedDistanceGrid extends IParametricObject {
                 resource: { buffer: delmitersBuffer }
             }, {
                 binding: 3,
+                resource: { buffer: radiiBuffer }
+            }, {
+                binding: 4,
                 resource: { buffer: globalsBuffer }
             }]
         });
@@ -565,6 +576,8 @@ export class SignedDistanceGrid extends IParametricObject {
         device.queue.writeBuffer(globalsBuffer, 0, globalsCPUBuffer, 0);
         device.queue.writeBuffer(pointsBuffer, 0, pointsCPUBuffer, 0);
         device.queue.writeBuffer(delmitersBuffer, 0, delimitersCPUBuffer, 0);
+        device.queue.writeBuffer(radiiBuffer, 0, radiiCPUBuffer, 0);
+
         const commandEncoder = device.createCommandEncoder();
         const computePass = commandEncoder.beginComputePass();
         computePass.setPipeline(pipeline);

@@ -65,7 +65,7 @@
                 }
             }
             depth--;
-            radiusOffset -= 0.015;
+            radiusOffset -= 0.025;
         }
 
         for (let timestep = 0; timestep < dataTimesteps.length; timestep++) {
