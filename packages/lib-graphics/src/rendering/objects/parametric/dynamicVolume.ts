@@ -102,7 +102,7 @@ export const DynamicVolumeStruct = new r.Struct({
     func: r.uint32le,
 });
 
-export const DynamicVolumeTextureSize: number = 64;
+export const DynamicVolumeTextureSize: number = 96;
 
 export class DynamicVolume extends IParametricObject {
     public static variableName = "dynamicVolume";
@@ -303,8 +303,8 @@ export class DynamicVolume extends IParametricObject {
                     //let rayOriginLocalSpace = (${this.variableName}[0].modelMatrixInverse * vec4<f32>(ray.origin, 1.0)).xyz;
                     //let rayDirectionLocalSpace = normalize(${this.variableName}[0].modelMatrixInverse * vec4<f32>(ray.direction, 0.0)).xyz;
                     // The volume object is normalized and situated at origin so no need to transform ray
-                    let rayOriginLocalSpace = (vec4<f32>(ray.origin, 1.0)).xyz;
-                    let rayDirectionLocalSpace = normalize(vec4<f32>(ray.direction, 0.0)).xyz;
+                    let rayOriginLocalSpace = (vec4<f32>(ray.origin, 1.0)).xyz * 0.8;
+                    let rayDirectionLocalSpace = normalize(vec4<f32>(ray.direction, 0.0)).xyz * 0.8;
 
                     let rayLocalSpace = Ray(rayOriginLocalSpace, rayDirectionLocalSpace);
 
@@ -759,7 +759,7 @@ export class DynamicVolumeUnit {
         const pointsFlat = points.flat();
         const pointsCPUBuffer = new Float32Array(pointsFlat.length * 4);
         for (let i = 0; i < pointsFlat.length; i++) {
-            pointsCPUBuffer.set(pointsFlat[i], 4 * i);
+            pointsCPUBuffer.set([pointsFlat[i][0] * 0.8, pointsFlat[i][1] * 0.8, pointsFlat[i][2] * 0.8], 4 * i);
         }
 
         const globalsCPUBuffer = new ArrayBuffer(64);
@@ -818,10 +818,12 @@ export class DynamicVolumeUnit {
 
     public set transparency(a: number) {
         this.properties.transparency = a;
+        this._dynamicVolume.setDirtyCPU();
     }
 
     public set func(f: number) {
         this.properties.func = f;
+        this._dynamicVolume.setDirtyCPU();
     }
 
     public set translate(t: vec3) {

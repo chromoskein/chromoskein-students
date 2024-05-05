@@ -4,21 +4,22 @@
     import { getContext, onMount } from "svelte";
     import type { Writable } from "svelte/store";
     import type { Viewport3D } from "lib-graphics";
-    import { Volume } from "lib-graphics";
-    import type { vec3, vec4 } from "gl-matrix";
+    import { DynamicVolumeUnit } from "lib-graphics";
+    import { vec4, type vec3 } from "gl-matrix";
+    import { blobFromPoints } from "../utils/main";
 
-    export let visible = true;
-    export let radii: number[] = [];
-    export let points: vec3[][][] | null = null;
-    export let colors: vec4[];
+    export let radius: number = 0.05;
+    export let points: vec3[][] | null = null;
+    export let color: vec3;
     export let transparency: number = 1.0;
     export let colormap: ImageBitmap | null = null;
     export let func: number = 0;
+    export let abstract: boolean = false;
 
     let device: Writable<GPUDevice> = getContext("device");
     let viewport: Writable<Viewport3D | null> = getContext("viewport");
 
-    let object: Volume | null = null;
+    let object: DynamicVolumeUnit | null = null;
     let objectID: number | null = null;
 
     $: if ($viewport) {
@@ -26,46 +27,38 @@
             $viewport.scene.removeObjectByID(objectID);
         }
 
-        [object, objectID] = $viewport.scene.addObjectInstanced(Volume, points.length);
-        object.setDirtyCPU();
+        [object, objectID] = $viewport.scene.addDynamicVolume(DynamicVolumeUnit);
     }
 
     $: if (object && colormap) {
         object.setColorMapFromBitmap(colormap);
-        object.setDirtyCPU();
     }
 
     $: if (object && points) {
-        object.fromPointArrays($device, points, radii);
-        object.setDirtyCPU();
-    }
-
-    $: if (object && colors) {
-        for (let i = 0; i < colors.length; i++) {
-            object.setColor(colors[i], i);
+        if (!abstract) {
+            object.fromPoints($device, points, radius);
+        } else {
+            let abstractRadius = points[0].length / 1000.0 * 2 + radius / 2.0;
+            object.fromPoints($device, points.map(p => [blobFromPoints(p).center]), abstractRadius);
         }
-        object.setDirtyCPU();
     }
 
     $: if (object) {
-        object.visible = visible;
-        object.setDirtyCPU();
+        object.setColor(vec4.fromValues(color[0], color[1], color[2], 0.0));
     }
 
     $: if (object && transparency) {
         object.transparency = transparency;
-        object.setDirtyCPU();
     }
 
     $: if (object) {
         object.func = func;
-        object.setDirtyCPU();
     }
 
     onMount(() => {
         return () => {
             if ($viewport?.scene && objectID) {
-                $viewport.scene.removeObjectByID(objectID);
+                $viewport.scene.removeDynamicVolumeByID(objectID);
             }
         };
     });

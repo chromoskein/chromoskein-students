@@ -32,7 +32,6 @@
   import "@carbon/charts/styles.css";
   import ConnectedCones from "./objects/ConnectedCones.svelte";
   import ConnectedSpheres from "./objects/ConnectedSpheres.svelte";
-  import BlobVolumes from "./visalizations/BlobVolumes.svelte";
   import MatryoshkaClusters from "./visalizations/MatryoshkaClusters.svelte";
   import Hedgehog from "./objects/Hedgehog.svelte";
   import InteractiveCluster from "./visalizations/InteractiveCluster.svelte";
@@ -182,7 +181,7 @@
 
   //#region Configuration
   // Volume
-  let blobsTimeVolumeVisible = false;
+  let abstractVolumes = false;
   let volumeVisible = false;
   let volumeTransparency = 0.15;
   let volumeRadius = 0.03;
@@ -346,30 +345,21 @@
             center={[0.0, 0.0, 0.0]}
             color={[0.0, 0.0, 0.0, 0.0]} 
           />
-          {#if volumeVisible}
-            <TimeVolume
-              visible={volumeVisible}
-              points={[dataTimesteps.slice(volumeTimeRange[0], volumeTimeRange[1])]}
-              transparency={volumeTransparency}
-              radii={[volumeRadius]}
-              colormap={volumeColormap}
-              func={volumeFunction}
-              colors={[[1.0, 1.0, 1.0, 0.0]]}
-            />
-          {/if}
-          {#if blobsTimeVolumeVisible && blobs && blobs[0]}
-            <BlobVolumes
-              blobs={blobs}
-              blobColors={blobColors}
-              volumeRadius={volumeRadius}
-              selectedTimestep={selectedTimestep}
-              transparency={volumeTransparency}
-              func={volumeFunction}
-              colormap={volumeColormap}
-            />
+          {#if visualizationSelected == "Volume"}
+            {#each dataClustersGivenK[blobsAmount] as cluster, _}
+              <TimeVolume
+                points={dataTimesteps.map(sequence => sequence.slice(cluster.from, cluster.to))}
+                transparency={volumeTransparency}
+                radius={volumeRadius}
+                colormap={volumeColormap}
+                func={volumeFunction}
+                abstract={abstractVolumes}
+                color={cluster.color.rgb}
+              />
+            {/each}
           {/if}
           {#if visualizationSelected == "Matryoshka"}
-              <MatryoshkaClusters
+            <MatryoshkaClusters
               selectedTimestep={selectedTimestep}
               dataClustersGivenK={dataClustersGivenK}
               dataTimesteps={dataTimesteps}
@@ -456,31 +446,11 @@
     <Pane size={25}>
       <div style="padding: 8px; color:white; overflow: auto; height: calc(90vh);">
         <Accordion>
-          <AccordionItem title="Volume">
-            <Checkbox labelText="Visible" bind:checked={volumeVisible} />
-            <Checkbox labelText="Approximation blob volumes" bind:checked={blobsTimeVolumeVisible} />
-
-            <Slider labelText="Transparency" fullWidth min={0.0} max={1.0} step={0.01} bind:value={volumeTransparency} />
-            <Slider labelText="Radius" fullWidth min={0.0} max={0.1} step={0.01} bind:value={volumeRadius} />
-
-            <Select labelText="Colormap" bind:selected={volumeColormapChoice}>
-              <SelectItem value="White to Black" />
-              <SelectItem value="Rainbow" />
-              <SelectItem value="Cool Warm" />
-              <SelectItem value="Matplotlib Plasma" />
-              <SelectItem value="Samsel Linear Green" />
-            </Select>
-
-            <Select labelText="Math Function" bind:selected={volumeFunction}>
-              <SelectItem text="Last Timestep" value={0} />
-              <SelectItem text="Number of Timesteps" value={1} />
-            </Select>
-          </AccordionItem>
-
-          <AccordionItem open title="Blobby Clusters">
+          <AccordionItem open title="Visualisation Parameters">
             <Select size="sm" inline labelText="Visualization:" bind:selected={visualizationSelected}>
               <SelectItem value="None" />
               <SelectItem value="Default" />
+              <SelectItem value="Volume" />
               <SelectItem value="Matryoshka" />
               <SelectItem value="Spheres" />
               <SelectItem value="Cones" />
@@ -538,9 +508,29 @@
               <Slider labelText="Max distance" fullWidth min={0.1} max={3.0} step={0.05} bind:value={maxDistance} />
             {/if}
 
+            {#if visualizationSelected == "Volume"}
+              <Checkbox labelText="Abstractize volumes" bind:checked={abstractVolumes} />
+
+              <Slider labelText="Transparency" fullWidth min={0.0} max={1.0} step={0.01} bind:value={volumeTransparency} />
+              <Slider labelText="Radius" fullWidth min={0.01} max={0.1} step={0.01} bind:value={volumeRadius} />
+
+              <Select labelText="Colormap" bind:selected={volumeColormapChoice}>
+                <SelectItem value="White to Black" />
+                <SelectItem value="Rainbow" />
+                <SelectItem value="Cool Warm" />
+                <SelectItem value="Matplotlib Plasma" />
+                <SelectItem value="Samsel Linear Green" />
+              </Select>
+
+              <Select labelText="Math Function" bind:selected={volumeFunction}>
+                <SelectItem text="Last Timestep" value={0} />
+                <SelectItem text="Number of Timesteps" value={1} />
+              </Select>
+            {/if}
+
             {#if dataClustersGivenK && 
             (visualizationSelected == "Cones" || visualizationSelected == "Spheres" ||
-            visualizationSelected == "Hedgehog" || visualizationSelected == "Default")}
+            visualizationSelected == "Hedgehog" || visualizationSelected == "Default" || visualizationSelected == "Volume")}
               <div class="cluster-dendogram">
                 {#each dataClustersGivenK.slice(1, 16) as clustersAtLevel, clusterLevel}
                   <div class="cluster-dendogram-row" on:click={() => dendrogramClick(clusterLevel)} on:keydown={() => { }}>
