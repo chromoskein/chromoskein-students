@@ -298,116 +298,73 @@ export class DynamicVolume extends IParametricObject {
         switch (variable) {
             case "color": {
                 return /* wgsl */`
-                    var color = vec4<f32>(0.0);
-
-                    //let rayOriginLocalSpace = (${this.variableName}[0].modelMatrixInverse * vec4<f32>(ray.origin, 1.0)).xyz;
-                    //let rayDirectionLocalSpace = normalize(${this.variableName}[0].modelMatrixInverse * vec4<f32>(ray.direction, 0.0)).xyz;
                     // The volume object is normalized and situated at origin so no need to transform ray
-                    let rayOriginLocalSpace = (vec4<f32>(ray.origin, 1.0)).xyz * 0.8;
-                    let rayDirectionLocalSpace = normalize(vec4<f32>(ray.direction, 0.0)).xyz * 0.8;
-
+                    let rayOriginLocalSpace = ray.origin;
+                    let rayDirectionLocalSpace = normalize(vec4<f32>(ray.direction, 0.0)).xyz;
                     let rayLocalSpace = Ray(rayOriginLocalSpace, rayDirectionLocalSpace);
-
                     var t_interval = rayUnitBoxIntersection(rayLocalSpace);
                     if (t_interval.x > t_interval.y) {
                         discard;
                     }
-                    t_interval.x = max(t_interval.x, 0.0);
-
-                    // Previous t
+                    
+                    // Helpers for early discard
                     let previousDepth: f32 = textureLoad(depthTexture, vec2<u32>(vertexOuput.Position.xy), 0);
-
-                    // Step 3: Compute the step size to march through the volume grid
-                    let dt_vec = 1.0 / (vec3(${DynamicVolumeTextureSize}) * abs(rayDirectionLocalSpace));
-                    let dt = min(dt_vec.x, min(dt_vec.y, dt_vec.z));
-
-                    // Step 4: Starting from the entry point, march the ray through the volume
-                    // and sample it
-                    var p = rayOriginLocalSpace + t_interval.x * rayDirectionLocalSpace;
-                    var t = t_interval.x;
                     var intersectionWorldSpace = vec3(0.0);
                     var depth = 0.0;
-                    for (; t < t_interval.y; t += dt) {
-                        // Step 4.1: Sample the volume, and color it by the transfer function.
-                        // Note that here we don't use the opacity from the transfer function,
-                        // and just use the sample value as the opacity
+                    
+                    // Step-size
+                    let dt_vec = 1.0 / (vec3(${DynamicVolumeTextureSize}) * abs(rayDirectionLocalSpace));
+                    let dt = min(dt_vec.x, min(dt_vec.y, dt_vec.z));
+                    
+                    var color = vec4<f32>(0.0);
+                    // Ray-marching
+                    for (var t = max(t_interval.x, 0.0); t < t_interval.y; t += dt) {
                         let p = rayOriginLocalSpace + t * rayDirectionLocalSpace;
                         let tex_coord = 0.5 * p + vec3(0.5);                        
 
-                        var val_color = vec4(0.0, 0.0, 0.0, 0.0);
-                        var value = 0.0;
+                        var p_color: vec3<f32> = vec3(0.0, 0.0, 0.0);
+                        var p_alpha: f32 = 1.0;
+                        var accumulator: f32 = 0.0;
 
-                        var j = 0.0;
                         for(var i: u32 = 0; i < arrayLength(&${this.variableName}); i++) {
-                            var texValue = 0.0;
-                            if (${this.variableName}[0].func == 0) { 
-                                texValue = sampleLastTimestepGrid(tex_coord, i);
+                            var grid_value: f32 = 0.0;
+                            if (${this.variableName}[i].func == 0) { 
+                                grid_value = sampleLastTimestepGrid(tex_coord, i);
                             } else {
-                                texValue = sampleNumberOfTimestepsGrid(tex_coord, i);
+                                grid_value = sampleNumberOfTimestepsGrid(tex_coord, i);
                             }
 
-                            value += texValue;
-                            if (${this.variableName}[i].color.w == 1.0 && texValue > 0.01) {
-                                val_color += vec4(mix(${this.variableName}[i].color.rgb * 1.2, ${this.variableName}[i].color.rgb * 0.6, 1.0 - texValue), ${this.variableName}[i].transparency * texValue);
+                            var grid_color = ${this.variableName}[i].color.rgb;
+                            if (${this.variableName}[i].color.w == 0.0) {
+                                grid_color = textureSampleLevel(colormap, linearSampler, vec2<f32>(grid_value, 0.5), 0.0).rgb;
                             }
-                            j = j + 1.0;
+                            let grid_alpha: f32 = ${this.variableName}[i].transparency * grid_value;
+
+                            // Compose using inclusive opacity
+                            p_alpha = p_alpha * (1 - grid_alpha);
+                            p_color += grid_alpha * grid_color;
+                            accumulator += grid_alpha;
                         }
 
-                        //value = textureSampleLevel(${this.variableName}Texture, linearSampler, pp_tex, 0.0).g;
-                        // let value = textureSampleLevel(${this.variableName}Texture, linearSampler, 0.5 * p + vec3(0.5), 0.0).r;
-                        // let lastTimestep = textureSampleLevel(${this.variableName}Texture, linearSampler, 0.5 * p + vec3(0.5), 0.0).g;
-                        // let stepsCount = textureSampleLevel(${this.variableName}Texture, linearSampler, 0.5 * p + vec3(0.5), 0.0).b;
+                        p_alpha = 1 - p_alpha;
+                        p_color = p_color / max(accumulator, 0.0001);
 
-                        // Version simple based on last timestep
-                        
-                        if (${this.variableName}[0].color.w == 0.0) {
-                            let tf = textureSampleLevel(colormap, linearSampler, vec2<f32>(value, 0.5), 0.0).rgb;
-                            val_color = vec4(tf, 0);
-                            val_color.w = ${this.variableName}[0].transparency * value;
-                        }
+                        // Accumulate the color and opacity using front-to-back
+                        color.r += (1.0 - color.a) * p_alpha * p_color.r;
+                        color.g += (1.0 - color.a) * p_alpha * p_color.g;
+                        color.b += (1.0 - color.a) * p_alpha * p_color.b;
+                        color.a += (1.0 - color.a) * p_alpha;
 
-                        // Version Threshold
-                        // let tf = textureSampleLevel(colormap, linearSampler, vec2<f32>(lastTimestep, 0.5), 0.0).rgb;
-                        // var val_color = vec4(tf, lastTimestep);
-
-                        // if (stepsCount > 100) {
-                        //     val_color = vec4(0.0);
-                        //     // val_color.a = 0.0;
-                        // }
-
-                        // Version Combination
-                        // let tf = textureSampleLevel(colormap, linearSampler, vec2<f32>(lastTimestep, 0.5), 0.0).rgb;
-                        // let val_color = vec4(mix(tf, vec3(1.0), stepsCount), 0.5 * stepsCount);
-
-                        // Step 4.2: Accumulate the color and opacity using the front-to-back
-                        // compositing equation
-                        color.r = color.r + (1.0 - color.a) * val_color.a * val_color.r;
-                        color.g += (1.0 - color.a) * val_color.a * val_color.g;
-                        color.b += (1.0 - color.a) * val_color.a * val_color.b;
-                        color.a += (1.0 - color.a) * val_color.a;
-
-                        //intersection.t = t;
                         intersectionWorldSpace = camera.position.xyz + t * ray.direction.xyz;
                         var depthVec = camera.projectionView * vec4<f32>(intersectionWorldSpace.xyz, 1.0);
                         depthVec = depthVec * (1.0 / depthVec.w);
                         depth = depthVec.z;
 
                         // Optimization: break out of the loop when the color is near opaque
-                        if (color.a >= 0.95 || depth < previousDepth) {
+                        if (color.a >= 0.99 || depth < previousDepth) {
                             break;
                         }                        
                     }                    
-
-                    // Temporary solution to a larger problem
-                    if (color.a < 0.05) {
-                        discard;
-                    }
-                    // if (depth < previousDepth) {
-                    //     color = vec4(1.0, 1.0 - color.a, 0.0, 1.0 - color.a);
-                    // } else {
-                    //     let depthDifference = 50.0 * abs(depth - previousDepth);
-                    //     color = vec4(depthDifference, depthDifference, depthDifference, 1.0);
-                    // }
                 `;
             }
             case "normal": {
@@ -802,7 +759,6 @@ export class DynamicVolumeUnit {
         device.queue.submit([commandEncoder.finish()]);
 
         this._dynamicVolume.updateGridArrays();
-        //this.onAllocationMoved();
     }
 
     public async setColorMapFromBitmap(bitmap: ImageBitmap) {
@@ -811,8 +767,6 @@ export class DynamicVolumeUnit {
 
     public setColor(color: vec4) {
         this.properties.color = [color[0], color[1], color[2], color[3]];
-        //this._dirtyCPU = true;
-        //this._dirtyGPU = true;
         this._dynamicVolume.setDirtyCPU();
     }
 
@@ -840,8 +794,6 @@ export class DynamicVolumeUnit {
         this.properties.modelMatrixInverse = mat4.invert(mat4.create(), this.properties.modelMatrix);
 
         this._dynamicVolume.setDirtyCPU();
-        //this._dirtyCPU = true;
-        //this._dirtyGPU = true;
     }
 
     public set scale(s: number) {
@@ -856,7 +808,5 @@ export class DynamicVolumeUnit {
         this.properties.modelMatrixInverse = mat4.invert(mat4.create(), this.properties.modelMatrix);
 
         this._dynamicVolume.setDirtyCPU();
-        //this._dirtyCPU = true;
-        //this._dirtyGPU = true;
     }
 }
