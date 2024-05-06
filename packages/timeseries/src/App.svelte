@@ -189,6 +189,7 @@
   let volumeColormap: ImageBitmap | null = null;
   let volumeFunction = 0;
   let volumeTimeRange = [0, 599];
+  let volumeUseColormap = false;
 
   // Blobs
   let blobsVisible = true;
@@ -215,7 +216,7 @@
   let showConnectors = false;
   let selectedTimestep = 0; 
 
-  let matryoshkaBlobsVisible = [false, true, false, true, false, false, false, false, false, false, false, false, false, false];
+  let matryoshkaBlobsVisible = [false, true, false, true, false, false, false, false, false, false, false, false, false, false, false];
   function dendrogramClick(depth) {
     blobsAmount = depth + 1;
   }
@@ -352,6 +353,7 @@
                 transparency={volumeTransparency}
                 radius={volumeRadius}
                 colormap={volumeColormap}
+                usecolormap={volumeUseColormap}
                 func={volumeFunction}
                 abstract={abstractVolumes}
                 color={cluster.color.rgb}
@@ -513,6 +515,8 @@
 
               <Slider labelText="Transparency" fullWidth min={0.0} max={1.0} step={0.01} bind:value={volumeTransparency} />
               <Slider labelText="Radius" fullWidth min={0.01} max={0.1} step={0.01} bind:value={volumeRadius} />
+
+              <Checkbox labelText="Use colormap" bind:checked={volumeUseColormap} />
 
               <Select labelText="Colormap" bind:selected={volumeColormapChoice}>
                 <SelectItem value="White to Black" />

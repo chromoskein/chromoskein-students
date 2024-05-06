@@ -15,6 +15,7 @@
     export let colormap: ImageBitmap | null = null;
     export let func: number = 0;
     export let abstract: boolean = false;
+    export let usecolormap: boolean = false;
 
     let device: Writable<GPUDevice> = getContext("device");
     let viewport: Writable<Viewport3D | null> = getContext("viewport");
@@ -44,7 +45,7 @@
     }
 
     $: if (object) {
-        object.setColor(vec4.fromValues(color[0], color[1], color[2], 0.0));
+        object.setColor(vec4.fromValues(color[0], color[1], color[2], usecolormap ? 0.0 : 1.0));
     }
 
     $: if (object && transparency) {
