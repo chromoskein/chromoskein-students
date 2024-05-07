@@ -27,6 +27,7 @@ fn sdSphere(p: vec3<f32>, c: vec3<f32>, s: f32 ) -> f32
 
 struct GlobalsStruct {
     radius: f32,
+    scale: f32,
     steps: u32,
     sizeOfStep: u32,
 };
@@ -41,24 +42,25 @@ struct GlobalsStruct {
     let positionNDC: vec3<f32> = (1.0 / ${DynamicVolumeTextureSize}) * vec3<f32>(GlobalInvocationID.xyz) + vec3<f32>(1.0 / ${2 * DynamicVolumeTextureSize});
     let p = 2.0 * (positionNDC - vec3<f32>(0.5)); // [-1, 1]
 
-    let radius = globals.radius;
+    let scale = globals.scale;
+    let radius = globals.radius / scale;
     let smoothing = 0.1;
 
     var lastTimestep: u32 = 0;
     var countTimesteps: u32 = 0;
     // Repeat for every timestep
     for(var step: u32 = 0; step < globals.steps; step++) {
-        var sdf = sdSphere(p, points[step * globals.sizeOfStep].xyz, radius);
+        var sdf = sdSphere(p, points[step * globals.sizeOfStep].xyz, radius) * scale;
         if (globals.sizeOfStep > 1) {
             // Repeat for every point pair inside timestep
             for(var i: u32 = step * globals.sizeOfStep; i < step * globals.sizeOfStep + globals.sizeOfStep - 1; i++) {
                 let p1 = points[i].xyz;
                 let p2 = points[i + 1].xyz;
         
-                let sdf2 = sdCapsule(p, p1, p2, radius);
+                let sdf2 = sdCapsule(p, p1, p2, radius) * scale;
                 sdf = opSmoothUnion(sdf, sdf2, smoothing);
             }
-            var sdFinal = sdSphere(p, points[step * globals.sizeOfStep + globals.sizeOfStep - 1].xyz, radius);
+            var sdFinal = sdSphere(p, points[step * globals.sizeOfStep + globals.sizeOfStep - 1].xyz, radius) * scale;
             sdf = opSmoothUnion(sdf, sdFinal, smoothing);
         }
         

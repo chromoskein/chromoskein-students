@@ -189,7 +189,7 @@
   let volumeColormap: ImageBitmap | null = null;
   let volumeFunction = 0;
   let volumeTimeRange = [0, 599];
-  let volumeUseColormap = false;
+  let volumeUseColormap = true;
 
   // Blobs
   let blobsVisible = true;

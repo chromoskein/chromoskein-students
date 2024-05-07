@@ -299,8 +299,8 @@ export class DynamicVolume extends IParametricObject {
             case "color": {
                 return /* wgsl */`
                     // The volume object is normalized and situated at origin so no need to transform ray
-                    let rayOriginLocalSpace = ray.origin;
-                    let rayDirectionLocalSpace = normalize(vec4<f32>(ray.direction, 0.0)).xyz;
+                    let rayOriginLocalSpace = (${this.variableName}[0].modelMatrixInverse * vec4<f32>(ray.origin, 1.0)).xyz;
+                    let rayDirectionLocalSpace = normalize(${this.variableName}[0].modelMatrixInverse * vec4<f32>(ray.direction, 0.0)).xyz;
                     let rayLocalSpace = Ray(rayOriginLocalSpace, rayDirectionLocalSpace);
                     var t_interval = rayUnitBoxIntersection(rayLocalSpace);
                     if (t_interval.x > t_interval.y) {
@@ -725,8 +725,9 @@ export class DynamicVolumeUnit {
         const globalsCPUBufferF32 = new Float32Array(globalsCPUBuffer);
         const globalsCPUBufferU32 = new Uint32Array(globalsCPUBuffer);
         globalsCPUBufferF32[0] = radius;
-        globalsCPUBufferU32[1] = points.length;
-        globalsCPUBufferU32[2] = points[0].length;
+        globalsCPUBufferF32[1] = this.properties.scale[0];
+        globalsCPUBufferU32[2] = points.length;
+        globalsCPUBufferU32[3] = points[0].length;
 
         const globalsBuffer = device.createBuffer({ label: "GlobalsComputeBuffer", size: 64, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
         const pointsBuffer = device.createBuffer({ label: "PointsComputeBuffer", size: pointsFlat.length * 4 * 4, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE });
