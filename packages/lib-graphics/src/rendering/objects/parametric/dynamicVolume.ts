@@ -322,11 +322,14 @@ export class DynamicVolume extends IParametricObject {
                         let p = rayOriginLocalSpace + t * rayDirectionLocalSpace;
                         let tex_coord = 0.5 * p + vec3(0.5);                        
 
+                        // Create the color and opacity for volume composition
                         var p_color: vec3<f32> = vec3(0.0, 0.0, 0.0);
                         var p_alpha: f32 = 1.0;
                         var accumulator: f32 = 0.0;
 
+                        // Iterate over every volume
                         for(var i: u32 = 0; i < arrayLength(&${this.variableName}); i++) {
+                            // Sample the grid
                             var grid_value: f32 = 0.0;
                             if (${this.variableName}[i].func == 0) { 
                                 grid_value = sampleLastTimestepGrid(tex_coord, i);
@@ -334,6 +337,7 @@ export class DynamicVolume extends IParametricObject {
                                 grid_value = sampleNumberOfTimestepsGrid(tex_coord, i);
                             }
 
+                            // Apply the transfer function to create the volume color and opacity at p 
                             var grid_color = ${this.variableName}[i].color.rgb;
                             if (${this.variableName}[i].color.w == 0.0) {
                                 grid_color = textureSampleLevel(colormap, linearSampler, vec2<f32>(grid_value, 0.5), 0.0).rgb;
@@ -582,13 +586,14 @@ export class DynamicVolumeUnit {
     }
 
     private calculateVolumeGridValue(p: vec3): vec2 {
+        var smoothing = 0.1;
+
         var lastTimestep: number = 0;
         var countTimesteps: number = 0;
-        var lastSdf: number = 1.0;
         // Repeat for every timestep
         for(var step = 0; step < this._steps; step++) {
     
-            var sdf = 1.0;
+            var sdf = this.sdSphere(p, this._volumePoints[step * this._sizeOfStep], this._radius);
             if (this._sizeOfStep > 1) {
                 // Repeat for every point pair inside timestep
                 for(let i = step * this._sizeOfStep; i < step * this._sizeOfStep + this._sizeOfStep - 1; i++) {
@@ -596,12 +601,10 @@ export class DynamicVolumeUnit {
                     let p2 = this._volumePoints[i + 1];
             
                     let sdf2 = this.sdCapsule(p, p1, p2, this._radius);
-                    sdf = this.opSmoothUnion(sdf, sdf2, 0.1);
+                    sdf = this.opSmoothUnion(sdf, sdf2, smoothing);
                 }
-            } else {
-                let p1 = this._volumePoints[step];
-                let sdf2 = this.sdSphere(p, p1, this._radius);
-                sdf = this.opSmoothUnion(sdf, sdf2, 0.1);
+                var sdFinal = this.sdSphere(p, this._volumePoints[step * this._sizeOfStep + this._sizeOfStep - 1], this._radius);
+                sdf = this.opSmoothUnion(sdf, sdFinal, smoothing);
             }
     
             if (sdf < 0.0) {
@@ -609,7 +612,6 @@ export class DynamicVolumeUnit {
                 countTimesteps += 1;
             }
             
-            lastSdf = Math.min(lastSdf, sdf);
         }
     
         return vec2.fromValues(lastTimestep / this._steps, countTimesteps / this._steps);
@@ -653,7 +655,7 @@ export class DynamicVolumeUnit {
                 texValue = value[1];
             }
             
-            if (texValue > 0.01) {
+            if (texValue > 0.05) {
                 return t;
             }
                      
@@ -716,7 +718,7 @@ export class DynamicVolumeUnit {
         const pointsFlat = points.flat();
         const pointsCPUBuffer = new Float32Array(pointsFlat.length * 4);
         for (let i = 0; i < pointsFlat.length; i++) {
-            pointsCPUBuffer.set([pointsFlat[i][0] * 0.8, pointsFlat[i][1] * 0.8, pointsFlat[i][2] * 0.8], 4 * i);
+            pointsCPUBuffer.set([pointsFlat[i][0], pointsFlat[i][1], pointsFlat[i][2]], 4 * i);
         }
 
         const globalsCPUBuffer = new ArrayBuffer(64);

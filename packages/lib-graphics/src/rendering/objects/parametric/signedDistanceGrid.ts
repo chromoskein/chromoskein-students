@@ -368,6 +368,10 @@ export class SignedDistanceGrid extends IParametricObject {
         return (d2 * (1.0 - h) + d1 * h) - k*h*(1.0-h);
     }
     
+    private sdSphere(p: vec3, c: vec3, r: number ): number {
+        return vec3.dist(p, c) - r;
+    }
+
     private sdCapsule(p: vec3, a: vec3, b: vec3, r: number ): number
     {
       let pa = vec3.sub(vec3.fromValues(0, 0, 0), p, a); // p - a;
@@ -380,16 +384,22 @@ export class SignedDistanceGrid extends IParametricObject {
     }
 
     private calculateSDFValue(p: vec3): number {
-        let sdf = this.sdCapsule(p, this._normalizedPoints[0], this._normalizedPoints[1], this._radius);
-        for(let i = 1; i < this._normalizedPoints.length - 1; i++) {
+        let scale = this.properties[0].scale[0];
+        let radius = this._radius / scale;
+        let smoothing = 0.1;
+
+        let sdf = this.sdSphere(p, this._normalizedPoints[0], radius) * scale;
+        for(let i = 0; i < this._normalizedPoints.length - 1; i++) {
             let p1 = this._normalizedPoints[i];
             let p2 = this._normalizedPoints[i + 1];
     
-            let sdf2 = this.sdCapsule(p, p1, p2, this._radius);
-            sdf = this.opSmoothUnion(sdf, sdf2, 0.1);
+            let sdf2 = this.sdCapsule(p, p1, p2, radius) * scale;
+            sdf = this.opSmoothUnion(sdf, sdf2, smoothing);
         }
+        let sdFinal = this.sdSphere(p, this._normalizedPoints[this._normalizedPoints.length - 1], radius) * scale;
+        sdf = this.opSmoothUnion(sdf, sdFinal, smoothing);
 
-        return sdf;
+        return sdf / scale;
     }
 
     public rayIntersection(ray: Ray): Intersection | null {
