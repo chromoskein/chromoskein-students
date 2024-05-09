@@ -68,9 +68,9 @@
       for (let i = 0; i < coneOrientation.length; i++) {        
         cones[i].properties.start = [coneCenter[0], coneCenter[1], coneCenter[2]];
         cones[i].properties.end = [
-            coneCenter[0] + coneHeight[i] * coneOrientation[i][0],
-            coneCenter[1] + coneHeight[i] * coneOrientation[i][1],
-            coneCenter[2] + coneHeight[i] * coneOrientation[i][2],
+            coneCenter[0] + (0.5 - coneHeight[i]) * coneOrientation[i][0],
+            coneCenter[1] + (0.5 - coneHeight[i]) * coneOrientation[i][1],
+            coneCenter[2] + (0.5 - coneHeight[i]) * coneOrientation[i][2],
         ]
         
         cones[i].properties.startRadius = coneStartRadius;
