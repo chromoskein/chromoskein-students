@@ -302,7 +302,7 @@
   let sparseDataClustersGivenK: ClusterNode[][] | null = [];
 
   $: if (dataClustersGivenK) {
-    
+    sparseDataClustersGivenK = [];
     sparseDataClustersGivenK.push([]);
     sparseDataClustersGivenK.push(dataClustersGivenK[1]);
     
