@@ -13,7 +13,7 @@
     export let blobAlpha: number;
     export let blobsRadius: number;
     export let experimentalColors: boolean;
-    export let matryoshkaBlobsVisible: boolean[] = [false, true, false, true, false, false, false, false, false, false, false, false, false, false];
+    export let matryoshkaBlobsVisible: boolean[] = [false, true, false, true, false, false, false, false, false, false, false, false, false, false, false];
 
     let matryoshkaColors: vec3[] = [];
     let matryoshkaExperiemntalColors: vec3[] = [];
@@ -44,10 +44,9 @@
         matryoshkaRadius = [];
 
         let depth = matryoshkaBlobsVisible.filter(x => x).length;
-        let radiusOffset = depth * 0.015;
-        let found = [];
+        let radiusOffset = depth * 0.02;
         let clusterPoints = [];
-        for (let i = 1; i < 15; i++) {
+        for (let i = 1; i < matryoshkaBlobsVisible.length + 1; i++) {
             if (!matryoshkaBlobsVisible[i - 1]) {
                 continue;
             }
@@ -55,14 +54,11 @@
             let clusters = dataClustersGivenK[i];
 
             for (const [_, cluster] of clusters.entries()) {
-                if (found.filter(x => x[0] == cluster.from && x[1] == cluster.to).length == 0) {
                     clusterPoints.push(dataPathlines.slice(cluster.from, cluster.to + 1));
                     matryoshkaColors.push(cluster.color.rgb);
                     matryoshkaExperiemntalColors.push(staticColors[cluster.i % staticColors.length]);
-                    found.push([cluster.from, cluster.to]);
                     matryoshkaRadius.push(radiusOffset);
                     matryoshkaBlobDepth.push(depth);
-                }
             }
             depth--;
             radiusOffset -= 0.025;
