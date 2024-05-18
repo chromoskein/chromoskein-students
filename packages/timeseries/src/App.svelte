@@ -242,7 +242,7 @@
 
   let closestBlobs: vec3[][] = [];
   let coneOrient: vec3[][] = [];
-  let maxDistance = 2.0;
+  let maxDistance = 1.0;
   let blobDistance: number[][] = [];
   $: if (blobs[selectedTimestep] && (visualizationSelected == "Hedgehog" || visualizationSelected == "Default") && blobsAmount > 1) {
     ({closestBlobs, blobDistance} = findClosestBlobsByClosestPoints(blobs[selectedTimestep], maxDistance));
@@ -507,7 +507,7 @@
               <Slider labelText="Alpha" fullWidth min={0.05} max={1.0} step={0.05} bind:value={blobAlpha} />
             {/if}
             {#if visualizationSelected == "Hedgehog"}
-              <Slider labelText="Max distance" fullWidth min={0.1} max={3.0} step={0.05} bind:value={maxDistance} />
+              <Slider labelText="Max distance" fullWidth min={0.0} max={1.0} step={0.05} bind:value={maxDistance} />
             {/if}
 
             {#if visualizationSelected == "Volume"}
