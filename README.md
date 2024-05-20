@@ -30,14 +30,19 @@ The split and merge functionality can also be accessed by clicking directly on t
 This section serves to define where to find files changed and implemented during the making of this thesis. Although this list is incomplete as many changes were forgotten :d
 
 **Adam Rychly**:
+
 GUI Work: 
 - /timeseries/src/App.svelte - All work related to the SDF, Matryoshka, Volumes, Pathline, Spheres, Splines, and clustering as very little of the original implementation remains unchanged
 - /timeseries/src/objects/SignedDistanceGrid.svelte - Some changes to the code
 - /timeseries/src/objects/SignedDistanceGridBlended.svelte - Contains the frontend implementation of the Matryoshka visualization
 - /timeseries/src/visualizations/MatryoshkaClusters.svelte - Contains the frontend preprocessing of data for the Matryoshka visualization
 - /timeseries/src/visualizations/InteractiveClusters.svelte - Setup of the composite visualization framework and events related to mouseclicking and mousemove were done by me
+
+Clustering and composite visualization:
 - /timeseries/src/utils/hclust.ts - Contains the hierarchical clustering implementation including the sequential alternative
 - /timeseries/src/interactiveClusters/* - Contains the entire class decomposition and every implementation of the composite cluster visualization
+
+Graphics backend work:
 - /lib-graphics/src/scene.ts - Contains part of the pipeline changes allowing multiple volumes to be rendered
 - /lib-graphics/src/rendering/objects/parametric/dynamicVolume.ts - Contains the pipeline setup, data overhead, changes and the fragment shader implmenetation of the rendering of the clusters for dynamic volumes (code is a changed adaptation of /lib-graphics/src/rendering/objects/parametric/volume.ts)
 - /lib-graphics/src/rendering/objects/parametric/dynamicVolumeFromPathlines.ts - Contains the compute shader code for the property grid calculation, it is a change of the original implementation
