@@ -65,7 +65,17 @@ export class SpheresClusterVisualization extends AbstractClusterVisualisation {
     }
 
     public rayIntersection(ray: Graphics.Ray): Graphics.Intersection {
-        return null;
+        let bestT = Infinity
+        let bestIntersection = null;
+        for (let object of this.spheres) {
+            let intersection = object.rayIntersection(ray);
+            if (intersection != null && intersection.t < bestT) {
+                bestT = intersection.t;
+                bestIntersection = intersection;
+            }
+        }
+
+        return bestIntersection;
     }
     
     public delete(viewport: Graphics.Viewport3D) {

@@ -637,7 +637,7 @@ export class DynamicVolumeUnit {
         }
 
         // Step 3: Compute the step size to march through the volume grid
-        let dt = Math.min(Math.abs(ray.direction[0] * (1.0 / DynamicVolumeTextureSize)), Math.min(Math.abs(ray.direction[1] * (1.0 / DynamicVolumeTextureSize)), Math.abs(ray.direction[2] * (1.0 / DynamicVolumeTextureSize))));
+        let dt = 2.0 * Math.min(Math.abs(ray.direction[0] * (1.0 / DynamicVolumeTextureSize)), Math.min(Math.abs(ray.direction[1] * (1.0 / DynamicVolumeTextureSize)), Math.abs(ray.direction[2] * (1.0 / DynamicVolumeTextureSize))));
 
         // Step 4: Starting from the entry point, march the ray through the volume
         // and sample it
@@ -655,7 +655,7 @@ export class DynamicVolumeUnit {
                 texValue = value[1];
             }
             
-            if (texValue > 0.05) {
+            if (texValue > 0.1) {
                 return t;
             }
                      

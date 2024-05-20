@@ -25,6 +25,7 @@
   import SignedDistanceGrid from "./objects/SignedDistanceGrid.svelte";
   import { treeColor, staticColors } from "./utils/treecolors";
   import Sphere from "./objects/Sphere.svelte";
+  import Spline from "./objects/Spline.svelte";
   import {DSVDelimiter, parseBEDString} from "./utils/data-parser";
   import {computePCA, findClosestBlobsByClosestPoints, getCenterPoints, getConeOrientation} from "./utils/abstractClustersUtils";
 
@@ -35,6 +36,7 @@
   import MatryoshkaClusters from "./visalizations/MatryoshkaClusters.svelte";
   import Hedgehog from "./objects/Hedgehog.svelte";
   import InteractiveCluster from "./visalizations/InteractiveCluster.svelte";
+  import ContinuousTube from "./objects/ContinuousTube.svelte";
 
   export const saveAs = (blob, name) => {
     // Namespace is used to prevent conflict w/ Chrome Poper Blocker extension (Issue https://github.com/eligrey/FileSaver.js/issues/561)
@@ -211,7 +213,7 @@
   }
 
 
-  let visualizationSelected = "Default"
+  let visualizationSelected = "Implicit"
   let showConnectors = false;
   let selectedTimestep = 0; 
 
@@ -348,7 +350,7 @@
           {#if visualizationSelected == "Volume"}
             {#each dataClustersGivenK[blobsAmount] as cluster, _}
               <TimeVolume
-                points={dataTimesteps.map(sequence => sequence.slice(cluster.from, cluster.to))}
+                points={dataTimesteps.map(sequence => sequence.slice(cluster.from, cluster.to + 1))}
                 transparency={volumeTransparency}
                 radius={volumeRadius}
                 colormap={volumeColormap}
@@ -359,6 +361,41 @@
               />
             {/each}
           {/if}
+
+          {#if visualizationSelected == "Pathline" && dataClustersGivenK && dataClustersGivenK[blobsAmount]}
+            {#each dataClustersGivenK[blobsAmount] as cluster, _}
+              <ContinuousTube
+                points={dataTimesteps[selectedTimestep].slice(cluster.from, cluster.to + 1)}
+                radius={blobsRadius}
+                color={blobsColored ? vec3.fromValues(cluster.color.rgb[0], cluster.color.rgb[1], cluster.color.rgb[2]) : [1.0, 1.0, 1.0]}
+                multicolored={false}
+              />
+              {/each}
+          {/if}
+
+          {#if visualizationSelected == "Spline" && dataClustersGivenK && dataClustersGivenK[blobsAmount]}
+          {#each dataClustersGivenK[blobsAmount] as cluster, _}
+            <Spline
+              points={dataTimesteps[selectedTimestep].slice(cluster.from, cluster.to + 1)}
+              radius={blobsRadius}
+              color={blobsColored ? vec3.fromValues(cluster.color.rgb[0], cluster.color.rgb[1], cluster.color.rgb[2]) : [1.0, 1.0, 1.0]}
+              multicolored={false}
+            />
+            {/each}
+        {/if}
+
+        {#if visualizationSelected == "Sphere" && dataClustersGivenK && dataClustersGivenK[blobsAmount]}
+          {#each dataClustersGivenK[blobsAmount] as cluster, _}
+            {#each dataTimesteps[selectedTimestep].slice(cluster.from, cluster.to + 1) as point, _}
+              <Sphere
+                radius={blobsRadius}
+                center={point}
+                color={blobsColored ? [cluster.color.rgb[0], cluster.color.rgb[1], cluster.color.rgb[2], 1.0] : [1.0, 1.0, 1.0, 1.0]} 
+              />
+            {/each}
+          {/each}
+        {/if}
+
           {#if visualizationSelected == "Matryoshka"}
             <MatryoshkaClusters
               selectedTimestep={selectedTimestep}
@@ -385,7 +422,7 @@
             />
           {/if}
 
-          {#if blobs[selectedTimestep] && visualizationSelected == "Default"}
+          {#if blobs[selectedTimestep] && visualizationSelected == "Implicit"}
             {#each blobs[selectedTimestep] as blob, i}
               <SignedDistanceGrid
                 points={blob.normalizedPoints}
@@ -450,7 +487,10 @@
           <AccordionItem open title="Visualisation Parameters">
             <Select size="sm" inline labelText="Visualization:" bind:selected={visualizationSelected}>
               <SelectItem value="None" />
-              <SelectItem value="Default" />
+              <SelectItem value="Implicit" />
+              <SelectItem value="Pathline" />
+              <SelectItem value="Sphere" />
+              <SelectItem value="Spline" />
               <SelectItem value="Volume" />
               <SelectItem value="Matryoshka" />
               <SelectItem value="Spheres" />
@@ -469,7 +509,7 @@
 
             {#if visualizationSelected == "Composite" && action == "Change representation"}
             <Select size="sm" inline labelText="Visualization type:" bind:selected={clusterVisualization}>
-              <SelectItem value="Default" />
+              <SelectItem value="Implicit" />
               <SelectItem value="Spherical" />
               <SelectItem value="Pathline" />
               <SelectItem value="Spline" />
@@ -500,7 +540,7 @@
             {#if visualizationSelected != "Matryoshka" && visualizationSelected != "Composite" && visualizationSelected != "None"}
             <Slider labelText="Cluster amount" fullWidth min={1} max={15} bind:value={blobsAmount} />
             {/if}
-            {#if visualizationSelected == "Default" || visualizationSelected == "Matryoshka"}
+            {#if visualizationSelected == "Implicit" || visualizationSelected == "Matryoshka" || visualizationSelected == "Pathline" || visualizationSelected == "Sphere" || visualizationSelected == "Spline"}
               <Slider labelText="Radius" fullWidth min={0.01} max={0.1} step={0.01} bind:value={blobsRadius} />
             {/if}
             {#if visualizationSelected == "Matryoshka"}
@@ -533,8 +573,8 @@
             {/if}
 
             {#if dataClustersGivenK && 
-            (visualizationSelected == "Cones" || visualizationSelected == "Spheres" ||
-            visualizationSelected == "Hedgehog" || visualizationSelected == "Default" || visualizationSelected == "Volume")}
+            (visualizationSelected == "Cones" || visualizationSelected == "Spheres" || visualizationSelected == "Sphere" || visualizationSelected == "Spline" ||
+            visualizationSelected == "Hedgehog" || visualizationSelected == "Implicit" || visualizationSelected == "Volume" || visualizationSelected == "Pathline")}
               <div class="cluster-dendogram">
                 {#each dataClustersGivenK.slice(1, 16) as clustersAtLevel, clusterLevel}
                   <div class="cluster-dendogram-row" on:click={() => dendrogramClick(clusterLevel)} on:keydown={() => { }}>

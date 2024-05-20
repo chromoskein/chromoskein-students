@@ -42,12 +42,9 @@
       if (multicolored) {
         color[2] = 0.0;
         color[1] = 0.0 + i * 1.0/points.length;
-      } else {
-        color[2] = 1.0;
-        color[1] = 1.0;
       }
-
-      object.properties[i].color = [color[0], color[1], color[2], 1.0];
+      object.properties[i].startColor = [color[0], color[1], color[2], 1.0];
+      object.properties[i].endColor = [color[0], color[1], color[2], 1.0];
     }
     object.setDirtyCPU();
   }

@@ -17,7 +17,7 @@ export class AbstractVolumeClusterVisualisation extends AbstractClusterVisualisa
 
         [this.volumeUnit, this.volumeUnitID] = viewport.scene.addDynamicVolume(Graphics.DynamicVolumeUnit);
         this.updateCluster(cluster);
-        this.volumeUnit.transparency = 0.5;
+        this.volumeUnit.transparency = 0.3;
         this.volumeUnit.func = 0;
         this.setColor(this.cluster.color.rgb);
     }
