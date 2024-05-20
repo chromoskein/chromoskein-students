@@ -384,7 +384,7 @@ export class DynamicVolume extends IParametricObject {
         }
     }
 
-    static gpuCodeGetBoundingRectangleVertex = `
+    static gpuCodeGetBoundingRectangleVertex = /* wgsl */`
         let begin = ${this.variableName}[0].modelMatrix * vec4<f32>(-1.0, -1.0, -1.0, 1.0);
         let end = ${this.variableName}[0].modelMatrix * vec4<f32>(1.0);
 

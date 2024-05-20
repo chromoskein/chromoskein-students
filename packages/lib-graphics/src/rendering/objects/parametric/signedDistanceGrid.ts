@@ -220,6 +220,7 @@ export class SignedDistanceGrid extends IParametricObject {
                 tx * ty * tz * c111; 
         }
 
+        // Implementation of the sphere tracing algorithm
         fn ray${this.typeName}Intersection(ray: Ray, ${this.variableName}: ${this.typeName}, index: u32) -> Intersection {
             let rayOriginLocalSpace = (${this.variableName}.modelMatrixInverse * vec4<f32>(ray.origin, 1.0)).xyz;
             let rayDirectionLocalSpace = normalize(${this.variableName}.modelMatrixInverse * vec4<f32>(ray.direction, 0.0)).xyz;
@@ -271,6 +272,7 @@ export class SignedDistanceGrid extends IParametricObject {
         }
 
 
+        // Iterates over all SDF grids to find the closest one
         fn findClosestIntersection(ray: Ray, index: i32) -> ObjectIntersection {
             var bestDistance: f32 = 10000.0;
             var found = false;
@@ -305,6 +307,8 @@ export class SignedDistanceGrid extends IParametricObject {
             }
         }
 
+        // Traces the ray which is input into this function
+        // Iteratively finds the closest object, accumulates color from hit object and repeats from new starting point
         fn TraceRay(ray: Ray) -> vec3<f32> {
             var r = ray;
             var intersection = findClosestIntersection(r, -1);

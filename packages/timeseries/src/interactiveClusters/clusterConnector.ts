@@ -3,6 +3,9 @@ import * as Graphics from "lib-graphics";
 import type { Viewport3D } from "lib-graphics";
 import type { ClusterCompositeNode } from "./clusterCompositeNode";
 
+/**
+ * Represents a tube connection between two clustercompositenodes
+ */
 export class ClusterConnector {
     private start: ClusterCompositeNode;
     private end: ClusterCompositeNode;

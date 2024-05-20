@@ -1,6 +1,6 @@
 <script lang="ts">
     import type { ClusterNode } from "../utils/main";
-    import { CompositeClusters } from "../interactiveClusters/interactiveClusters";
+    import { CompositeClusters } from "../interactiveClusters/compositeClusters";
     import type { ClusterCompositeNode } from "../interactiveClusters/clusterCompositeNode";
     import { HedgehogClusterVisualisation, SphereSimplificationClusterVisualisation, PCAClusterVisualisation, SDGClusterVisualisation, PathlineClusterVisualization, SplineClusterVisualisation, SpheresClusterVisualization, AbstractVolumeClusterVisualisation, VolumeClusterVisualisation } from "../interactiveClusters/visualisations/index";
     import { getContext, onMount } from "svelte";

@@ -1,5 +1,8 @@
 import type { ClusterCompositeNode } from "./clusterCompositeNode";
 
+/**
+ * Allows highlighting of individual clusters for interaction purposes
+ */
 export class ClusterHighlighter {
     private highlightedClusters: ClusterCompositeNode[];
 
