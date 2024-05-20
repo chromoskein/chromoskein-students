@@ -250,7 +250,7 @@
     coneOrient = getConeOrientation(blobs[selectedTimestep], closestBlobs);
   }
 
-  let clusterVisualization = "Sphere";
+  let clusterVisualization = "AbstractSphere";
   let action = "Change representation";
 
   // fixed for now
@@ -384,7 +384,7 @@
             {/each}
         {/if}
 
-        {#if visualizationSelected == "Sphere" && dataClustersGivenK && dataClustersGivenK[blobsAmount]}
+        {#if visualizationSelected == "Spheres" && dataClustersGivenK && dataClustersGivenK[blobsAmount]}
           {#each dataClustersGivenK[blobsAmount] as cluster, _}
             {#each dataTimesteps[selectedTimestep].slice(cluster.from, cluster.to + 1) as point, _}
               <Sphere
@@ -434,7 +434,7 @@
               />
             {/each}
           {/if}
-          {#if blobs[selectedTimestep] && visualizationSelected == "Spheres"}
+          {#if blobs[selectedTimestep] && visualizationSelected == "AbstractSpheres"}
             {#each blobs[selectedTimestep] as blob, i}
               <ConnectedSpheres
                 tubePoints={centerPoints}
@@ -489,11 +489,11 @@
               <SelectItem value="None" />
               <SelectItem value="Implicit" />
               <SelectItem value="Pathline" />
-              <SelectItem value="Sphere" />
+              <SelectItem value="Spheres" />
               <SelectItem value="Spline" />
               <SelectItem value="Volume" />
               <SelectItem value="Matryoshka" />
-              <SelectItem value="Spheres" />
+              <SelectItem value="AbstractSpheres" />
               <SelectItem value="Cones" />
               <SelectItem value="Hedgehog" />
               <SelectItem value="Composite" />
@@ -510,10 +510,10 @@
             {#if visualizationSelected == "Composite" && action == "Change representation"}
             <Select size="sm" inline labelText="Visualization type:" bind:selected={clusterVisualization}>
               <SelectItem value="Implicit" />
-              <SelectItem value="Spherical" />
+              <SelectItem value="Spheres" />
               <SelectItem value="Pathline" />
               <SelectItem value="Spline" />
-              <SelectItem value="Sphere" />
+              <SelectItem value="AbstractSphere" />
               <SelectItem value="Cone" />
               <SelectItem value="Hedgehog" />
               <SelectItem value="Volume" />
@@ -540,7 +540,7 @@
             {#if visualizationSelected != "Matryoshka" && visualizationSelected != "Composite" && visualizationSelected != "None"}
             <Slider labelText="Cluster amount" fullWidth min={1} max={15} bind:value={blobsAmount} />
             {/if}
-            {#if visualizationSelected == "Implicit" || visualizationSelected == "Matryoshka" || visualizationSelected == "Pathline" || visualizationSelected == "Sphere" || visualizationSelected == "Spline"}
+            {#if visualizationSelected == "Implicit" || visualizationSelected == "Matryoshka" || visualizationSelected == "Pathline" || visualizationSelected == "Spheres" || visualizationSelected == "Spline"}
               <Slider labelText="Radius" fullWidth min={0.01} max={0.1} step={0.01} bind:value={blobsRadius} />
             {/if}
             {#if visualizationSelected == "Matryoshka"}
@@ -573,7 +573,7 @@
             {/if}
 
             {#if dataClustersGivenK && 
-            (visualizationSelected == "Cones" || visualizationSelected == "Spheres" || visualizationSelected == "Sphere" || visualizationSelected == "Spline" ||
+            (visualizationSelected == "Cones" || visualizationSelected == "Spheres" || visualizationSelected == "AbstractSpheres" || visualizationSelected == "Spline" ||
             visualizationSelected == "Hedgehog" || visualizationSelected == "Implicit" || visualizationSelected == "Volume" || visualizationSelected == "Pathline")}
               <div class="cluster-dendogram">
                 {#each dataClustersGivenK.slice(1, 16) as clustersAtLevel, clusterLevel}

@@ -33,7 +33,7 @@
     let canvas: HTMLElement | null = null;
 
     const representations = {
-      "Sphere": SphereSimplificationClusterVisualisation,
+      "AbstractSphere": SphereSimplificationClusterVisualisation,
       "Hedgehog": HedgehogClusterVisualisation,
       "Cone": PCAClusterVisualisation,
       "Default": SDGClusterVisualisation,
@@ -41,7 +41,7 @@
       "AbstractVolume": AbstractVolumeClusterVisualisation,
       "Volume": VolumeClusterVisualisation,
       "Spline": SplineClusterVisualisation,
-      "Spherical": SpheresClusterVisualization,
+      "Spheres": SpheresClusterVisualization,
     };
 
     export function getClusterComposite(cluster) {
