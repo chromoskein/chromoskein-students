@@ -102,7 +102,7 @@ export const DynamicVolumeStruct = new r.Struct({
     func: r.uint32le,
 });
 
-export const DynamicVolumeTextureSize: number = 96;
+export const DynamicVolumeTextureSize: number = 64;
 
 export class DynamicVolume extends IParametricObject {
     public static variableName = "dynamicVolume";
