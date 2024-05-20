@@ -19,10 +19,18 @@ export class CompositeClusters {
         this.device = device;
     }
 
+    /**
+     * @returns The root of the cluster composite tree
+     */
     public getRoot() {
         return this.root;
     }
 
+    /**
+     * Attempts to intersect all objects contained in this composite cluster visualization
+     * @param ray Ray to intersect the scene
+     * @returns Closest intersected object or null
+     */
     public rayIntersection(ray: Graphics.Ray): ClusterCompositeNode {
         let inorder = this.root.getInorder();
 
@@ -39,6 +47,10 @@ export class CompositeClusters {
         return closestCluster;
     }
 
+    /**
+     * Updates the clusters of all nodes
+     * @param clustersGivenK Hierarchical clustering tree 
+     */
     public updateClusters(clustersGivenK: ClusterNode[][]) {
         let inorder = this.root.getInorder();
         for (let cluster of inorder) {
@@ -46,6 +58,11 @@ export class CompositeClusters {
         }
     }
 
+    /**
+     * Updates points of all clusters
+     * @param pointsAtTimestep All points over all timesteps
+     * @param selectedTimestep Current selected timestep
+     */
     public updatePoints(pointsAtTimesteps: vec3[][], selectedTimestep: number) {
         let inorder = this.root.getInorder();
         for (let cluster of inorder) {
@@ -65,6 +82,9 @@ export class CompositeClusters {
         }
     }
 
+    /**
+     * Creates clusterConnector objects between all neighboring leaves in the tree
+     */
     private createConnectors() {
         // This assumes that the connectors do not exist on nodes
         let inorder: ClusterCompositeNode[] = this.root.getInorder();
@@ -73,6 +93,9 @@ export class CompositeClusters {
         }
     }
 
+    /**
+     * Destroys all cluster connector objects
+     */
     private destroyConnectors() {
         let inorder: ClusterCompositeNode[] = this.root.getInorder();
         for (let i = 0; i < inorder.length - 1; i++) {
@@ -82,6 +105,9 @@ export class CompositeClusters {
         }
     }
 
+    /**
+     * Deletes all leaves, connectors and this object
+     */
     public delete() {
         let inorder = this.root.getInorder();
         inorder.forEach((cluster : ClusterCompositeNode) => { 

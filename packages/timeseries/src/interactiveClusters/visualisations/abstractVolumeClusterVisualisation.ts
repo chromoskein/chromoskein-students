@@ -2,7 +2,7 @@ import { vec3, vec4 } from "gl-matrix";
 import * as Graphics from "lib-graphics";
 import type { Viewport3D } from "lib-graphics";
 import { blobFromPoints, type ClusterNode } from "../../utils/main";
-import type { CompositeClusters } from "../interactiveClusters";
+import type { CompositeClusters } from "../compositeClusters";
 import { AbstractClusterVisualisation } from "./abstractVisualization";
 
 export class AbstractVolumeClusterVisualisation extends AbstractClusterVisualisation {

@@ -3,18 +3,19 @@ import type * as Graphics from "lib-graphics";
 import type { Viewport3D } from "lib-graphics";
 import type { ClusterNode } from "../utils/main";
 import type { AbstractClusterVisualisation } from "./visualisations/abstractVisualization";
-import type { CompositeClusters } from "./interactiveClusters";
+import type { CompositeClusters } from "./compositeClusters";
 import { ClusterConnector } from "./clusterConnector";
 import { SphereSimplificationClusterVisualisation } from "./visualisations/sphereSimplificationClusterVisualisation";
 
-
+/**
+ * Represents a single node in the clusternode tree maintaned for the composite visualization
+ */
 export class ClusterCompositeNode {
     private children: ClusterCompositeNode[];
     private isLeaf: boolean;
     private viewport: Viewport3D;
     private manager: CompositeClusters;
     
-    // TODO: This should probably not be public
     public parent: ClusterCompositeNode = null;
     public cluster: ClusterNode;
     public inConnector: ClusterConnector = null;
@@ -34,6 +35,10 @@ export class ClusterCompositeNode {
         this.setVisible(true);
     }
 
+    /**
+     * Enables changing of the visualization which represents this cluster
+     * @param visualisationType New visualization
+     */
     public setVisualisation<T extends AbstractClusterVisualisation>(visualisationType: new(manager: CompositeClusters, cluster: ClusterNode, viewport: Viewport3D) => T) {
         this.deleteVisualization();
         this.visualisation = new visualisationType(this.manager, this.cluster, this.viewport);
@@ -55,6 +60,10 @@ export class ClusterCompositeNode {
         return this.visualisation;
     }
 
+    /**
+     * Returns the inorder array of this node and its children
+     * @returns Inorder array of this node and its children
+     */
     public getInorder() {
         if (this.isLeaf) {
             return [this];
@@ -67,12 +76,21 @@ export class ClusterCompositeNode {
         return inorder;
     }
 
+    /**
+     * Updates the cluster represented by this node when changing clustering
+     * @param clustersGivenK Hierarchical clustering tree
+     */
     public updateCluster(clustersGivenK: ClusterNode[][]) {
         this.cluster = clustersGivenK[this.cluster.k][this.cluster.i];
         if (this.isLeaf && this.visualisation) 
             this.visualisation.updateCluster(this.cluster);        
     }
 
+    /**
+     * Updates the positions of points of this cluster when timestep is changed
+     * @param pointsAtTimestep All points over all timesteps
+     * @param selectedTimestep Current selected timestep
+     */
     public updatePoints(pointsAtTimesteps: vec3[][], selectedTimestep: number) {
         if (this.isLeaf && this.visualisation)
             this.visualisation.updatePoints(pointsAtTimesteps, selectedTimestep);
@@ -82,11 +100,23 @@ export class ClusterCompositeNode {
             if (this.outConnector) this.outConnector.update();
     }
 
+    /**
+     * This function is called when a different cluster is updated
+     * Used by clusters whose form depends on positions/sizes etc. of other clusters
+     * @param pointsAtTimestep All points over all timesteps
+     * @param selectedTimestep Current selected timestep
+     */
     public eventUpdate(pointsAtTimesteps: vec3[][], selectedTimestep: number) {
         if (this.isLeaf && this.visualisation)
             this.visualisation.eventUpdate(pointsAtTimesteps, selectedTimestep);
     }
 
+    /**
+     * Splits this cluster into its children nodes while retaining the visualization type of this cluster
+     * @param clustersGivenK Hierarchical clustering tree
+     * @param pointsAtTimestep All points over all timesteps
+     * @param selectedTimestep Current selected timestep
+     */
     public split(clustersGivenK: ClusterNode[][], pointsAtTimesteps: vec3[][], selectedTimestep: number) {
         if (!this.isLeaf || this.cluster.k + 1 >= clustersGivenK.length) return;
 
@@ -128,6 +158,14 @@ export class ClusterCompositeNode {
         this.setVisible(false);
     }
 
+    /**
+     * Merges this cluster into parent along with all children of the parent while setting the parents visualization type
+
+     * @param visualisationType The visualization type constructor to set for parent node
+     * @param clustersGivenK Hierarchical clustering tree
+     * @param pointsAtTimestep All points over all timesteps
+     * @param selectedTimestep Current selected timestep
+     */
     private mergeWithVisualization<T extends AbstractClusterVisualisation>(visualisationType: new(manager: CompositeClusters, cluster: ClusterNode, viewport: Viewport3D) => T, clustersGivenK: ClusterNode[][], pointsAtTimesteps: vec3[][], selectedTimestep: number) {
         let inorderChildren = this.getInorder();
         for (let child of inorderChildren) {
@@ -156,6 +194,12 @@ export class ClusterCompositeNode {
         this.manager.eventUpdate([this], pointsAtTimesteps, selectedTimestep);
     }
 
+    /**
+     * Merges this cluster into parent along with all children of the parent while retaining the visualization type of this cluster
+     * @param clustersGivenK Hierarchical clustering tree
+     * @param pointsAtTimestep All points over all timesteps
+     * @param selectedTimestep Current selected timestep
+     */
     public merge(clustersGivenK: ClusterNode[][],  pointsAtTimesteps: vec3[][], selectedTimestep: number) {
         if (this.isLeaf && this.parent != null) {
             this.parent.mergeWithVisualization(this.visualisation?.getConstructor(), clustersGivenK, pointsAtTimesteps, selectedTimestep);
@@ -163,6 +207,11 @@ export class ClusterCompositeNode {
         }
     }
 
+    /**
+     * Attempts to intersect the object defined this clusters visualization type 
+     * @param ray Ray to intersect the object 
+     * @returns intersection or null
+     */
     public rayIntersection(ray: Graphics.Ray): Graphics.Intersection | null {
         if (!this.isLeaf) {
             return null;
@@ -171,6 +220,9 @@ export class ClusterCompositeNode {
         return this.visualisation.rayIntersection(ray);
     }
 
+    /**
+     * Deletes this object from the scene
+     */
     public deleteVisualization() {
         if (this.visualisation) {
             this.visualisation.delete(this.viewport);
