@@ -57,10 +57,10 @@
   let dataTimesteps: vec3[][] = null;  
   let dataClustersByTimestep: ClusterNode[][] = [];
 
-
-  let dataClusteredTimestep: ClusterBlob[] = [];
-  let dataClusteredTimestepDelimiters: number[][] = [];
-
+  // The volume and composite visualizations do not work for time-sensitive clustering so it turns off
+  $: if (visualizationSelected == "Volume" || visualizationSelected == "Composite") {
+    timestepClustering = false;
+  }
   
   $: if (timestepClustering) {
     dataClustersGivenK = clusterTimestep(dataTimesteps[selectedTimestep]).slice(0, 16);
@@ -182,7 +182,6 @@
   //#region Configuration
   // Volume
   let abstractVolumes = false;
-  let volumeVisible = false;
   let volumeTransparency = 0.15;
   let volumeRadius = 0.03;
   let volumeColormapChoice = "Cool Warm";
@@ -407,7 +406,7 @@
                 tubeMulticolored={false} 
                 sphereRadius={blob.normalizedPoints.length / 1000.0 * 2}
                 sphereCenter={blob.center}
-                sphereColor={[blobColors[i][0], blobColors[i][1], blobColors[i][2], blobColors[i][3]]} 
+                sphereColor={blobsColored ? [blobColors[i][0], blobColors[i][1], blobColors[i][2], blobColors[i][3]] : [1.0, 1.0, 1.0, 1.0]} 
               />
             {/each}
           {/if}
@@ -486,11 +485,11 @@
             <Checkbox labelText="Show cluster connections" bind:checked={showConnectors} />
             {/if}
 
-            {#if visualizationSelected != "Composite" && visualizationSelected != "None"}
+            {#if visualizationSelected != "Composite" && visualizationSelected != "None" && visualizationSelected != "Volume" && visualizationSelected != "Matryoshka"}
             <Checkbox labelText="Colored" bind:checked={blobsColored} />
             {/if}
 
-            {#if visualizationSelected != "None"}
+            {#if visualizationSelected != "None" && visualizationSelected != "Composite"}
             <Checkbox labelText="Cluster at timestep" bind:checked={timestepClustering} />
             {/if}
 
