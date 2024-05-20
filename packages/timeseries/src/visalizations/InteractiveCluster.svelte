@@ -10,9 +10,11 @@
     import * as Graphics from "lib-graphics";
     import { vec2 } from "gl-matrix";
     import { ClusterHighlighter } from "../interactiveClusters/clusterHighlighter";
-    import { VolumeClusterVisualisation } from "../interactiveClusters/visualisations/volumeClusterVisualisation";
+    //import { VolumeClusterVisualisation } from "../interactiveClusters/visualisations/volumeClusterVisualisation";
     import { SplineClusterVisualisation } from "../interactiveClusters/visualisations/splineVisualisation";
     import { SpheresClusterVisualization } from "../interactiveClusters/visualisations/spheresClusterVisualisation";
+    import { AbstractVolumeClusterVisualisation } from "../interactiveClusters/visualisations/abstractVolumeClusterVisualisation";
+    import { VolumeClusterVisualisation } from "../interactiveClusters/visualisations/volumeClusterVisualisation";
 
     let viewport: Writable<Viewport3D | null> = getContext("viewport");
     let device: Writable<GPUDevice> = getContext("device");
@@ -36,6 +38,7 @@
       "Cone": PCAClusterVisualisation,
       "Default": SDGClusterVisualisation,
       "Pathline": PathlineClusterVisualization,
+      "AbstractVolume": AbstractVolumeClusterVisualisation,
       "Volume": VolumeClusterVisualisation,
       "Spline": SplineClusterVisualisation,
       "Spherical": SpheresClusterVisualization,

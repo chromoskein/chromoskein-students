@@ -249,7 +249,7 @@
     coneOrient = getConeOrientation(blobs[selectedTimestep], closestBlobs);
   }
 
-  let clusterVisualization = "SphereSimplification";
+  let clusterVisualization = "Sphere";
   let action = "Change representation";
 
   // fixed for now
@@ -478,6 +478,7 @@
               <SelectItem value="Cone" />
               <SelectItem value="Hedgehog" />
               <SelectItem value="Volume" />
+              <SelectItem value="AbstractVolume" />
             </Select>
             {/if}
 

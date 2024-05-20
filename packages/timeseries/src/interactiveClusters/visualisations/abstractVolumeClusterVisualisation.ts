@@ -5,7 +5,7 @@ import { blobFromPoints, type ClusterNode } from "../../utils/main";
 import type { InteractiveClusters } from "../interactiveClusters";
 import { AbstractClusterVisualisation } from "./abstractVisualization";
 
-export class VolumeClusterVisualisation extends AbstractClusterVisualisation {
+export class AbstractVolumeClusterVisualisation extends AbstractClusterVisualisation {
     private cluster: ClusterNode;
     private volumeUnit: Graphics.DynamicVolumeUnit;
     private volumeUnitID: number;
@@ -17,8 +17,8 @@ export class VolumeClusterVisualisation extends AbstractClusterVisualisation {
 
         [this.volumeUnit, this.volumeUnitID] = viewport.scene.addDynamicVolume(Graphics.DynamicVolumeUnit);
         this.updateCluster(cluster);
-        this.volumeUnit.transparency = 0.3;
-        this.volumeUnit.func = 1;
+        this.volumeUnit.transparency = 0.5;
+        this.volumeUnit.func = 0;
         this.setColor(this.cluster.color.rgb);
     }
 
@@ -44,8 +44,10 @@ export class VolumeClusterVisualisation extends AbstractClusterVisualisation {
 
         this.volumeCenter = blobFromPoints(centers).center;
 
-        let volumeRadius = 0.03;
-        this.volumeUnit.fromPoints(this.manager.getDevice(), slicedPointsAtTimestep, volumeRadius);
+        let volumePoints: vec3[][] = centers.map(center => [center]);
+        let volumeRadius = slicedPointsAtTimestep[0].length / 1000.0 * 2 + 0.05;
+        this.volumeUnit.fromPoints(this.manager.getDevice(), volumePoints, volumeRadius);
+
     }
 
     public setColor(color: vec3) {
@@ -55,7 +57,7 @@ export class VolumeClusterVisualisation extends AbstractClusterVisualisation {
             vec3.scale(c, c, 1.8);
         }
 
-        this.volumeUnit.setColor(vec4.fromValues(c[0], c[1], c[2], 1.0));
+        this.volumeUnit.setColor(vec4.fromValues(c[0], c[1], c[2], 0.0));
     }
 
     public rayIntersection(ray: Graphics.Ray): Graphics.Intersection {
@@ -83,6 +85,6 @@ export class VolumeClusterVisualisation extends AbstractClusterVisualisation {
     }
 
     public getConstructor() {
-        return VolumeClusterVisualisation;
+        return AbstractVolumeClusterVisualisation;
     }
 }

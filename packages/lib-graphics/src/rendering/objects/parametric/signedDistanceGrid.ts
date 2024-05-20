@@ -115,7 +115,7 @@ export const SignedDistanceGridStruct = new r.Struct({
     scale: new r.Array(r.floatle, 4),
 });
 
-export const GridTextureSize: number = 128;
+export const GridTextureSize: number = 64;
 
 export class SignedDistanceGrid extends IParametricObject {
     private _pipelines: Pipelines;
@@ -314,6 +314,10 @@ export class SignedDistanceGrid extends IParametricObject {
                 var alpha = ${this.variableName}[intersection.index].color.a;
                 color = color + alphaCoef * alpha * ${this.variableName}[intersection.index].color.rgb;
                 alphaCoef = alphaCoef * (1 - alpha);
+
+                if (alphaCoef < 0.001) {
+                    return color;
+                }
 
                 r = Ray(intersection.position, r.direction);
                 intersection = findClosestIntersection(r, intersection.index);
