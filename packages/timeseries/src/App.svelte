@@ -56,8 +56,8 @@
 
   //#region Data
 
+  // Repesents an array of all points for all timesteps in format [timestep][point]
   let dataTimesteps: vec3[][] = null;  
-  let dataClustersByTimestep: ClusterNode[][] = [];
 
   // The volume and composite visualizations do not work for time-sensitive clustering so it turns off
   $: if (visualizationSelected == "Volume" || visualizationSelected == "Composite") {
@@ -72,16 +72,19 @@
     dataClustersGivenK = staticDataClustersGivenK;
   }
 
-  // [pathline][timestep]
+  // Represents an array of all points for all timesteps in format [point][timestep]
+  // aka each inner array contains all positions of a point all timesteps
   $: dataPathlines = dataTimesteps && timestepsToPathlines(dataTimesteps);
 
-  // Load precomputed clusters of pathlines
+  // Objects which contain the calculated clusters
   let timestepClustering = false;
   let staticDataClustersGivenK: ClusterNode[][] | null = null;
   let dataClustersGivenK: ClusterNode[][] | null = null;
 
   $: dataClustersGivenK && treeColor(dataClustersGivenK);
 
+  // Splits data pathlines based on clusters
+  // Format [cluster][point][timestep]
   let dataClusteredPathlines: vec3[][][] | null = null;
   $: if (dataClustersGivenK && dataClustersGivenK[blobsAmount] && dataPathlines) {
     const clusters = dataClustersGivenK[blobsAmount];
@@ -120,22 +123,14 @@
     staticDataClustersGivenK = staticDataClustersGivenK.slice(0, 16);
     dataClustersGivenK = staticDataClustersGivenK;
     treeColor(staticDataClustersGivenK);
-
-    // const bytes = new TextEncoder().encode(JSON.stringify(clusterPathlines(dataPathlines)));
-    // const blob = new Blob([bytes], {
-    //   type: "application/json;charset=utf-8",
-    // });
-    // saveAs(blob, `clusters.json`);
-
-    //dataClustersGivenK = await (await fetch("./clusters.json")).json();
-    dataClustersByTimestep = clusterTimestep(dataTimesteps[selectedTimestep]).slice(0, 16);
-    treeColor(dataClustersByTimestep);
   });
   //#endregion Init
 
   // [timestep][blob]
   let blobs: ClusterBlob[][] = [];
 
+  // Process the clustered pathlines [cluster][point][timestep]
+  // into normalized blobs in format [timestep][blob]
   $: if (dataClusteredPathlines && blobsAmount) {
     // Allocate new ones
     blobs = [];
