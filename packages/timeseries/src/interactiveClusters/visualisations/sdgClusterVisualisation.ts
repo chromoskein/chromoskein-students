@@ -2,7 +2,7 @@ import { vec3 } from "gl-matrix";
 import * as Graphics from "lib-graphics";
 import type { Viewport3D } from "lib-graphics";
 import type { ClusterNode } from "../../utils/main";
-import type { InteractiveClusters } from "../interactiveClusters";
+import type { CompositeClusters } from "../interactiveClusters";
 import { AbstractClusterVisualisation } from "./abstractVisualization";
 import { blobFromPoints } from "../../utils/main";
 
@@ -13,7 +13,7 @@ export class SDGClusterVisualisation extends AbstractClusterVisualisation {
     private startPoint: vec3 = vec3.fromValues(0, 0, 0);
     private endPoint: vec3 = vec3.fromValues(0, 0, 0);
 
-    constructor(manager: InteractiveClusters, cluster: ClusterNode, viewport: Viewport3D) {
+    constructor(manager: CompositeClusters, cluster: ClusterNode, viewport: Viewport3D) {
         super(manager, cluster, viewport);
 
         [this.sdgObject, this.sdgObjectID] = viewport.scene.addObject(Graphics.SignedDistanceGrid);

@@ -1,13 +1,13 @@
-import type { ClusterComposite } from "./clusterComposite";
+import type { ClusterCompositeNode } from "./clusterCompositeNode";
 
 export class ClusterHighlighter {
-    private highlightedClusters: ClusterComposite[];
+    private highlightedClusters: ClusterCompositeNode[];
 
     constructor() {
         this.highlightedClusters = [];
     }
 
-    public updateHighlightedClusters(hitCluster: ClusterComposite, type: String) {
+    public updateHighlightedClusters(hitCluster: ClusterCompositeNode, type: String) {
         if (hitCluster == null) {
             this.removeHighlights();
             return;
@@ -41,7 +41,7 @@ export class ClusterHighlighter {
                     }
                 }
 
-                toHightlight.forEach((cluster: ClusterComposite) => cluster.getVisualisation()?.setHighlighted(true));
+                toHightlight.forEach((cluster: ClusterCompositeNode) => cluster.getVisualisation()?.setHighlighted(true));
                 this.highlightedClusters = toHightlight;
                 break;
         } 
@@ -49,11 +49,11 @@ export class ClusterHighlighter {
     }
 
     public removeHighlights() {
-        this.highlightedClusters.forEach((cluster: ClusterComposite) => cluster.getVisualisation()?.setHighlighted(false));
+        this.highlightedClusters.forEach((cluster: ClusterCompositeNode) => cluster.getVisualisation()?.setHighlighted(false));
         this.highlightedClusters = [];
     }
 
-    public addHighlightedClusters(newHighlightedClusters: ClusterComposite[]) {
+    public addHighlightedClusters(newHighlightedClusters: ClusterCompositeNode[]) {
         // This is probably useless, but might not be.
     }
 }

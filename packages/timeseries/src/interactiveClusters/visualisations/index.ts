@@ -4,3 +4,7 @@ export * from "./pathlineClusterVisualisation";
 export * from "./pcaClusterVisualisation";
 export * from "./sdgClusterVisualisation";
 export * from "./sphereSimplificationClusterVisualisation";
+export * from "./abstractVolumeClusterVisualisation";
+export * from "./spheresClusterVisualisation";
+export * from "./splineVisualisation";
+export * from "./volumeClusterVisualisation";

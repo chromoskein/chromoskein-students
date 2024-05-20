@@ -1,8 +1,8 @@
 <script lang="ts">
     import type { ClusterNode } from "../utils/main";
-    import { InteractiveClusters } from "../interactiveClusters/interactiveClusters";
-    import type { ClusterComposite } from "../interactiveClusters/clusterComposite";
-    import { HedgehogClusterVisualisation, SphereSimplificationClusterVisualisation, PCAClusterVisualisation, SDGClusterVisualisation, PathlineClusterVisualization } from "../interactiveClusters/visualisations/index";
+    import { CompositeClusters } from "../interactiveClusters/interactiveClusters";
+    import type { ClusterCompositeNode } from "../interactiveClusters/clusterCompositeNode";
+    import { HedgehogClusterVisualisation, SphereSimplificationClusterVisualisation, PCAClusterVisualisation, SDGClusterVisualisation, PathlineClusterVisualization, SplineClusterVisualisation, SpheresClusterVisualization, AbstractVolumeClusterVisualisation, VolumeClusterVisualisation } from "../interactiveClusters/visualisations/index";
     import { getContext, onMount } from "svelte";
     import type { Writable } from "svelte/store";
     import type { Viewport3D } from "lib-graphics";
@@ -10,11 +10,6 @@
     import * as Graphics from "lib-graphics";
     import { vec2 } from "gl-matrix";
     import { ClusterHighlighter } from "../interactiveClusters/clusterHighlighter";
-    //import { VolumeClusterVisualisation } from "../interactiveClusters/visualisations/volumeClusterVisualisation";
-    import { SplineClusterVisualisation } from "../interactiveClusters/visualisations/splineVisualisation";
-    import { SpheresClusterVisualization } from "../interactiveClusters/visualisations/spheresClusterVisualisation";
-    import { AbstractVolumeClusterVisualisation } from "../interactiveClusters/visualisations/abstractVolumeClusterVisualisation";
-    import { VolumeClusterVisualisation } from "../interactiveClusters/visualisations/volumeClusterVisualisation";
 
     let viewport: Writable<Viewport3D | null> = getContext("viewport");
     let device: Writable<GPUDevice> = getContext("device");
@@ -29,14 +24,14 @@
     export let updateClustersUpdated;
     export let action;
 
-    let clusterObjects: InteractiveClusters = null;
+    let clusterObjects: CompositeClusters = null;
     let canvas: HTMLElement | null = null;
 
     const representations = {
       "AbstractSphere": SphereSimplificationClusterVisualisation,
       "Hedgehog": HedgehogClusterVisualisation,
       "Cone": PCAClusterVisualisation,
-      "Default": SDGClusterVisualisation,
+      "Implicit": SDGClusterVisualisation,
       "Pathline": PathlineClusterVisualization,
       "AbstractVolume": AbstractVolumeClusterVisualisation,
       "Volume": VolumeClusterVisualisation,
@@ -69,7 +64,7 @@
 		  let rect = canvas.getBoundingClientRect(); 
       let ray = Graphics.screenSpaceToRay(vec2.fromValues((event.clientX - rect.left) / rect.width, (event.clientY - rect.top) / rect.height), $viewport.camera);
 
-      let hitCluster: ClusterComposite = clusterObjects.rayIntersection(ray);
+      let hitCluster: ClusterCompositeNode = clusterObjects.rayIntersection(ray);
       if (hitCluster != null) {
         switch(action) {
           case "Change representation":
@@ -89,7 +84,7 @@
 
     $: if ($viewport) {
       if (clusterObjects == null) {
-        clusterObjects = new InteractiveClusters(dataClustersGivenK, pointsAtTimesteps, selectedTimestep, $viewport, $device);
+        clusterObjects = new CompositeClusters(dataClustersGivenK, pointsAtTimesteps, selectedTimestep, $viewport, $device);
         canvas = document.getElementById("canvas");
         canvas?.addEventListener("mousedown", event => {
           if (event.button == 0) { // left click for mouse
@@ -98,7 +93,7 @@
         canvas?.addEventListener("mousemove", function(event) {
           let rect = canvas.getBoundingClientRect(); // abs. size of element    
           let ray = Graphics.screenSpaceToRay(vec2.fromValues((event.clientX - rect.left) / rect.width, (event.clientY - rect.top) / rect.height), $viewport.camera);
-          let hitCluster: ClusterComposite = clusterObjects.rayIntersection(ray);
+          let hitCluster: ClusterCompositeNode = clusterObjects.rayIntersection(ray);
           if (action == "Merge") clusterHighlighter.updateHighlightedClusters(hitCluster, "Merge");
           else clusterHighlighter.updateHighlightedClusters(hitCluster, "Normal");
         });

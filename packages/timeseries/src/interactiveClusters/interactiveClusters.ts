@@ -2,18 +2,18 @@ import type { vec3 } from "gl-matrix";
 import type * as Graphics from "lib-graphics";
 import type { Viewport3D } from "lib-graphics";
 import type { ClusterNode } from "../utils/main";
-import { ClusterComposite } from "./clusterComposite";
+import { ClusterCompositeNode } from "./clusterCompositeNode";
 import { ClusterConnector } from "./clusterConnector";
 
-export class InteractiveClusters {
-    private root: ClusterComposite;
+export class CompositeClusters {
+    private root: ClusterCompositeNode;
     private device: GPUDevice;
     private viewport: Viewport3D;
     private showConnectors: Boolean = false;
-    private highlightedClusters: ClusterComposite[] = [];
+    private highlightedClusters: ClusterCompositeNode[] = [];
 
     constructor(clustersGivenK: ClusterNode[][], pointsAtTimeStep: vec3[][], selectedTimestep: number, viewport: Viewport3D, device: GPUDevice) {
-        this.root = new ClusterComposite(clustersGivenK[1][0], viewport, null, this);
+        this.root = new ClusterCompositeNode(clustersGivenK[1][0], viewport, null, this);
         this.root.updatePoints(pointsAtTimeStep, selectedTimestep);
         this.viewport = viewport;
         this.device = device;
@@ -23,7 +23,7 @@ export class InteractiveClusters {
         return this.root;
     }
 
-    public rayIntersection(ray: Graphics.Ray): ClusterComposite {
+    public rayIntersection(ray: Graphics.Ray): ClusterCompositeNode {
         let inorder = this.root.getInorder();
 
         let bestDistance = Infinity;
@@ -54,11 +54,11 @@ export class InteractiveClusters {
     }
 
     // Used for notifying other clusters of changed elsewhere in the tree
-    public eventUpdate(newNodes: ClusterComposite[], pointsAtTimestep: vec3[][], selectedTimestep: number) {
-        let inorder: ClusterComposite[] = this.root.getInorder();
+    public eventUpdate(newNodes: ClusterCompositeNode[], pointsAtTimestep: vec3[][], selectedTimestep: number) {
+        let inorder: ClusterCompositeNode[] = this.root.getInorder();
 
         for (let i = 0; i < inorder.length; i++) {
-            let cluster: ClusterComposite = inorder[i];
+            let cluster: ClusterCompositeNode = inorder[i];
             if (!newNodes.includes(cluster)) {
                 cluster.eventUpdate(pointsAtTimestep, selectedTimestep);
             }
@@ -67,14 +67,14 @@ export class InteractiveClusters {
 
     private createConnectors() {
         // This assumes that the connectors do not exist on nodes
-        let inorder: ClusterComposite[] = this.root.getInorder();
+        let inorder: ClusterCompositeNode[] = this.root.getInorder();
         for (let i = 0; i < inorder.length - 1; i++) {
-            new ClusterConnector(inorder[i] as ClusterComposite, inorder[i + 1] as ClusterComposite, this.viewport);
+            new ClusterConnector(inorder[i] as ClusterCompositeNode, inorder[i + 1] as ClusterCompositeNode, this.viewport);
         }
     }
 
     private destroyConnectors() {
-        let inorder: ClusterComposite[] = this.root.getInorder();
+        let inorder: ClusterCompositeNode[] = this.root.getInorder();
         for (let i = 0; i < inorder.length - 1; i++) {
             let cluster = inorder[i];
             cluster.outConnector?.destroy(this.viewport);
@@ -84,7 +84,7 @@ export class InteractiveClusters {
 
     public delete() {
         let inorder = this.root.getInorder();
-        inorder.forEach((cluster : ClusterComposite) => { 
+        inorder.forEach((cluster : ClusterCompositeNode) => { 
             cluster.outConnector?.destroy(this.viewport);
             cluster.inConnector?.destroy(this.viewport);
             cluster.deleteVisualization()
@@ -117,6 +117,6 @@ export class InteractiveClusters {
     }
 
     public getClusters() {
-        return this.root.getInorder().map((c: ClusterComposite) => c.cluster);
+        return this.root.getInorder().map((c: ClusterCompositeNode) => c.cluster);
     }
 }

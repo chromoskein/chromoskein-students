@@ -2,7 +2,7 @@ import { vec3 } from "gl-matrix";
 import * as Graphics from "lib-graphics";
 import type { Viewport3D } from "lib-graphics";
 import type { ClusterNode } from "../../utils/main";
-import type { InteractiveClusters } from "../interactiveClusters";
+import type { CompositeClusters } from "../interactiveClusters";
 import { AbstractClusterVisualisation } from "./abstractVisualization";
 
 export class SphereSimplificationClusterVisualisation extends AbstractClusterVisualisation {
@@ -11,7 +11,7 @@ export class SphereSimplificationClusterVisualisation extends AbstractClusterVis
     private cluster: ClusterNode;
     private center: vec3 = vec3.fromValues(0, 0, 0);
 
-    constructor(manager: InteractiveClusters, cluster: ClusterNode, viewport: Viewport3D) {
+    constructor(manager: CompositeClusters, cluster: ClusterNode, viewport: Viewport3D) {
         super(manager, cluster, viewport);
 
         [this.sphere, this.sphereID] = viewport.scene.addObject(Graphics.Sphere);

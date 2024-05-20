@@ -2,7 +2,7 @@ import { vec3, vec4 } from "gl-matrix";
 import * as Graphics from "lib-graphics";
 import type { Viewport3D } from "lib-graphics";
 import { blobFromPoints, type ClusterNode } from "../../utils/main";
-import type { InteractiveClusters } from "../interactiveClusters";
+import type { CompositeClusters } from "../interactiveClusters";
 import { AbstractClusterVisualisation } from "./abstractVisualization";
 
 export class VolumeClusterVisualisation extends AbstractClusterVisualisation {
@@ -12,7 +12,7 @@ export class VolumeClusterVisualisation extends AbstractClusterVisualisation {
     private volumeCenter: vec3 = vec3.fromValues(0, 0, 0);
     private clusterChanged: Boolean = true;
 
-    constructor(manager: InteractiveClusters, cluster: ClusterNode, viewport: Viewport3D) {
+    constructor(manager: CompositeClusters, cluster: ClusterNode, viewport: Viewport3D) {
         super(manager, cluster, viewport);
 
         [this.volumeUnit, this.volumeUnitID] = viewport.scene.addDynamicVolume(Graphics.DynamicVolumeUnit);

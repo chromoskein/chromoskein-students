@@ -2,14 +2,14 @@ import type { vec3 } from "gl-matrix";
 import type * as Graphics from "lib-graphics";
 import type { Viewport3D } from "lib-graphics";
 import type { ClusterNode } from "../../utils/main";
-import type { InteractiveClusters } from "../interactiveClusters";
+import type { CompositeClusters } from "../interactiveClusters";
 
 export abstract class AbstractClusterVisualisation {
-    protected manager: InteractiveClusters;
+    protected manager: CompositeClusters;
     protected highlighted: Boolean = false;
     protected color: vec3;
 
-    constructor(manager: InteractiveClusters, cluster: ClusterNode, viewport: Viewport3D) {
+    constructor(manager: CompositeClusters, cluster: ClusterNode, viewport: Viewport3D) {
         this.manager = manager;
         this.color = cluster.color.rgb;
     }

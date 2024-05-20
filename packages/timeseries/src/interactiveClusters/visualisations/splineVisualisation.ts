@@ -2,7 +2,7 @@ import { vec3 } from "gl-matrix";
 import * as Graphics from "lib-graphics";
 import type { Viewport3D } from "lib-graphics";
 import type { ClusterNode } from "../../utils/main";
-import type { InteractiveClusters } from "../interactiveClusters";
+import type { CompositeClusters } from "../interactiveClusters";
 import { AbstractClusterVisualisation } from "./abstractVisualization";
 import { lineToSpline } from "../../utils/lineToSpline";
 
@@ -15,7 +15,7 @@ export class SplineClusterVisualisation extends AbstractClusterVisualisation {
     private startPoint: vec3 = vec3.fromValues(0, 0, 0);
     private endPoint: vec3 = vec3.fromValues(0, 0, 0);
 
-    constructor(manager: InteractiveClusters, cluster: ClusterNode, viewport: Viewport3D) {
+    constructor(manager: CompositeClusters, cluster: ClusterNode, viewport: Viewport3D) {
         super(manager, cluster, viewport);
 
         this.viewport = viewport;
@@ -42,7 +42,7 @@ export class SplineClusterVisualisation extends AbstractClusterVisualisation {
             this.setColor(this.cluster.color.rgb);
         }
         
-        const radius = 0.06;
+        const radius = 0.03;
         for (let i = 0; i < spline.length / 3; i++) {
             this.spline.properties[i].p0 = [spline[i * 3 + 0][0], spline[i * 3 + 0][1], spline[i * 3 + 0][2], radius];
             this.spline.properties[i].p1 = [spline[i * 3 + 1][0], spline[i * 3 + 1][1], spline[i * 3 + 1][2], radius];

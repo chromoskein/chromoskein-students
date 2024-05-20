@@ -3,26 +3,26 @@ import type * as Graphics from "lib-graphics";
 import type { Viewport3D } from "lib-graphics";
 import type { ClusterNode } from "../utils/main";
 import type { AbstractClusterVisualisation } from "./visualisations/abstractVisualization";
-import type { InteractiveClusters } from "./interactiveClusters";
+import type { CompositeClusters } from "./interactiveClusters";
 import { ClusterConnector } from "./clusterConnector";
 import { SphereSimplificationClusterVisualisation } from "./visualisations/sphereSimplificationClusterVisualisation";
 
 
-export class ClusterComposite {
-    private children: ClusterComposite[];
+export class ClusterCompositeNode {
+    private children: ClusterCompositeNode[];
     private isLeaf: boolean;
     private viewport: Viewport3D;
-    private manager: InteractiveClusters;
+    private manager: CompositeClusters;
     
     // TODO: This should probably not be public
-    public parent: ClusterComposite = null;
+    public parent: ClusterCompositeNode = null;
     public cluster: ClusterNode;
     public inConnector: ClusterConnector = null;
     public outConnector: ClusterConnector = null;
 
     private visualisation: AbstractClusterVisualisation;
 
-    constructor(cluster: ClusterNode, viewport: Viewport3D,  parent: ClusterComposite, manager: InteractiveClusters) {
+    constructor(cluster: ClusterNode, viewport: Viewport3D,  parent: ClusterCompositeNode, manager: CompositeClusters) {
         this.parent = parent;
         this.cluster = cluster;
         this.children = [];
@@ -34,7 +34,7 @@ export class ClusterComposite {
         this.setVisible(true);
     }
 
-    public setVisualisation<T extends AbstractClusterVisualisation>(visualisationType: new(manager: InteractiveClusters, cluster: ClusterNode, viewport: Viewport3D) => T) {
+    public setVisualisation<T extends AbstractClusterVisualisation>(visualisationType: new(manager: CompositeClusters, cluster: ClusterNode, viewport: Viewport3D) => T) {
         this.deleteVisualization();
         this.visualisation = new visualisationType(this.manager, this.cluster, this.viewport);
     }
@@ -60,7 +60,7 @@ export class ClusterComposite {
             return [this];
         }
 
-        let inorder: ClusterComposite[] = this.children[0].getInorder();
+        let inorder: ClusterCompositeNode[] = this.children[0].getInorder();
         for (let i = 1; i < this.children.length; i++) {
             inorder = inorder.concat(this.children[i].getInorder());
         }
@@ -104,7 +104,7 @@ export class ClusterComposite {
         this.deleteVisualization();
         
         for (let clusterIdx of clustersGivenK[k][i].children) {
-            this.children.push(new ClusterComposite(clustersGivenK[k + 1][clusterIdx], this.viewport, this, this.manager));
+            this.children.push(new ClusterCompositeNode(clustersGivenK[k + 1][clusterIdx], this.viewport, this, this.manager));
         }
 
         for (let child of this.children) {
@@ -128,7 +128,7 @@ export class ClusterComposite {
         this.setVisible(false);
     }
 
-    private mergeWithVisualization<T extends AbstractClusterVisualisation>(visualisationType: new(manager: InteractiveClusters, cluster: ClusterNode, viewport: Viewport3D) => T, clustersGivenK: ClusterNode[][], pointsAtTimesteps: vec3[][], selectedTimestep: number) {
+    private mergeWithVisualization<T extends AbstractClusterVisualisation>(visualisationType: new(manager: CompositeClusters, cluster: ClusterNode, viewport: Viewport3D) => T, clustersGivenK: ClusterNode[][], pointsAtTimesteps: vec3[][], selectedTimestep: number) {
         let inorderChildren = this.getInorder();
         for (let child of inorderChildren) {
             child.deleteVisualization();
