@@ -488,7 +488,7 @@
               <SelectItem value="Spline" />
               <SelectItem value="Volume" />
               <SelectItem value="Matryoshka" />
-              <SelectItem value="AbstractSpheres" />
+              <SelectItem value="AbstractSpheres" text="Abstract Spheres" />
               <SelectItem value="Cones" />
               <SelectItem value="Hedgehog" />
               <SelectItem value="Composite" />
@@ -505,14 +505,14 @@
             {#if visualizationSelected == "Composite" && action == "Change representation"}
             <Select size="sm" inline labelText="Visualization type:" bind:selected={clusterVisualization}>
               <SelectItem value="Implicit" />
-              <SelectItem value="Spheres" />
+              <SelectItem value="Sphere" />
               <SelectItem value="Pathline" />
               <SelectItem value="Spline" />
-              <SelectItem value="AbstractSphere" />
+              <SelectItem value="AbstractSphere" text="Abstract Sphere"/>
               <SelectItem value="Cone" />
               <SelectItem value="Hedgehog" />
               <SelectItem value="Volume" />
-              <SelectItem value="AbstractVolume" />
+              <SelectItem value="AbstractVolume" text="Abstract Volume" />
             </Select>
             {/if}
 
