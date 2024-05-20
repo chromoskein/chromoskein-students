@@ -505,7 +505,7 @@
             {#if visualizationSelected == "Composite" && action == "Change representation"}
             <Select size="sm" inline labelText="Visualization type:" bind:selected={clusterVisualization}>
               <SelectItem value="Implicit" />
-              <SelectItem value="Sphere" />
+              <SelectItem value="Spheres" text="Sphere" />
               <SelectItem value="Pathline" />
               <SelectItem value="Spline" />
               <SelectItem value="AbstractSphere" text="Abstract Sphere"/>
