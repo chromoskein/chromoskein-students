@@ -221,7 +221,7 @@ export class SignedDistanceGrid extends IParametricObject {
         }
 
         // Implementation of the sphere tracing algorithm
-        fn ray${this.typeName}Intersection(ray: Ray, ${this.variableName}: ${this.typeName}, index: u32) -> Intersection {
+        fn ray${this.typeName}Intersection(ray: Ray, ${this.variableName}: ${this.typeName}, index: u32, offset: f32) -> Intersection {
             let rayOriginLocalSpace = (${this.variableName}.modelMatrixInverse * vec4<f32>(ray.origin, 1.0)).xyz;
             let rayDirectionLocalSpace = normalize(${this.variableName}.modelMatrixInverse * vec4<f32>(ray.direction, 0.0)).xyz;
 
@@ -247,7 +247,7 @@ export class SignedDistanceGrid extends IParametricObject {
             var distance = 0.0;
             for(var i = 0; i < ${GridTextureSize}; i++) {
                 intersection = rayOriginLocalSpace + t * rayDirectionLocalSpace;
-                distance = sampleGrid(intersection, index);
+                distance = sampleGrid(intersection, index) + offset;
 
                 if (abs(distance) <= 0.0005) {
                     break;
@@ -278,15 +278,21 @@ export class SignedDistanceGrid extends IParametricObject {
             var found = false;
             var bestIntersection: Intersection = Intersection(-1.0, vec3<f32>(0.0), vec3<f32>(0.0));
             var foundIndex: i32 = -1;
+            var offset = -0.02;
 
             for(var i: u32 = 0; i < arrayLength(&${this.variableName}); i++) {
-                var intersection = ray${this.typeName}Intersection(ray, ${this.variableName}[i], i);
-                var dist = distance(ray.origin, intersection.position);
-                if (intersection.t > 0.0 && index != i32(i) && dist < bestDistance) {
-                    found = true;
-                    bestIntersection = intersection;
-                    bestDistance = dist;
-                    foundIndex = i32(i);
+                var intersection = ray${this.typeName}Intersection(ray, ${this.variableName}[i], i, offset);
+
+                var intersection_one = ray${this.typeName}Intersection(ray, ${this.variableName}[i], i, 0.0);
+                var intersection_two = ray${this.typeName}Intersection(ray, ${this.variableName}[i], i, offset);
+                if (intersection_two.t > 0.0 && !(intersection_one.t > 0.0)) {       
+                    var dist = distance(ray.origin, intersection.position);
+                    if (intersection.t > 0.0 && index != i32(i) && dist < bestDistance) {
+                        found = true;
+                        bestIntersection = intersection;
+                        bestDistance = dist;
+                        foundIndex = i32(i);
+                    }
                 }
             }
 

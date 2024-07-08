@@ -61,7 +61,7 @@
                     matryoshkaBlobDepth.push(depth);
             }
             depth--;
-            radiusOffset -= 0.025;
+            radiusOffset -= 0.035;
         }
 
         for (let timestep = 0; timestep < dataTimesteps.length; timestep++) {
@@ -83,7 +83,7 @@
         colors={(!experimentalColors) ? matryoshkaColors : matryoshkaExperiemntalColors}
         radius={blobsRadius}
         radiusOffsets={matryoshkaRadius}
-        alpha={blobAlpha}
+        alpha={1.0}
         depths={matryoshkaBlobDepth}
     />
 </div>
