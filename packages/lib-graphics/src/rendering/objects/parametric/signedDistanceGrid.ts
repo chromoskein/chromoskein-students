@@ -104,8 +104,9 @@ export interface SignedDistanceGridProperties {
     color: vec4,
     translate: vec4,
     scale: vec4,
+    outline: vec4
 }
-const SignedDistanceGridStructUniformSize: number = 176;
+const SignedDistanceGridStructUniformSize: number = 192;
 
 export const SignedDistanceGridStruct = new r.Struct({
     modelMatrix: new r.Array(r.floatle, 16),
@@ -113,6 +114,7 @@ export const SignedDistanceGridStruct = new r.Struct({
     color: new r.Array(r.floatle, 4),
     translate: new r.Array(r.floatle, 4),
     scale: new r.Array(r.floatle, 4),
+    outline: new r.Array(r.floatle, 4)
 });
 
 export const GridTextureSize: number = 64;
@@ -161,7 +163,8 @@ export class SignedDistanceGrid extends IParametricObject {
             modelMatrixInverse: mat4x4<f32>,
             color: vec4<f32>,
             translate: vec4<f32>,
-            scale: vec3<f32>,
+            scale: vec4<f32>,
+            outline: vec4<f32>,
         };
         
         struct ObjectIntersection {
@@ -278,14 +281,27 @@ export class SignedDistanceGrid extends IParametricObject {
             var found = false;
             var bestIntersection: Intersection = Intersection(-1.0, vec3<f32>(0.0), vec3<f32>(0.0));
             var foundIndex: i32 = -1;
-            var offset = -0.02;
-
+            
             for(var i: u32 = 0; i < arrayLength(&${this.variableName}); i++) {
-                var intersection = ray${this.typeName}Intersection(ray, ${this.variableName}[i], i, offset);
-
-                var intersection_one = ray${this.typeName}Intersection(ray, ${this.variableName}[i], i, 0.0);
-                var intersection_two = ray${this.typeName}Intersection(ray, ${this.variableName}[i], i, offset);
-                if (intersection_two.t > 0.0 && !(intersection_one.t > 0.0)) {       
+                
+                // Intersect an outline if object is set to outline 
+                if (${this.variableName}[i].outline.x == 1.0) {
+                    var offset = -0.02;
+                    var intersection_one = ray${this.typeName}Intersection(ray, ${this.variableName}[i], i, 0.0);
+                    var intersection_two = ray${this.typeName}Intersection(ray, ${this.variableName}[i], i, offset);
+                    if (intersection_two.t > 0.0 && !(intersection_one.t > 0.0)) {       
+                        var dist = distance(ray.origin, intersection_two.position);
+                        if (intersection_two.t > 0.0 && index != i32(i) && dist < bestDistance) {
+                            found = true;
+                            bestIntersection = intersection_two;
+                            bestDistance = dist;
+                            foundIndex = i32(i);
+                        }
+                    }
+                }
+                // Attempt to intersect entire object if outline is set to 0
+                else {
+                    var intersection = ray${this.typeName}Intersection(ray, ${this.variableName}[i], i, 0.0);
                     var dist = distance(ray.origin, intersection.position);
                     if (intersection.t > 0.0 && index != i32(i) && dist < bestDistance) {
                         found = true;
@@ -485,6 +501,7 @@ export class SignedDistanceGrid extends IParametricObject {
             this.properties[i].color = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
             this.properties[i].translate = vec4.fromValues(0.0, 0.0, 0.0, 0.0);
             this.properties[i].scale = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
+            this.properties[i].outline = vec4.fromValues(0.0, 0.0, 0.0, 0.0);
         }
         this.onAllocationMoved();
     }
@@ -682,6 +699,12 @@ export class SignedDistanceGrid extends IParametricObject {
         device.queue.submit([commandEncoder.finish()]);
 
         this.onAllocationMoved();
+    }
+
+    public outline(outline: boolean, index: number = 0) {
+        this.properties[index].outline[0] = outline ? 1.0 : 0.0;
+        this._dirtyCPU = true;
+        this._dirtyGPU = true;
     }
 
     public translate(t: vec3, index: number = 0) {
