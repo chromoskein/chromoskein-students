@@ -286,9 +286,9 @@ export class SignedDistanceGrid extends IParametricObject {
                 
                 // Intersect an outline if object is set to outline 
                 if (${this.variableName}[i].outline.x == 1.0) {
-                    var offset = -0.02;
+                    var offset = -0.01;
                     var intersection_one = ray${this.typeName}Intersection(ray, ${this.variableName}[i], i, 0.0);
-                    var intersection_two = ray${this.typeName}Intersection(ray, ${this.variableName}[i], i, offset);
+                    var intersection_two = ray${this.typeName}Intersection(ray, ${this.variableName}[i], i, offset / ${this.variableName}[i].scale.x);
                     if (intersection_two.t > 0.0 && !(intersection_one.t > 0.0)) {       
                         var dist = distance(ray.origin, intersection_two.position);
                         if (intersection_two.t > 0.0 && index != i32(i) && dist < bestDistance) {

@@ -4,6 +4,7 @@
     import { staticColors } from "../utils/treecolors";
     import type { ClusterBlob, ClusterNode } from "../utils/main";
     import SignedDistanceGridBlended from "../objects/SignedDistanceGridBlended.svelte";
+    import SignedDistanceGrid from "../objects/SignedDistanceGrid.svelte";
     import { blobFromPoints } from "../utils/main";
 
     export let selectedTimestep: number;
@@ -20,11 +21,14 @@
     let matryoshkaRadius: number[] = [];
     let matryoshkaBlobDepth: number[] = [];
     let matryoshkaBlobs: ClusterBlob[][] = [];
+    let matryoshkaOutline: boolean[] = []
 
+
+    let blendedBlobIndices: number[] = [];
+    let outlineBlobIndices: number[] = [];
     let matryoshkaBlobPoints: vec3[][] = [];
     let matryoshkaBlobCenters: vec3[] = [];
     let matryoshkaBlobScales: number[] = [];
-
 
     $: if (matryoshkaBlobs[selectedTimestep]) {
         matryoshkaBlobPoints.length = 0;
@@ -42,11 +46,13 @@
         matryoshkaColors = [];
         matryoshkaExperiemntalColors = [];
         matryoshkaRadius = [];
+        matryoshkaOutline = [];
 
-        let depth = matryoshkaBlobsVisible.filter(x => x).length;
-        let radiusOffset = depth * 0.02;
+        let lowest = true;
+        let depth = 0.0;
+        let radiusOffset = 0.0;
         let clusterPoints = [];
-        for (let i = 1; i < matryoshkaBlobsVisible.length + 1; i++) {
+        for (let i = matryoshkaBlobsVisible.length; i > 0; i--) {
             if (!matryoshkaBlobsVisible[i - 1]) {
                 continue;
             }
@@ -59,9 +65,11 @@
                     matryoshkaExperiemntalColors.push(staticColors[cluster.i % staticColors.length]);
                     matryoshkaRadius.push(radiusOffset);
                     matryoshkaBlobDepth.push(depth);
+                    matryoshkaOutline.push(lowest)
             }
-            depth--;
-            radiusOffset -= 0.035;
+            lowest = false;
+            depth++;
+            radiusOffset += 0.03;
         }
 
         for (let timestep = 0; timestep < dataTimesteps.length; timestep++) {
@@ -77,13 +85,28 @@
 
 <div>
     <SignedDistanceGridBlended
-        points={matryoshkaBlobPoints}
-        scales={matryoshkaBlobScales}
-        translates={matryoshkaBlobCenters}
-        colors={(!experimentalColors) ? matryoshkaColors : matryoshkaExperiemntalColors}
+        points={matryoshkaBlobs[selectedTimestep].filter((_, index) => matryoshkaOutline[index]).map(blob => blob.normalizedPoints)}
+        scales={matryoshkaBlobs[selectedTimestep].filter((_, index) => matryoshkaOutline[index]).map(blob => blob.scale)}
+        translates={matryoshkaBlobs[selectedTimestep].filter((_, index) => matryoshkaOutline[index]).map(blob => blob.center)}
+        colors={(!experimentalColors) ? matryoshkaColors.filter((_, index) => matryoshkaOutline[index])  : matryoshkaExperiemntalColors.filter((_, index) => matryoshkaOutline[index])}
         radius={blobsRadius}
-        radiusOffsets={matryoshkaRadius}
-        alpha={1.0}
-        depths={matryoshkaBlobDepth}
+        radiusOffsets={matryoshkaRadius.filter((_, index) => matryoshkaOutline[index])}
+        alpha={blobAlpha}
+        depths={matryoshkaBlobDepth.filter((_, index) => matryoshkaOutline[index])}
     />
+
+    {#each matryoshkaBlobs[selectedTimestep] as blob, i}
+        {#if !matryoshkaOutline[i]}
+              <SignedDistanceGrid
+                points={blob.normalizedPoints}
+                translate={blob.center}
+                scale={blob.scale}
+                radius={blobsRadius + matryoshkaRadius[i]}
+                visible={true}
+                color={(!experimentalColors) ? matryoshkaColors[i] : matryoshkaExperiemntalColors[i]}
+                outline={true}
+              />
+        {/if}
+    {/each}
+
 </div>

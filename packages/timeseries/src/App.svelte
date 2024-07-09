@@ -426,6 +426,7 @@
                 radius={blobsRadius}
                 visible={blobsVisible}
                 color={blobsColored ? dataClustersGivenK[blobsAmount][i].color.rgb : vec3.fromValues(1.0, 1.0, 1.0)}
+                outline={false}
               />
             {/each}
           {/if}

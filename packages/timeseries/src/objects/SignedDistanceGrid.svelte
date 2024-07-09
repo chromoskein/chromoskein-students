@@ -13,6 +13,7 @@
     export let color: vec3 = vec3.fromValues(1.0, 1.0, 1.0);
     export let translate: vec3 = vec3.fromValues(0.0, 0.0, 0.0);
     export let scale: number = 1.0;
+    export let outline: boolean = false;
 
     let device: Writable<GPUDevice> = getContext("device");
     let viewport: Writable<Viewport3D | null> = getContext("viewport");
@@ -27,6 +28,7 @@
     $: if (object) { object.properties[0].color = vec4.fromValues(color[0], color[1], color[2], 1.0); object.setDirtyCPU(); };
     $: if (object) object.fromPoints($device, [points], [radius]);
     $: if (object) object.visible = visible;
+    $: if (object) object.outline(outline, 0);
 
     onMount(() => {
         return () => {
