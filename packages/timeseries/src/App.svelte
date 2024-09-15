@@ -432,16 +432,21 @@
           {/if}
           {#if blobs[selectedTimestep] && visualizationSelected == "AbstractSpheres"}
             {#each blobs[selectedTimestep] as blob, i}
-              <ConnectedSpheres
-                tubePoints={centerPoints}
-                tubeRadius={(1.0 / centerPoints.length) / 15.0} 
-                tubeColor={[0.9, 0.9, 0.9]} 
-                tubeMulticolored={false} 
-                sphereRadius={blob.normalizedPoints.length / 1000.0 * 2}
-                sphereCenter={blob.center}
-                sphereColor={blobsColored ? [blobColors[i][0], blobColors[i][1], blobColors[i][2], blobColors[i][3]] : [1.0, 1.0, 1.0, 1.0]} 
+              <Sphere
+                radius={blob.normalizedPoints.length / 1000.0 * 2}
+                center={blob.center}
+                color={blobsColored ? [blobColors[i][0], blobColors[i][1], blobColors[i][2], blobColors[i][3]] : [1.0, 1.0, 1.0, 1.0]} 
               />
-            {/each}
+              {/each}
+              {#if blobsAmount > 1}
+                <ContinuousTube
+                  radius={(1.0 / blobsAmount) / 15.0}
+                  points={blobs[selectedTimestep].map(blob => blob.center)}
+                  color={[0.9, 0.9, 0.9]}
+                  multicolored={false}
+                />
+              {/if}
+            
           {/if}
           {#if blobs[selectedTimestep] && visualizationSelected == "Cones"}
             {#each blobs[selectedTimestep] as blob, i}
