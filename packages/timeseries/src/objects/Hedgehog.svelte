@@ -1,92 +1,113 @@
 <script lang="ts">
     import { getContext, onMount } from "svelte";
-    import {RoundedConeInstanced, RoundedCone} from "lib-graphics";
+    import {RoundedCone, Sphere} from "lib-graphics";
     import type { Writable } from "svelte/store";
     import type { Viewport3D } from "lib-graphics";
     import { vec3 } from "gl-matrix";
+    import type { ClusterBlob } from "../utils/main";
   
     let viewport: Writable<Viewport3D | null> = getContext("viewport");
-  
-    export let tubeRadius = 0.3;
-    export let tubePoints: vec3[] = [];
-    export let tubeColor: vec3 = vec3.fromValues(1.0, 1.0, 1.0);
-    export let coneStartRadius = 0.0;
-    export let coneCenter: vec3 = vec3.fromValues(0.0, 0.0, 0.0);
-    export let coneHeight: number[] = [];
-    export let coneOrientation: vec3[] = [];
-    export let coneColor: vec3 = vec3.fromValues(1.0, 1.0, 1.0);
     
-    let tube: RoundedConeInstanced;
-    let tubeID: number | null = null;
+    export let blobID: number = 0.0;
+    export let blobs: ClusterBlob[] = [];
+    export let minDistance: number = 1.0;
+    export let color: vec3 = vec3.fromValues(1.0, 1.0, 1.0);
+    export let radius: number = 0.1;
+    export let precise: boolean = false;
+
+
     let cones: RoundedCone[] = [];
-    let conesIDs: number[] = [];
-    
-    function keepIfNull(objectID) {
-      if (objectID != null) {
-        $viewport.scene.removeObjectByID(objectID);
+    let coneIDs: number[] = [];
+    let sphere: Sphere | null = null;
+    let sphereID: number | null = null;
+    let quills: vec3[] = [];
+
+    function findClosestPoint(blob1: ClusterBlob, blob2: ClusterBlob, minDistance: number): vec3 | null {
+      let foundMinDistance = Infinity;
+      let closestPoint: vec3 | null = null;
+
+      for (let i = 0; i < blob1.normalizedPoints.length; i++) {
+          for (let j = 0; j < blob2.normalizedPoints.length; j++) {
+            let a = vec3.add(vec3.create(), blob1.normalizedPoints[i], blob1.center); 
+            let b = vec3.add(vec3.create(), blob2.normalizedPoints[j], blob2.center);
+              let distance = vec3.dist(a, b);
+              if (distance < foundMinDistance && distance < minDistance) {
+                foundMinDistance = distance;
+                closestPoint = a;
+              }
+          } 
       }
+    
+      return closestPoint;
     }
+
   
     $: if ($viewport) {
-      keepIfNull(tubeID);
-      for (let i = 0; i < conesIDs.length; i++) {
-        keepIfNull(conesIDs[i]);
+      for (let i = 0; i < coneIDs.length; i++) {
+        $viewport.scene.removeObjectByID(coneIDs[i]);
       }
+      $viewport.scene.removeObjectByID(sphereID);
   
-      [tube, tubeID] = $viewport.scene.addObjectInstanced(
-        RoundedConeInstanced,
-        tubePoints.length
-      );
-      tube.setDirtyCPU();
-
-      for (let i = 0; i < coneOrientation.length; i++) {
-        [cones[i], conesIDs[i]] = $viewport.scene.addObject(RoundedCone);
+      for (let i = 0; i < quills.length; i++) {
+        [cones[i], coneIDs[i]] = $viewport.scene.addObject(RoundedCone);
         cones[i].setDirtyCPU;
+      }
+      
+      if (quills.length == 0) {
+        [sphere, sphereID] = $viewport.scene.addObject(Sphere);
+        sphere.setDirtyCPU();
       }
     }
   
-    $: if (tube && tubePoints && cones) {
-      for (let i = 0; i < tubePoints.length - 1; i++) {
-        tube.properties[i].start = [tubePoints[i][0], tubePoints[i][1], tubePoints[i][2]];
-        tube.properties[i].end = [
-          tubePoints[i + 1][0],
-          tubePoints[i + 1][1],
-          tubePoints[i + 1][2],
-        ];
-  
-        tube.properties[i].startRadius = tubeRadius;
-        tube.properties[i].endRadius = tubeRadius;
-  
-        tubeColor[2] = 1.0;
-        tubeColor[1] = 1.0;
-  
-        tube.properties[i].startColor = [tubeColor[0], tubeColor[1], tubeColor[2], 1.0];
-        tube.properties[i].endColor = [tubeColor[0], tubeColor[1], tubeColor[2], 1.0];
+    $: if (blobs) {
+      quills = [];
+      for (let i = 0; i < blobs.length; i++) {
+        if (i != blobID) {
+          let closestPoint = findClosestPoint(blobs[blobID], blobs[i], minDistance); 
+          if (closestPoint != null) {
+            if (precise) {
+              quills.push(closestPoint);
+            }
+            else {
+              quills.push(vec3.lerp(vec3.create(), blobs[blobID].center, blobs[i].center, 0.5));
+            }
+          }
+        }
       }
-      tube.setDirtyCPU();
+      console.log(quills);
+    }
 
-      for (let i = 0; i < coneOrientation.length; i++) {        
-        cones[i].properties.start = [coneCenter[0], coneCenter[1], coneCenter[2]];
+    $: if (cones || sphere) {
+      for (let i = 0; i < quills.length; i++) {        
+        cones[i].properties.start = [blobs[blobID].center[0], blobs[blobID].center[1], blobs[blobID].center[2]];
         cones[i].properties.end = [
-            coneCenter[0] + (0.5 - coneHeight[i]) * coneOrientation[i][0],
-            coneCenter[1] + (0.5 - coneHeight[i]) * coneOrientation[i][1],
-            coneCenter[2] + (0.5 - coneHeight[i]) * coneOrientation[i][2],
+            quills[i][0],
+            quills[i][1],
+            quills[i][2],
         ]
         
-        cones[i].properties.startRadius = coneStartRadius;
-        cones[i].properties.endRadius = 0.0001;
-        cones[i].properties.color = [coneColor[0], coneColor[1], coneColor[2], 1.0];
+        cones[i].properties.startRadius = radius;
+        cones[i].properties.endRadius = 0.001;
+        cones[i].properties.color = [color[0], color[1], color[2], 1.0];
         cones[i].setDirtyCPU();
+      }
+
+      if (quills.length == 0) {
+        console.log("There are no quills.");
+        sphere.properties.radius = radius;
+        sphere.properties.center = [blobs[blobID].center[0], blobs[blobID].center[1], blobs[blobID].center[2]];
+        sphere.properties.color = [color[0], color[1], color[2], 1.0];
+        sphere.setDirtyCPU();
       }
     }
   
     onMount(() => {
       return () => {
-        if (viewport && $viewport?.scene && tubeID != null) {
-          $viewport.scene.removeObjectByID(tubeID);
-          for (let i = 0; i < conesIDs.length; i++) {
-            $viewport.scene.removeObjectByID(conesIDs[i]);
+        if (viewport && $viewport?.scene) {
+          for (let i = 0; i < coneIDs.length; i++) {
+            $viewport.scene.removeObjectByID(coneIDs[i]);
           }
+          $viewport.scene.removeObjectByID(sphereID);
         }
       };
     });

@@ -236,6 +236,7 @@
       secondPCVal = PCA.secondPCVal;    
   }
 
+  let preciseQuills: boolean = false;
   let closestBlobs: vec3[][] = [];
   let coneOrient: vec3[][] = [];
   let maxDistance = 1.0;
@@ -462,19 +463,25 @@
               />
             {/each}                
           {/if}
-          {#if blobs[selectedTimestep] && visualizationSelected == "Hedgehog" && blobsAmount > 1}
+          {#if blobs[selectedTimestep] && visualizationSelected == "Hedgehog"}
             {#each blobs[selectedTimestep] as blob, i}
               <Hedgehog
-                tubePoints={centerPoints}
-                tubeRadius={(1.0 / centerPoints.length) / 15.0} 
-                tubeColor={[0.9, 0.9, 0.9]}
-                coneStartRadius={0.1}
-                coneCenter={blob.center}
-                coneHeight={blobDistance[i]}
-                coneOrientation={coneOrient[i]}
-                coneColor={blobsColored ? [dataClustersGivenK[blobsAmount][i].color.rgb[0], dataClustersGivenK[blobsAmount][i].color.rgb[1], dataClustersGivenK[blobsAmount][i].color.rgb[2]] : [1.0, 1.0, 1.0]}
+                radius = {blob.normalizedPoints.length / 1000.0 * 2}
+                blobs = {blobs[selectedTimestep]}
+                blobID = {i}
+                precise = {preciseQuills}
+                minDistance = {maxDistance}
+                color={blobsColored ? [dataClustersGivenK[blobsAmount][i].color.rgb[0], dataClustersGivenK[blobsAmount][i].color.rgb[1], dataClustersGivenK[blobsAmount][i].color.rgb[2]] : [1.0, 1.0, 1.0]}
               />
             {/each}
+            {#if blobsAmount > 1}
+              <ContinuousTube
+                radius={(1.0 / blobsAmount) / 15.0}
+                points={blobs[selectedTimestep].map(blob => blob.center)}
+                color={[0.9, 0.9, 0.9]}
+                multicolored={false}
+              />
+            {/if}
           {/if}
         </Viewport3D>
       {/if}
@@ -548,7 +555,8 @@
               <Slider labelText="Alpha" fullWidth min={0.05} max={1.0} step={0.05} bind:value={blobAlpha} />
             {/if}
             {#if visualizationSelected == "Hedgehog"}
-              <Slider labelText="Max distance" fullWidth min={0.0} max={1.0} step={0.05} bind:value={maxDistance} />
+              <Slider labelText="Max distance" fullWidth min={0.0} max={0.5} step={0.01} bind:value={maxDistance} />
+              <Checkbox labelText="Precise quills" bind:checked={preciseQuills} />
             {/if}
 
             {#if visualizationSelected == "Volume"}
