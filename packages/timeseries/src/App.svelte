@@ -27,12 +27,11 @@
   import Sphere from "./objects/Sphere.svelte";
   import Spline from "./objects/Spline.svelte";
   import {DSVDelimiter, parseBEDString} from "./utils/data-parser";
-  import {computePCA, findClosestBlobsByClosestPoints, getCenterPoints, getConeOrientation} from "./utils/abstractClustersUtils";
+  import {computePCA, getCenterPoints} from "./utils/abstractClustersUtils";
 
   import "@carbon/styles/css/styles.css";
   import "@carbon/charts/styles.css";
   import ConnectedCones from "./objects/ConnectedCones.svelte";
-  import ConnectedSpheres from "./objects/ConnectedSpheres.svelte";
   import MatryoshkaClusters from "./visalizations/MatryoshkaClusters.svelte";
   import Hedgehog from "./objects/Hedgehog.svelte";
   import InteractiveCluster from "./visalizations/InteractiveCluster.svelte";
@@ -237,14 +236,7 @@
   }
 
   let preciseQuills: boolean = false;
-  let closestBlobs: vec3[][] = [];
-  let coneOrient: vec3[][] = [];
   let maxDistance = 1.0;
-  let blobDistance: number[][] = [];
-  $: if (blobs[selectedTimestep] && (visualizationSelected == "Hedgehog" || visualizationSelected == "Default") && blobsAmount > 1) {
-    ({closestBlobs, blobDistance} = findClosestBlobsByClosestPoints(blobs[selectedTimestep], maxDistance));
-    coneOrient = getConeOrientation(blobs[selectedTimestep], closestBlobs);
-  }
 
   let clusterVisualization = "AbstractSphere";
   let action = "Change representation";

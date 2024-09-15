@@ -74,7 +74,6 @@
           }
         }
       }
-      console.log(quills);
     }
 
     $: if (cones || sphere) {
@@ -93,7 +92,6 @@
       }
 
       if (quills.length == 0) {
-        console.log("There are no quills.");
         sphere.properties.radius = radius;
         sphere.properties.center = [blobs[blobID].center[0], blobs[blobID].center[1], blobs[blobID].center[2]];
         sphere.properties.color = [color[0], color[1], color[2], 1.0];
