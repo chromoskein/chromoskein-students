@@ -37,6 +37,7 @@
   import Hedgehog from "./objects/Hedgehog.svelte";
   import InteractiveCluster from "./visalizations/InteractiveCluster.svelte";
   import ContinuousTube from "./objects/ContinuousTube.svelte";
+  import type { Chromosome } from "./utils/data-models";
 
   export const saveAs = (blob, name) => {
     // Namespace is used to prevent conflict w/ Chrome Poper Blocker extension (Issue https://github.com/eligrey/FileSaver.js/issues/561)
@@ -52,25 +53,49 @@
   const device: Writable<GPUDevice | null> = writable(null);
   const graphicsLibrary: Writable<Graphics.GraphicsLibrary | null> = writable(null);
 
-  let everything: vec3[] = [];
-  let pdbModel;
-
   let viewport: Graphics.Viewport3D | null = null;
 
-	let pdbFiles;
+  let chromosomes: Chromosome[] = [];
 
-	$: if (pdbFiles) {
-		console.log(pdbFiles);
-    console.log(typeof pdbFiles);
-    
+	let pdbFiles;
+  let newModels: Chromosome[] = [];
+	$: if (pdbFiles) { 
 		for (const file of pdbFiles) {
-			console.log(`${file.name}: ${file.size} bytes`);
       file.text().then(
-        pdbText => console.log(pdbText)
-        
+        pdbText => {
+          let loadedModels = [];
+          let model = parsePdb(pdbText);
+          if (model.ranges.length == 0) {
+            loadedModels.push({
+                name: "0",
+                points: model.bins.map((v) => vec3.fromValues(v.x, v.y, v.z)),
+                color: {r: Math.random(), g: Math.random(), b: Math.random()}
+              });
+          } else {
+            for (let i = 0; i < model.ranges.length; i++) {
+              loadedModels.push({
+                name: i.toString(),
+                points: model.bins.slice(model.ranges[i].from, model.ranges[i].to).map((v) => vec3.fromValues(v.x, v.y, v.z)),
+                color: {r: Math.random(), g: Math.random(), b: Math.random()}
+              });
+            }
+          }
+          newModels = loadedModels;
+        }
       );
 		}
 	}
+
+ $: if (newModels && chromosomes) {
+  chromosomes = chromosomes.concat(newModels);
+ }
+
+ $: if (chromosomes) {
+    for (let chromosome of chromosomes) {
+      console.log(chromosome.name)
+    }
+    console.log(chromosomes);
+ }
 
   //#region Data
 
@@ -134,11 +159,6 @@
     //normalizePointClouds(timesteps)
     const filenames: string[] = new Array(600).fill(null).map((v, i) => "./timeseries/timestep_" + (i + 1).toString() + ".XYZ");
     const timesteps = await loadTimesteps(filenames);
-    const pdbText: string = await ( await fetch("./pdb/GSM2219497_Cell_1_genome_structure_model.pdb")).text();
-    pdbModel = await parsePdb(pdbText);
-    everything = pdbModel.bins.map((v) => vec3.fromValues(v.x, v.y, v.z));
-
-    console.log(pdbModel);
     dataTimesteps = normalizePointClouds(timesteps);
     // dataTimesteps = normalizePointClouds(timesteps);
     dataPathlines = timestepsToPathlines(dataTimesteps);
@@ -375,13 +395,13 @@
           {/if}
 
           {#if visualizationSelected == "Pathline" && dataClustersGivenK && dataClustersGivenK[blobsAmount]}
-            {#each pdbModel.ranges as range, i}
-            <ContinuousTube
-              points={everything.slice(range.from, range.to)}
-              radius={blobsRadius}
-              color={[Math.random(), Math.random(), Math.random()]}
-              multicolored={false}
-            />
+            {#each chromosomes as chromosome, i}
+              <ContinuousTube
+                points={chromosome.points}
+                radius={blobsRadius}
+                color={[chromosome.color.r, chromosome.color.g, chromosome.color.b]}
+                multicolored={false}
+              />
             {/each}
             <!--
             {#each dataClustersGivenK[blobsAmount] as cluster, _}

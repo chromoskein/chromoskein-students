@@ -1,3 +1,5 @@
+import { vec3 } from "gl-matrix"
+
 export interface HiCMapModel
 {
     frequencies: number[][],
@@ -56,4 +58,11 @@ export interface StandardBEDOptionalFields
     blockCount: number | null,
     blockSizes: number[] | null,
     blockStarts: number[] | null
+}
+
+export type Chromosome =
+{
+    name: string,
+    points: vec3[],
+    color: { r: number, g: number, b: number }
 }
