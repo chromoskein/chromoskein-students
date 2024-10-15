@@ -20,7 +20,7 @@
   import type { ClusterBlob, ClusterNode } from "./utils/main";
 
   import "carbon-components-svelte/css/g100.css";
-  import { Header, SkipToContent, Checkbox, Accordion, AccordionItem, Select, SelectItem } from "carbon-components-svelte";
+  import { Header, SkipToContent, Checkbox, Accordion, AccordionItem, Select, SelectItem, Button } from "carbon-components-svelte";
   import { Slider } from "carbon-components-svelte";
   import TimeVolume from "./objects/TimeVolume.svelte";
   import SignedDistanceGrid from "./objects/SignedDistanceGrid.svelte";
@@ -56,6 +56,21 @@
   let pdbModel;
 
   let viewport: Graphics.Viewport3D | null = null;
+
+	let pdbFiles;
+
+	$: if (pdbFiles) {
+		console.log(pdbFiles);
+    console.log(typeof pdbFiles);
+    
+		for (const file of pdbFiles) {
+			console.log(`${file.name}: ${file.size} bytes`);
+      file.text().then(
+        pdbText => console.log(pdbText)
+        
+      );
+		}
+	}
 
   //#region Data
 
@@ -649,6 +664,17 @@
               {/key}
           </AccordionItem>
 
+          <AccordionItem title="Data Loading">
+            <input type="file"  accept=".pdb,.PDB" id="file-input" bind:files={pdbFiles}/>
+            <Button
+              kind="secondary"
+              size="field"
+              on:click={() => document.getElementById("file-input").click()}
+            >  
+              Load PDB File
+            </Button>
+
+          </AccordionItem>
           <!-- <AccordionItem title="Pathlines" /> -->
         </Accordion>
       </div>
@@ -709,5 +735,9 @@
 
   .cluster-dendogram-row:last-child {
     border: 0px;
+  }
+
+  #file-input {
+    display: none;
   }
 </style>
