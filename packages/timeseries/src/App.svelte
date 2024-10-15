@@ -10,6 +10,7 @@
   import { onMount, setContext } from "svelte";
   import { writable, type Writable } from "svelte/store";
   import * as Graphics from "lib-graphics";
+  import { parsePdb } from "lib-dataloader";
   import Viewport3D from "./viewports/Viewport3D.svelte";
   import { vec3, type vec4 } from "gl-matrix";
   import "./styles/splitpanes.css";
@@ -50,6 +51,9 @@
   const adapter: Writable<GPUAdapter | null> = writable(null);
   const device: Writable<GPUDevice | null> = writable(null);
   const graphicsLibrary: Writable<Graphics.GraphicsLibrary | null> = writable(null);
+
+  let everything: vec3[] = [];
+  let pdbModel;
 
   let viewport: Graphics.Viewport3D | null = null;
 
@@ -115,6 +119,11 @@
     //normalizePointClouds(timesteps)
     const filenames: string[] = new Array(600).fill(null).map((v, i) => "./timeseries/timestep_" + (i + 1).toString() + ".XYZ");
     const timesteps = await loadTimesteps(filenames);
+    const pdbText: string = await ( await fetch("./pdb/GSM2219497_Cell_1_genome_structure_model.pdb")).text();
+    pdbModel = await parsePdb(pdbText);
+    everything = pdbModel.bins.map((v) => vec3.fromValues(v.x, v.y, v.z));
+
+    console.log(pdbModel);
     dataTimesteps = normalizePointClouds(timesteps);
     // dataTimesteps = normalizePointClouds(timesteps);
     dataPathlines = timestepsToPathlines(dataTimesteps);
@@ -207,7 +216,7 @@
   }
 
 
-  let visualizationSelected = "Implicit"
+  let visualizationSelected = "Pathline"
   let showConnectors = false;
   let selectedTimestep = 0; 
 
@@ -351,6 +360,15 @@
           {/if}
 
           {#if visualizationSelected == "Pathline" && dataClustersGivenK && dataClustersGivenK[blobsAmount]}
+            {#each pdbModel.ranges as range, i}
+            <ContinuousTube
+              points={everything.slice(range.from, range.to)}
+              radius={blobsRadius}
+              color={[Math.random(), Math.random(), Math.random()]}
+              multicolored={false}
+            />
+            {/each}
+            <!--
             {#each dataClustersGivenK[blobsAmount] as cluster, _}
               <ContinuousTube
                 points={dataTimesteps[selectedTimestep].slice(cluster.from, cluster.to + 1)}
@@ -358,7 +376,8 @@
                 color={blobsColored ? vec3.fromValues(cluster.color.rgb[0], cluster.color.rgb[1], cluster.color.rgb[2]) : [1.0, 1.0, 1.0]}
                 multicolored={false}
               />
-              {/each}
+            {/each}
+            -->
           {/if}
 
           {#if visualizationSelected == "Spline" && dataClustersGivenK && dataClustersGivenK[blobsAmount]}
@@ -541,7 +560,7 @@
             <Slider labelText="Cluster amount" fullWidth min={1} max={15} bind:value={blobsAmount} />
             {/if}
             {#if visualizationSelected == "Implicit" || visualizationSelected == "Matryoshka" || visualizationSelected == "Pathline" || visualizationSelected == "Spheres" || visualizationSelected == "Spline"}
-              <Slider labelText="Radius" fullWidth min={0.01} max={0.1} step={0.01} bind:value={blobsRadius} />
+              <Slider labelText="Radius" fullWidth min={0.01} max={0.3} step={0.01} bind:value={blobsRadius} />
             {/if}
             {#if visualizationSelected == "Matryoshka"}
               <Slider labelText="Alpha" fullWidth min={0.05} max={1.0} step={0.05} bind:value={blobAlpha} />
