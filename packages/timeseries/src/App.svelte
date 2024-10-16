@@ -40,6 +40,20 @@
   import type { Chromosome } from "./utils/data-models";
   import ChromosomeItem from "./visalizations/ChromosomeItem.svelte";
 
+  enum VisualisationType {
+    None = "None",
+    Implicit = "Implicit",
+    Pathline = "Pathline",
+    Spheres = "Spheres",
+    Spline = "Spline",
+    Volume = "Volume",
+    Matryoshka = "Matryoshka",
+    AbstractSpheres = "Abstract Spheres",
+    Cones = "Cones",
+    Hedgehog = "Hedgehog",
+    Composite = "Composite"
+  }
+
   export const saveAs = (blob, name) => {
     // Namespace is used to prevent conflict w/ Chrome Poper Blocker extension (Issue https://github.com/eligrey/FileSaver.js/issues/561)
     const a = document.createElementNS("http://www.w3.org/1999/xhtml", "a");
@@ -92,12 +106,13 @@
 		}
 	}
 
-  $: if (chromosomes) {
+  $: (async (chromosomes) => {
+    if (chromosomes) {
       for (let chromosome of chromosomes) {
         console.log(chromosome.name)
       }
       console.log(chromosomes);
-  }
+  }})(chromosomes);
 
   function addChromosomes(models: Chromosome[]) {
     chromosomes = chromosomes.concat(models);
@@ -257,7 +272,7 @@
   }
 
 
-  let visualizationSelected = "Pathline"
+  let visualizationSelected = VisualisationType.Pathline;
   let showConnectors = false;
   let selectedTimestep = 0; 
 
@@ -485,7 +500,7 @@
               />
             {/each}
           {/if}
-          {#if blobs[selectedTimestep] && visualizationSelected == "AbstractSpheres"}
+          {#if blobs[selectedTimestep] && visualizationSelected == "Abstract Spheres"}
             {#each blobs[selectedTimestep] as blob, i}
               <Sphere
                 radius={blob.normalizedPoints.length / 1000.0 * 2}
@@ -547,21 +562,20 @@
       <div style="padding: 8px; color:white; overflow: auto; height: calc(90vh);">
         <Accordion>
           <AccordionItem open title="Visualisation Parameters">
-            <Select size="sm" inline labelText="Visualization:" bind:selected={visualizationSelected}>
-              <SelectItem value="None" />
-              <SelectItem value="Implicit" />
-              <SelectItem value="Pathline" />
-              <SelectItem value="Spheres" />
-              <SelectItem value="Spline" />
-              <SelectItem value="Volume" />
-              <SelectItem value="Matryoshka" />
-              <SelectItem value="AbstractSpheres" text="Abstract Spheres" />
-              <SelectItem value="Cones" />
-              <SelectItem value="Hedgehog" />
-              <SelectItem value="Composite" />
+            <Select size="sm" inline labelText="Model">
+              <SelectItem value={-1} text="Base"/>
+              {#each chromosomes as chromosome, i}
+                <SelectItem value={chromosome.id} text={chromosome.name}/>
+              {/each}
             </Select>
 
-            {#if visualizationSelected == "Composite"}
+            <Select size="sm" inline labelText="Visualization:" bind:selected={visualizationSelected}>
+              {#each Object.keys(VisualisationType) as key, index}
+                <SelectItem value={key}/>  
+              {/each}
+            </Select>
+
+            {#if visualizationSelected == VisualisationType.Composite}
             <Select size="sm" inline labelText="Action:" bind:selected={action}>
               <SelectItem value="Change representation" />
               <SelectItem value="Split" />
@@ -569,51 +583,47 @@
             </Select>
             {/if}
 
-            {#if visualizationSelected == "Composite" && action == "Change representation"}
-            <Select size="sm" inline labelText="Visualization type:" bind:selected={clusterVisualization}>
-              <SelectItem value="Implicit" />
-              <SelectItem value="Spheres" text="Sphere" />
-              <SelectItem value="Pathline" />
-              <SelectItem value="Spline" />
-              <SelectItem value="AbstractSphere" text="Abstract Sphere"/>
-              <SelectItem value="Cone" />
-              <SelectItem value="Hedgehog" />
-              <SelectItem value="Volume" />
-              <SelectItem value="AbstractVolume" text="Abstract Volume" />
-            </Select>
+            {#if visualizationSelected == VisualisationType.Composite && action == "Change representation"}
+              <Select size="sm" inline labelText="Visualization type:" bind:selected={clusterVisualization}>
+              {#each Object.keys(VisualisationType) as key, index}
+                {#if key != VisualisationType.None}
+                  <SelectItem value={key}/>  
+                {/if}
+              {/each}
+              </Select>
             {/if}
 
-            {#if visualizationSelected == "Composite"}
+            {#if visualizationSelected == VisualisationType.Composite}
             <Checkbox labelText="Show cluster connections" bind:checked={showConnectors} />
             {/if}
 
-            {#if visualizationSelected != "Composite" && visualizationSelected != "None" && visualizationSelected != "Volume" && visualizationSelected != "Matryoshka"}
+            {#if visualizationSelected != VisualisationType.Composite && visualizationSelected != VisualisationType.None && visualizationSelected != VisualisationType.Volume && visualizationSelected != VisualisationType.Matryoshka}
             <Checkbox labelText="Colored" bind:checked={blobsColored} />
             {/if}
 
-            {#if visualizationSelected != "None" && visualizationSelected != "Composite"}
+            {#if visualizationSelected != VisualisationType.None && visualizationSelected != VisualisationType.Composite}
             <Checkbox labelText="Cluster at timestep" bind:checked={timestepClustering} />
             {/if}
 
-            {#if visualizationSelected == "Matryoshka"}
+            {#if visualizationSelected == VisualisationType.Matryoshka}
             <Checkbox labelText="Experimental colors" bind:checked={experimentalColors} />
             {/if}
 
-            {#if visualizationSelected != "Matryoshka" && visualizationSelected != "Composite" && visualizationSelected != "None"}
+            {#if visualizationSelected != VisualisationType.Matryoshka && visualizationSelected != VisualisationType.Composite && visualizationSelected != VisualisationType.None}
             <Slider labelText="Cluster amount" fullWidth min={1} max={15} bind:value={blobsAmount} />
             {/if}
-            {#if visualizationSelected == "Implicit" || visualizationSelected == "Matryoshka" || visualizationSelected == "Pathline" || visualizationSelected == "Spheres" || visualizationSelected == "Spline"}
+            {#if visualizationSelected == VisualisationType.Implicit || visualizationSelected == VisualisationType.Matryoshka || visualizationSelected == VisualisationType.Pathline || visualizationSelected == VisualisationType.Spheres || visualizationSelected == VisualisationType.Spline}
               <Slider labelText="Radius" fullWidth min={0.01} max={0.3} step={0.01} bind:value={blobsRadius} />
             {/if}
-            {#if visualizationSelected == "Matryoshka"}
+            {#if visualizationSelected == VisualisationType.Matryoshka}
               <Slider labelText="Alpha" fullWidth min={0.05} max={1.0} step={0.05} bind:value={blobAlpha} />
             {/if}
-            {#if visualizationSelected == "Hedgehog"}
+            {#if visualizationSelected == VisualisationType.Hedgehog}
               <Slider labelText="Max distance" fullWidth min={0.0} max={0.5} step={0.01} bind:value={maxDistance} />
               <Checkbox labelText="Precise quills" bind:checked={preciseQuills} />
             {/if}
 
-            {#if visualizationSelected == "Volume"}
+            {#if visualizationSelected == VisualisationType.Volume}
               <Checkbox labelText="Abstractize volumes" bind:checked={abstractVolumes} />
 
               <Slider labelText="Transparency" fullWidth min={0.0} max={1.0} step={0.01} bind:value={volumeTransparency} />
@@ -636,7 +646,7 @@
             {/if}
 
             {#if dataClustersGivenK && 
-            (visualizationSelected == "Cones" || visualizationSelected == "Spheres" || visualizationSelected == "AbstractSpheres" || visualizationSelected == "Spline" ||
+            (visualizationSelected == "Cones" || visualizationSelected == "Spheres" || visualizationSelected == "Abstract Spheres" || visualizationSelected == "Spline" ||
             visualizationSelected == "Hedgehog" || visualizationSelected == "Implicit" || visualizationSelected == "Volume" || visualizationSelected == "Pathline")}
               <div class="cluster-dendogram">
                 {#each dataClustersGivenK.slice(1, 16) as clustersAtLevel, clusterLevel}
