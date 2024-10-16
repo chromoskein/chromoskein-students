@@ -62,6 +62,7 @@ export interface StandardBEDOptionalFields
 
 export type Chromosome =
 {
+    id: number,
     name: string,
     visible: boolean,
     points: vec3[],
