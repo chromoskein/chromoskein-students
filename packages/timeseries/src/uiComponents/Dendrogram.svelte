@@ -36,7 +36,6 @@
     }
 
     function fetchColor(cluster, i, experimental) {
-        console.log(experimental);
         let color = [];
         if (experimental) { 
             color = [255 * staticColors[i % staticColors.length][0], 255 * staticColors[i % staticColors.length][1], 255 * staticColors[i % staticColors.length][2]];

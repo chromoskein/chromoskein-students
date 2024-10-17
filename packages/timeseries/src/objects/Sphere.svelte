@@ -3,9 +3,8 @@
   import * as Graphics from "lib-graphics";
   import type { Writable } from "svelte/store";
   import type { Viewport3D } from "lib-graphics";
-    import { vec3 } from "gl-matrix";
+  import { vec3 } from "gl-matrix";
 
-  let device: Writable<GPUDevice> = getContext("device");
   let viewport: Writable<Graphics.Viewport3D | null> = getContext("viewport");
 
   export let radius = 0.3;

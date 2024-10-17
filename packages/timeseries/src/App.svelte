@@ -341,10 +341,10 @@
             {/each}
           {/if}
           {#if blobs[selectedTimestep] && visualizationSelected == VisualisationType.AbstractSpheres} 
-            {#each blobs[selectedTimestep] as blob, i}
+            {#each dataClustersGivenK[blobsAmount] as cluster, i}
               <Sphere
-                radius={blob.normalizedPoints.length / 1000.0 * 2}
-                center={blob.center}
+                radius={(cluster.to - cluster.from + 1) / 1000.0 * 2}
+                center={blobFromPoints(dataTimesteps[selectedTimestep].slice(cluster.from, cluster.to + 1)).center}
                 color={blobsColored ? [dataClustersGivenK[blobsAmount][i].color.rgb[0], dataClustersGivenK[blobsAmount][i].color.rgb[1], dataClustersGivenK[blobsAmount][i].color.rgb[2], 1.0] : [1.0, 1.0, 1.0, 1.0]}
               />
             {/each}
