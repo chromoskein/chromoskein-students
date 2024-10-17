@@ -61,6 +61,7 @@
 
     // TODO: fix number of octopi tentacles when any cluster is split
     function onElementLeftButtonClick(event) {
+      if (event.button != 0) return;
 		  let rect = canvas.getBoundingClientRect(); 
       let ray = Graphics.screenSpaceToRay(vec2.fromValues((event.clientX - rect.left) / rect.width, (event.clientY - rect.top) / rect.height), $viewport.camera);
 
@@ -82,22 +83,20 @@
       }
 	  }
 
+    function onMouseMoveEvent(event) {
+      let rect = canvas.getBoundingClientRect(); // abs. size of element    
+      let ray = Graphics.screenSpaceToRay(vec2.fromValues((event.clientX - rect.left) / rect.width, (event.clientY - rect.top) / rect.height), $viewport.camera);
+      let hitCluster: ClusterCompositeNode = clusterObjects.rayIntersection(ray);
+      if (action == "Merge") clusterHighlighter.updateHighlightedClusters(hitCluster, "Merge");
+      else clusterHighlighter.updateHighlightedClusters(hitCluster, "Normal");
+    }
+
     $: if ($viewport) {
       if (clusterObjects == null) {
         clusterObjects = new CompositeClusters(dataClustersGivenK, pointsAtTimesteps, selectedTimestep, $viewport, $device);
         canvas = document.getElementById("canvas");
-        canvas?.addEventListener("mousedown", event => {
-          if (event.button == 0) { // left click for mouse
-              onElementLeftButtonClick(event);
-          }});
-        canvas?.addEventListener("mousemove", function(event) {
-          let rect = canvas.getBoundingClientRect(); // abs. size of element    
-          let ray = Graphics.screenSpaceToRay(vec2.fromValues((event.clientX - rect.left) / rect.width, (event.clientY - rect.top) / rect.height), $viewport.camera);
-          let hitCluster: ClusterCompositeNode = clusterObjects.rayIntersection(ray);
-          if (action == "Merge") clusterHighlighter.updateHighlightedClusters(hitCluster, "Merge");
-          else clusterHighlighter.updateHighlightedClusters(hitCluster, "Normal");
-        });
-
+        canvas?.addEventListener("mousedown", onElementLeftButtonClick);
+        canvas?.addEventListener("mousemove", onMouseMoveEvent);
       }
     }
 
@@ -130,7 +129,8 @@
         if (clusterObjects)
           clusterObjects.delete();
         canvas = document.getElementById("canvas");
-        //canvas?.removeEventListener("mousedown", onElementButtonClick); 
+        canvas?.removeEventListener("mousedown", onElementLeftButtonClick);
+        canvas?.removeEventListener("mousemove", onMouseMoveEvent) 
       };
     });
   </script>

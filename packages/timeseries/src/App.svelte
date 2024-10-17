@@ -16,7 +16,7 @@
   import "./styles/splitpanes.css";
   import { Pane, Splitpanes } from "svelte-splitpanes";
 
-  import { loadTimesteps, normalizePointClouds, timestepsToPathlines, loadBitmap, clusterTimestep, clusterPathlines, loadBEDfile, blobFromPoints } from "./utils/main";
+  import { loadTimesteps, normalizePointClouds, timestepsToPathlines, loadBitmap, clusterTimestep, clusterPathlines, loadBEDfile, blobFromPoints, VisualisationType } from "./utils/main";
   import type { ClusterBlob, ClusterNode } from "./utils/main";
 
   import "carbon-components-svelte/css/g100.css";
@@ -24,10 +24,9 @@
   import { Slider } from "carbon-components-svelte";
   import TimeVolume from "./objects/TimeVolume.svelte";
   import SignedDistanceGrid from "./objects/SignedDistanceGrid.svelte";
-  import { treeColor, staticColors } from "./utils/treecolors";
+  import { treeColor } from "./utils/treecolors";
   import Sphere from "./objects/Sphere.svelte";
   import Spline from "./objects/Spline.svelte";
-  import {DSVDelimiter, parseBEDString} from "./utils/data-parser";
   import {computePCA, getCenterPoints} from "./utils/abstractClustersUtils";
 
   import "@carbon/styles/css/styles.css";
@@ -38,21 +37,9 @@
   import InteractiveCluster from "./visalizations/InteractiveCluster.svelte";
   import ContinuousTube from "./objects/ContinuousTube.svelte";
   import type { Chromosome } from "./utils/data-models";
-  import ChromosomeItem from "./visalizations/ChromosomeItem.svelte";
+  import ChromosomeItem from "./uiComponents/ChromosomeItem.svelte";
+  import Dendrogram from "./uiComponents/Dendrogram.svelte";
 
-  enum VisualisationType {
-    None = "None",
-    Implicit = "Implicit",
-    Pathline = "Pathline",
-    Spheres = "Spheres",
-    Spline = "Spline",
-    Volume = "Volume",
-    Matryoshka = "Matryoshka",
-    AbstractSpheres = "Abstract Spheres",
-    Cones = "Cones",
-    Hedgehog = "Hedgehog",
-    Composite = "Composite"
-  }
 
   export const saveAs = (blob, name) => {
     // Namespace is used to prevent conflict w/ Chrome Poper Blocker extension (Issue https://github.com/eligrey/FileSaver.js/issues/561)
@@ -105,14 +92,6 @@
       file.text().then(pdbText => addChromosomes(loadNewModels(pdbText)));
 		}
 	}
-
-  $: (async (chromosomes) => {
-    if (chromosomes) {
-      for (let chromosome of chromosomes) {
-        console.log(chromosome.name)
-      }
-      console.log(chromosomes);
-  }})(chromosomes);
 
   function addChromosomes(models: Chromosome[]) {
     chromosomes = chromosomes.concat(models);
@@ -177,11 +156,9 @@
 
   onMount(async () => {
     await getGPU();
-    //normalizePointClouds(timesteps)
     const filenames: string[] = new Array(600).fill(null).map((v, i) => "./timeseries/timestep_" + (i + 1).toString() + ".XYZ");
     const timesteps = await loadTimesteps(filenames);
     dataTimesteps = normalizePointClouds(timesteps);
-    // dataTimesteps = normalizePointClouds(timesteps);
     dataPathlines = timestepsToPathlines(dataTimesteps);
     staticDataClustersGivenK = await clusterPathlines(dataPathlines);
     staticDataClustersGivenK = staticDataClustersGivenK.slice(0, 16);
@@ -236,7 +213,7 @@
     volumeColormap = await loadBitmap(path);
   })();
 
-  $: if (volumeColormap && viewport != null) {
+  $: if (volumeColormap && viewport != null && viewport.scene != null) {
     viewport.scene.setColorMapFromBitmap(volumeColormap);
   }
 
@@ -254,7 +231,7 @@
   // Blobs
   let blobsVisible = true;
   let blobsRadius = 0.03;
-  let blobsAmount = 1;
+  let blobsAmount: number = 1;
   let blobsColored = true;
   let blobAlpha = 0.4;
   let blobColors: vec4[] = [];
@@ -276,14 +253,7 @@
   let showConnectors = false;
   let selectedTimestep = 0; 
 
-  let matryoshkaBlobsVisible = [false, true, false, true, false, false, false, false, false, false, false, false, false, false, false];
-  function dendrogramClick(depth) {
-    blobsAmount = depth + 1;
-  }
-
-  function dendrogramClickMatryoshka(depth) {
-    matryoshkaBlobsVisible[depth] = !matryoshkaBlobsVisible[depth];
-  }
+  let matryoshkaBlobsVisible:boolean[] = [false, true, false, true, false, false, false, false, false, false, false, false, false, false, false];
 
   let centerPoints: vec3[] = [];
   $: if (blobs[selectedTimestep] && (visualizationSelected == "Spheres"  || visualizationSelected == "Cones" || visualizationSelected == "Hedgehog")) {
@@ -305,75 +275,11 @@
 
   let clusterVisualization = "AbstractSphere";
   let action = "Change representation";
-
-  // fixed for now
-  let filename = "./timeseries/tmpfile.bed";
-  let result = loadBEDfile(filename);
-  result.then((res) => {
-    let data = parseBEDString(res, DSVDelimiter.Tab);
-    // TODO
-  });
-
   let clustersUpdated = false;
+  let interactiveClusterRef;
 
   function updateClustersUpdated(newClustersUpdated) {
     clustersUpdated = newClustersUpdated;
-  }
-
-  let interactiveClusterRef;
-
-  function callSplitClusters(cluster) {
-    switch (action) {
-      case "Split":
-        cluster = interactiveClusterRef.getClusterComposite(cluster);
-        interactiveClusterRef.splitClusters(cluster);
-        break;
-      case "Merge":
-        cluster = interactiveClusterRef.getClusterComposite(cluster);
-        interactiveClusterRef.mergeClusters(cluster);
-    }
-  }
-
-  function findNodeWithTwoChildren(node) {
-    while (node.children.length == 1 && node.k + 1 < dataClustersGivenK.length - 1) { 
-      let originalRowIndex = node.k + 1;
-      let originalColumnIndex = node.children[0];
-      node = dataClustersGivenK[originalRowIndex][originalColumnIndex];
-    }
-    return node;
-  }
-
-  function addChildren(list, node, i) {
-    for (let c = 0; c < node.children.length; c++) {
-      let originalRowIndex = node.k + 1;
-      let originalColumnIndex = node.children[c];
-      let child = dataClustersGivenK[originalRowIndex][originalColumnIndex];
-      list[i + 1].push(child);
-    }
-    return list;
-  }
-
-  let sparseDataClustersGivenK: ClusterNode[][] | null = [];
-
-  $: if (dataClustersGivenK) {
-    sparseDataClustersGivenK = [];
-    sparseDataClustersGivenK.push([]);
-    sparseDataClustersGivenK.push(dataClustersGivenK[1]);
-    
-    let i = 1;
-    
-    while (sparseDataClustersGivenK[i][0].k < dataClustersGivenK.length - 1) {
-      sparseDataClustersGivenK.push([]);
-      for(let j = 0; j < sparseDataClustersGivenK[i].length; j++){
-        let node = findNodeWithTwoChildren(sparseDataClustersGivenK[i][j]);
-        if(node.k == dataClustersGivenK.length - 1){
-          sparseDataClustersGivenK[i + 1].push(node);
-          continue;
-        }
-        sparseDataClustersGivenK = addChildren(sparseDataClustersGivenK, node, i);
-      }
-      i++;
-    }
   }
 
   //#endregion Configuration
@@ -555,9 +461,6 @@
         </Viewport3D>
       {/if}
     </Pane>
-        <!--
-      </Splitpanes>
-    </Pane> -->
     <Pane size={25}>
       <div style="padding: 8px; color:white; overflow: auto; height: calc(90vh);">
         <Accordion>
@@ -645,61 +548,19 @@
               </Select>
             {/if}
 
-            {#if dataClustersGivenK && 
-            (visualizationSelected == "Cones" || visualizationSelected == "Spheres" || visualizationSelected == "Abstract Spheres" || visualizationSelected == "Spline" ||
-            visualizationSelected == "Hedgehog" || visualizationSelected == "Implicit" || visualizationSelected == "Volume" || visualizationSelected == "Pathline")}
-              <div class="cluster-dendogram">
-                {#each dataClustersGivenK.slice(1, 16) as clustersAtLevel, clusterLevel}
-                  <div class="cluster-dendogram-row" on:click={() => dendrogramClick(clusterLevel)} on:keydown={() => { }}>
-                    {#each clustersAtLevel as cluster, i}
-                      <div
-                        style={`
-                          width: ${100.0 * ((cluster.to - cluster.from + 1) / dataPathlines.length)}%;
-                          background-color: rgb(${(!experimentalColors) ? 255 * cluster.color.rgb[0] : 255 * staticColors[i % staticColors.length][0]} ${(!experimentalColors) ? 255 * cluster.color.rgb[1] : 255 * staticColors[i % staticColors.length][1]} ${(!experimentalColors) ? 255 * cluster.color.rgb[2] : 255 * staticColors[i % staticColors.length][2]});
-                          border: 2px solid ${blobsAmount == clusterLevel + 1 ? "white" : "black"}
-                        `}
-                      />
-                    {/each}
-                  </div>
-                {/each}
-              </div>
+            {#if dataClustersGivenK && dataPathlines}
+              <Dendrogram
+                dataClustersGivenK={dataClustersGivenK}
+                visualizationSelected={visualizationSelected}
+                bind:blobsAmount={blobsAmount}
+                modelSize={dataPathlines.length}
+                experimental={experimentalColors}
+                action={action}
+                bind:matryoshkaVisibility={matryoshkaBlobsVisible}
+                bind:interactiveCluster={interactiveClusterRef}
+                update={clustersUpdated}
+              />
             {/if}
-            {#if dataClustersGivenK && visualizationSelected == "Matryoshka"}
-            <div class="cluster-dendogram">
-              {#each dataClustersGivenK.slice(1, 16) as clustersAtLevel, clusterLevel}
-                <div class="cluster-dendogram-row" on:click={() => dendrogramClickMatryoshka(clusterLevel)} on:keydown={() => { }}>
-                  {#each clustersAtLevel as cluster, i}
-                    <div
-                      style={`
-                        width: ${100.0 * ((cluster.to - cluster.from + 1) / dataPathlines.length)}%;
-                        background-color: rgb(${(!experimentalColors) ? 255 * cluster.color.rgb[0] : 255 * staticColors[i % staticColors.length][0]} ${(!experimentalColors) ? 255 * cluster.color.rgb[1] : 255 * staticColors[i % staticColors.length][1]} ${(!experimentalColors) ? 255 * cluster.color.rgb[2] : 255 * staticColors[i % staticColors.length][2]});
-                        border: 2px solid ${matryoshkaBlobsVisible[clusterLevel] ? "white" : "black"}
-                      `}
-                    />
-                  {/each}
-                </div>
-              {/each}
-            </div>
-            {/if}
-            {#key clustersUpdated}
-            {#if sparseDataClustersGivenK && visualizationSelected == "Composite"}
-            <div class="cluster-dendogram">
-              {#each sparseDataClustersGivenK.slice(1, 16) as clustersAtLevel, clusterLevel}
-                <div class="cluster-dendogram-row">
-                  {#each clustersAtLevel as cluster, i}
-                    <div on:click={() => callSplitClusters(cluster)} on:keydown={() => { }}
-                      style={`
-                        width: ${100.0 * ((cluster.to - cluster.from + 1) / dataPathlines.length)}%;
-                        background-color: rgb(${(!experimentalColors) ? 255 * cluster.color.rgb[0] : 255 * staticColors[i % staticColors.length][0]} ${(!experimentalColors) ? 255 * cluster.color.rgb[1] : 255 * staticColors[i % staticColors.length][1]} ${(!experimentalColors) ? 255 * cluster.color.rgb[2] : 255 * staticColors[i % staticColors.length][2]});
-                        border: 2px solid ${cluster.visible ? "white" : "black"}
-                      `}
-                    />
-                  {/each}
-                </div>
-              {/each}
-            </div>
-              {/if}
-              {/key}
           </AccordionItem>
 
           <AccordionItem title="Data Loading">
@@ -715,7 +576,6 @@
               <ChromosomeItem bind:chromosome={chromosome} />
             {/each}
           </AccordionItem>
-          <!-- <AccordionItem title="Pathlines" /> -->
         </Accordion>
       </div>
       
@@ -748,33 +608,6 @@
     width: 100%;
 
     padding: 8px;
-  }
-
-  .cluster-dendogram {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    border: 1px solid black;
-  }
-
-  .cluster-dendogram-row {
-    height: 20px;
-    display: flex;
-    flex-direction: row;
-    border-bottom: 2px solid black;
-  }
-
-  .cluster-dendogram:last-child {
-    border-bottom: 0px;
-  }
-
-  .cluster-dendogram-row div {
-    border-right: 4px solid black;
-    display: block;
-  }
-
-  .cluster-dendogram-row:last-child {
-    border: 0px;
   }
 
   #file-input {

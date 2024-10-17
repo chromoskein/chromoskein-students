@@ -436,6 +436,21 @@ export function blobFromPoints(points: vec3[]) {
         scale: 0.5 * maxLength,
     };
 }
+
+
+export enum VisualisationType {
+    None = "None",
+    Implicit = "Implicit",
+    Pathline = "Pathline",
+    Spheres = "Spheres",
+    Spline = "Spline",
+    Volume = "Volume",
+    Matryoshka = "Matryoshka",
+    AbstractSpheres = "Abstract Spheres",
+    Cones = "Cones",
+    Hedgehog = "Hedgehog",
+    Composite = "Composite"
+  }
     // const bytes = new TextEncoder().encode(JSON.stringify(clustersGivenK));
     // const blob = new Blob([bytes], {
     //   type: "application/json;charset=utf-8",
