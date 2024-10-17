@@ -446,7 +446,7 @@ export enum VisualisationType {
     Spline = "Spline",
     Volume = "Volume",
     Matryoshka = "Matryoshka",
-    AbstractSpheres = "Abstract Spheres",
+    AbstractSpheres = "AbstractSpheres",
     Cones = "Cones",
     Hedgehog = "Hedgehog",
     Composite = "Composite"
