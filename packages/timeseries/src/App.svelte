@@ -10,13 +10,12 @@
   import { onMount, setContext } from "svelte";
   import { writable, type Writable } from "svelte/store";
   import * as Graphics from "lib-graphics";
-  import { parsePdb } from "lib-dataloader";
   import Viewport3D from "./viewports/Viewport3D.svelte";
-  import { vec3, type vec4 } from "gl-matrix";
+  import { vec3 } from "gl-matrix";
   import "./styles/splitpanes.css";
   import { Pane, Splitpanes } from "svelte-splitpanes";
 
-  import { loadTimesteps, normalizePointClouds, timestepsToPathlines, loadBitmap, clusterTimestep, clusterPathlines, loadBEDfile, blobFromPoints, VisualisationType } from "./utils/main";
+  import { loadTimesteps, normalizePointClouds, timestepsToPathlines, loadBitmap, clusterTimestep, clusterPathlines, blobFromPoints, VisualisationType } from "./utils/main";
   import type { ClusterBlob, ClusterNode } from "./utils/main";
 
   import "carbon-components-svelte/css/g100.css";
@@ -27,11 +26,9 @@
   import { treeColor } from "./utils/treecolors";
   import Sphere from "./objects/Sphere.svelte";
   import Spline from "./objects/Spline.svelte";
-  import {computePCA, getCenterPoints} from "./utils/abstractClustersUtils";
 
   import "@carbon/styles/css/styles.css";
   import "@carbon/charts/styles.css";
-  import ConnectedCones from "./objects/ConnectedCones.svelte";
   import MatryoshkaClusters from "./visalizations/MatryoshkaClusters.svelte";
   import Hedgehog from "./objects/Hedgehog.svelte";
   import InteractiveCluster from "./visalizations/InteractiveCluster.svelte";
@@ -39,18 +36,8 @@
   import type { Chromosome } from "./utils/data-models";
   import ChromosomeItem from "./uiComponents/ChromosomeItem.svelte";
   import Dendrogram from "./uiComponents/Dendrogram.svelte";
-    import PcaCone from "./objects/PCACone.svelte";
-
-
-  export const saveAs = (blob, name) => {
-    // Namespace is used to prevent conflict w/ Chrome Poper Blocker extension (Issue https://github.com/eligrey/FileSaver.js/issues/561)
-    const a = document.createElementNS("http://www.w3.org/1999/xhtml", "a");
-    //a.download = name;
-    //a.rel = "noopener";
-    //a.href = URL.createObjectURL(blob);
-
-    setTimeout(() => a.click(), 200);
-  };
+  import PcaCone from "./objects/PCACone.svelte";
+  import { loadNewPdbModels } from "./utils/data-parser";
 
   const adapter: Writable<GPUAdapter | null> = writable(null);
   const device: Writable<GPUDevice | null> = writable(null);
@@ -59,38 +46,11 @@
   let viewport: Graphics.Viewport3D | null = null;
 
   let chromosomes: Chromosome[] = [];
-  let chromosomeID: number = 0;
-  function loadNewModels(pdbText) {
-    let loadedModels = [];
-    let model = parsePdb(pdbText);
-    if (model.ranges.length == 0) {
-      loadedModels.push({
-          id: chromosomeID,
-          name: "0",
-          visible: true,
-          points: model.bins.map((v) => vec3.fromValues(v.x, v.y, v.z)),
-          color: {r: Math.random(), g: Math.random(), b: Math.random()}
-        });
-      chromosomeID++;
-    } else {
-      for (let i = 0; i < model.ranges.length; i++) {
-        loadedModels.push({
-          id: chromosomeID,
-          name: i.toString(),
-          visible: true,
-          points: model.bins.slice(model.ranges[i].from, model.ranges[i].to).map((v) => vec3.fromValues(v.x, v.y, v.z)),
-          color: {r: Math.random(), g: Math.random(), b: Math.random()}
-        });
-        chromosomeID++;
-      }
-    }
-    return loadedModels;
-  }
 
 	let pdbFiles;
 	$: if (pdbFiles) { 
 		for (const file of pdbFiles) {
-      file.text().then(pdbText => addChromosomes(loadNewModels(pdbText)));
+      file.text().then(pdbText => addChromosomes(loadNewPdbModels(pdbText)));
 		}
 	}
 
@@ -249,7 +209,7 @@
   let clusterVisualization = "AbstractSphere";
   let action = "Change representation";
   let clustersUpdated = false;
-  let interactiveClusterRef;
+  let interactiveClusterRef: InteractiveCluster;
 
   function updateClustersUpdated(newClustersUpdated) {
     clustersUpdated = newClustersUpdated;
@@ -279,7 +239,7 @@
             center={[0.0, 0.0, 0.0]}
             color={[0.0, 0.0, 0.0, 0.0]} 
           />
-          {#if visualizationSelected == "Volume"}
+          {#if visualizationSelected == VisualisationType.Volume}
             {#each dataClustersGivenK[blobsAmount] as cluster, _}
               <TimeVolume
                 points={dataTimesteps.map(sequence => sequence.slice(cluster.from, cluster.to + 1))}
@@ -294,7 +254,7 @@
             {/each}
           {/if}
 
-          {#if visualizationSelected == "Pathline" && dataClustersGivenK && dataClustersGivenK[blobsAmount]}
+          {#if visualizationSelected == VisualisationType.Pathline && dataClustersGivenK && dataClustersGivenK[blobsAmount]}
             {#each chromosomes as chromosome, i}
               {#if chromosome.visible}
                 <ContinuousTube
@@ -317,7 +277,7 @@
             -->
           {/if}
 
-          {#if visualizationSelected == "Spline" && dataClustersGivenK && dataClustersGivenK[blobsAmount]}
+          {#if visualizationSelected == VisualisationType.Spline && dataClustersGivenK && dataClustersGivenK[blobsAmount]}
             {#each dataClustersGivenK[blobsAmount] as cluster, _}
               <Spline
                 points={dataTimesteps[selectedTimestep].slice(cluster.from, cluster.to + 1)}
@@ -328,7 +288,7 @@
               {/each}
           {/if}
 
-          {#if visualizationSelected == "Spheres" && dataClustersGivenK && dataClustersGivenK[blobsAmount]}
+          {#if visualizationSelected == VisualisationType.Spheres && dataClustersGivenK && dataClustersGivenK[blobsAmount]}
             {#each dataClustersGivenK[blobsAmount] as cluster, _}
               {#each dataTimesteps[selectedTimestep].slice(cluster.from, cluster.to + 1) as point, _}
                 <Sphere
@@ -340,7 +300,7 @@
             {/each}
           {/if}
 
-          {#if visualizationSelected == "Matryoshka"}
+          {#if visualizationSelected == VisualisationType.Matryoshka}
             <MatryoshkaClusters
               selectedTimestep={selectedTimestep}
               dataClustersGivenK={dataClustersGivenK}
@@ -353,7 +313,7 @@
             />
           {/if}
 
-          {#if visualizationSelected == "Composite"}
+          {#if visualizationSelected == VisualisationType.Composite}
             <InteractiveCluster
               dataClustersGivenK={dataClustersGivenK}
               pointsAtTimesteps={dataTimesteps}
@@ -367,7 +327,7 @@
             />
           {/if}
 
-          {#if blobs[selectedTimestep] && visualizationSelected == "Implicit"}
+          {#if blobs[selectedTimestep] && visualizationSelected == VisualisationType.Implicit}
             {#each blobs[selectedTimestep] as blob, i}
               <SignedDistanceGrid
                 points={blob.normalizedPoints}
@@ -397,7 +357,7 @@
               />
             {/if}
           {/if}
-          {#if blobs[selectedTimestep] && visualizationSelected == "Cones"}
+          {#if blobs[selectedTimestep] && visualizationSelected == VisualisationType.Cones}
             {#each dataClustersGivenK[blobsAmount] as cluster, _}
               <PcaCone 
                 points={dataTimesteps[selectedTimestep].slice(cluster.from, cluster.to + 1)}
@@ -413,7 +373,7 @@
               />
             {/if}  
           {/if}
-          {#if blobs[selectedTimestep] && visualizationSelected == "Hedgehog"}
+          {#if blobs[selectedTimestep] && visualizationSelected == VisualisationType.Hedgehog}
             {#each blobs[selectedTimestep] as blob, i}
               <Hedgehog
                 radius = {blob.normalizedPoints.length / 1000.0 * 2}
