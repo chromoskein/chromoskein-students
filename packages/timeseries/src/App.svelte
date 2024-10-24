@@ -27,7 +27,6 @@
   import Sphere from "./objects/Sphere.svelte";
   import Spline from "./objects/Spline.svelte";
 
-  import "@carbon/styles/css/styles.css";
   import "@carbon/charts/styles.css";
   import MatryoshkaClusters from "./visalizations/MatryoshkaClusters.svelte";
   import Hedgehog from "./objects/Hedgehog.svelte";
