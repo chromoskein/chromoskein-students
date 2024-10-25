@@ -2,23 +2,17 @@
 <script lang="ts">
 
 import { Checkbox } from "carbon-components-svelte";
-import type { Chromosome } from "../utils/data-models";
 
-export let chromosome: Chromosome;
+export let visible: boolean;
+export let name: string;
 
-let checked = true;
-
-$: if (chromosome) {
-    chromosome.visible = checked;
-    console.log(chromosome);
-}
 
 </script>
 
 
 <div class="itemStyle">
-    <p> Name: {chromosome.name} </p>
-    <Checkbox bind:checked labelText="Visible" /> 
+    <p> Name: {name} </p>
+    <Checkbox bind:checked={visible} labelText="Visible" /> 
 </div>
 
 

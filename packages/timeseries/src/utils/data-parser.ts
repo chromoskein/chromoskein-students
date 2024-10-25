@@ -1,7 +1,7 @@
 import Papa from "papaparse";
 import { toNumber } from "lodash";
 
-import type { ArmatusLineModel, ArmatusModel, BEDLineModel, BEDModel, StandardBEDLineModel, StandardBEDModel, HiCMapModel } from "./data-models";
+import { type ArmatusLineModel, type ArmatusModel, type BEDLineModel, type BEDModel, type StandardBEDLineModel, type StandardBEDModel, type HiCMapModel, initializeChromosome } from "./data-models";
 import { parsePdb } from "lib-dataloader";
 import { vec3 } from "gl-matrix";
 
@@ -182,29 +182,14 @@ function parseNumberListString(numberListString: string): number[]
     return papaParseResult.data[0].slice();
 }
 
-let chromosomeID = 0;
 export function loadNewPdbModels(pdbText) {
     let loadedModels = [];
     let model = parsePdb(pdbText);
     if (model.ranges.length == 0) {
-      loadedModels.push({
-          id: chromosomeID,
-          name: "0",
-          visible: true,
-          points: model.bins.map((v) => vec3.fromValues(v.x, v.y, v.z)),
-          color: {r: Math.random(), g: Math.random(), b: Math.random()}
-        });
-      chromosomeID++;
+      loadedModels.push(initializeChromosome("0", model.bins.map((v) => vec3.fromValues(v.x, v.y, v.z))));
     } else {
       for (let i = 0; i < model.ranges.length; i++) {
-        loadedModels.push({
-          id: chromosomeID,
-          name: i.toString(),
-          visible: true,
-          points: model.bins.slice(model.ranges[i].from, model.ranges[i].to).map((v) => vec3.fromValues(v.x, v.y, v.z)),
-          color: {r: Math.random(), g: Math.random(), b: Math.random()}
-        });
-        chromosomeID++;
+        loadedModels.push(initializeChromosome(i.toString(), model.bins.slice(model.ranges[i].from, model.ranges[i].to).map((v) => vec3.fromValues(v.x, v.y, v.z))));
       }
     }
     return loadedModels;

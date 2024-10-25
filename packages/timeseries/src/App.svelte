@@ -507,7 +507,7 @@
               Load PDB File
             </Button>
             {#each chromosomes as chromosome, i}
-              <ChromosomeItem bind:chromosome={chromosome} />
+              <ChromosomeItem bind:visible={chromosome.visible} name={chromosome.name} />
             {/each}
           </AccordionItem>
         </Accordion>

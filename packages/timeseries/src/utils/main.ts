@@ -407,6 +407,10 @@ export function clusterTimestep(timestep: vec3[]): ClusterNode[][] {
     return kClustersRanges;
 }
 
+export async function clusterTimestepAsync(timestep: vec3[]): Promise<ClusterNode[][]> {
+    return clusterTimestep(timestep);
+}
+
 export type ClusterBlob = {
     normalizedPoints: vec3[];
     center: vec3;

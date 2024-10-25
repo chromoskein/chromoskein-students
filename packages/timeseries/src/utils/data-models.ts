@@ -1,4 +1,6 @@
 import { vec3 } from "gl-matrix"
+import { ClusterNode, clusterTimestep, clusterTimestepAsync, VisualisationType } from "./main"
+import ChromatinViewport from "../viewports/ChromatinViewport.svelte"
 
 export interface HiCMapModel
 {
@@ -60,11 +62,37 @@ export interface StandardBEDOptionalFields
     blockStarts: number[] | null
 }
 
+
+export type ChromosomeVisOptions = {
+    visualizationType: VisualisationType,
+    radius: number,
+    alpha: number,
+    blobsAmount: number,
+}
+
 export type Chromosome =
 {
     id: number,
     name: string,
     visible: boolean,
     points: vec3[],
+    clusters: ClusterNode[][];
     color: { r: number, g: number, b: number }
+}
+
+let id = 0;
+export function initializeChromosome(name, points) { 
+    let chromosome = {
+        id: id++,
+        name: name,
+        visible: true,
+        points: points,
+        clusters: [],
+        color: {r: Math.random(), g: Math.random(), b: Math.random()}
+    }
+
+    clusterTimestepAsync(points).then(result => {
+        chromosome.clusters = result.slice(0, 16);
+    });
+    return chromosome;
 }
