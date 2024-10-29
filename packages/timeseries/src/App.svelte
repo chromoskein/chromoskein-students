@@ -275,7 +275,6 @@
               <ChromatinVisualization
                 points={chromosome.points}
                 visible={chromosome.visible}
-                options={chromosome.options}
                 dataClustersGivenK={chromosome.clusters}
                 bind:this={chromosome.visualization}
               />

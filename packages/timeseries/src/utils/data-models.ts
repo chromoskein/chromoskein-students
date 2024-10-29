@@ -125,7 +125,7 @@ function getEmptyClustering(length: number): ClusterNode {
             h: 0,
             c: 0,
             l: 0,
-            rgb: [0, 0, 0]
+            rgb: [Math.random(), Math.random(), Math.random()]
         }
     }
 }
