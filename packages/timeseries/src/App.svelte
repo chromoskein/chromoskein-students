@@ -37,6 +37,7 @@
   import Dendrogram from "./uiComponents/Dendrogram.svelte";
   import PcaCone from "./objects/PCACone.svelte";
   import { loadNewPdbModels } from "./utils/data-parser";
+  import ChromatinVisualization from "./uiComponents/ChromatinVisualization.svelte";
 
   const adapter: Writable<GPUAdapter | null> = writable(null);
   const device: Writable<GPUDevice | null> = writable(null);
@@ -46,12 +47,13 @@
 
   let chromosomes: Chromosome[] = [];
 
-	let pdbFiles;
-	$: if (pdbFiles) { 
+  
+  let pdbFiles;
+  function loadFiles() {
 		for (const file of pdbFiles) {
       file.text().then(pdbText => addChromosomes(loadNewPdbModels(pdbText)));
 		}
-	}
+  }
 
   function addChromosomes(models: Chromosome[]) {
     chromosomes = chromosomes.concat(models);
@@ -177,6 +179,17 @@
     viewport.scene.setColorMapFromBitmap(volumeColormap);
   }
 
+  let selectedId: number = 0;
+  let selectedChromosome: Chromosome
+  function onSelectedChromosomeChanged() {
+    for (let chromosome of chromosomes) {
+      if (chromosome.id == selectedId) {
+        selectedChromosome = chromosome;
+        return;
+      }
+    }
+  }
+
   //#region Configuration
   // Volume
   let abstractVolumes = false;
@@ -253,28 +266,15 @@
             {/each}
           {/if}
 
-          {#if visualizationSelected == VisualisationType.Pathline && dataClustersGivenK && dataClustersGivenK[blobsAmount]}
-            {#each chromosomes as chromosome, i}
-              {#if chromosome.visible}
-                <ContinuousTube
-                  points={chromosome.points}
-                  radius={blobsRadius}
-                  color={[chromosome.color.r, chromosome.color.g, chromosome.color.b]}
-                  multicolored={false}
-                />
-              {/if}
-            {/each}
-            <!--
-            {#each dataClustersGivenK[blobsAmount] as cluster, _}
-              <ContinuousTube
-                points={dataTimesteps[selectedTimestep].slice(cluster.from, cluster.to + 1)}
-                radius={blobsRadius}
-                color={blobsColored ? vec3.fromValues(cluster.color.rgb[0], cluster.color.rgb[1], cluster.color.rgb[2]) : [1.0, 1.0, 1.0]}
-                multicolored={false}
+          {#each chromosomes as chromosome, i}
+              <ChromatinVisualization
+                points={chromosome.points}
+                visible={chromosome.visible}
+                options={chromosome.options}
+                dataClustersGivenK={chromosome.clusters}
+                bind:this={chromosome.visualization}
               />
-            {/each}
-            -->
-          {/if}
+          {/each}
 
           {#if visualizationSelected == VisualisationType.Spline && dataClustersGivenK && dataClustersGivenK[blobsAmount]}
             {#each dataClustersGivenK[blobsAmount] as cluster, _}
@@ -399,14 +399,14 @@
       <div style="padding: 8px; color:white; overflow: auto; height: calc(90vh);">
         <Accordion>
           <AccordionItem open title="Visualisation Parameters">
-            <Select size="sm" inline labelText="Model">
-              <SelectItem value={-1} text="Base"/>
+            <Select size="sm" inline labelText="Model" bind:selected={selectedId} on:change={onSelectedChromosomeChanged}>
+              <!-- <SelectItem value={-1} text="Base"/> -->
               {#each chromosomes as chromosome, i}
                 <SelectItem value={chromosome.id} text={chromosome.name}/>
               {/each}
             </Select>
 
-            <Select size="sm" inline labelText="Visualization:" bind:selected={visualizationSelected}>
+            <Select size="sm" inline labelText="Visualization:" bind:selected={visualizationSelected} on:change={() => selectedChromosome?.visualization?.setVisualizationType(visualizationSelected)}>
               {#each Object.keys(VisualisationType) as key, index}
                 <SelectItem value={key}/>  
               {/each}
@@ -498,7 +498,7 @@
           </AccordionItem>
 
           <AccordionItem title="Data Loading">
-            <input type="file"  accept=".pdb,.PDB" id="file-input" bind:files={pdbFiles}/>
+            <input type="file"  accept=".pdb,.PDB" id="file-input" bind:files={pdbFiles} on:change={loadFiles}/>
             <Button
               kind="secondary"
               size="field"

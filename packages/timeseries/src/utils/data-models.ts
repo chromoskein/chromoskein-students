@@ -1,6 +1,7 @@
 import { vec3 } from "gl-matrix"
-import { ClusterNode, clusterTimestep, clusterTimestepAsync, VisualisationType } from "./main"
-import ChromatinViewport from "../viewports/ChromatinViewport.svelte"
+import { clusterTimestepAsync, VisualisationType } from "./main"
+import type { ClusterNode } from "./main"
+import ChromatinVisualization from "../uiComponents/ChromatinVisualization.svelte";
 
 export interface HiCMapModel
 {
@@ -64,10 +65,12 @@ export interface StandardBEDOptionalFields
 
 
 export type ChromosomeVisOptions = {
-    visualizationType: VisualisationType,
+    selectedVisualization: VisualisationType,
     radius: number,
     alpha: number,
     blobsAmount: number,
+    timestep: number,
+    color: { r: number, g: number, b: number }
 }
 
 export type Chromosome =
@@ -75,24 +78,53 @@ export type Chromosome =
     id: number,
     name: string,
     visible: boolean,
-    points: vec3[],
+    points: vec3[][],
     clusters: ClusterNode[][];
-    color: { r: number, g: number, b: number }
+    options: ChromosomeVisOptions,
+    visualization: ChromatinVisualization
 }
 
 let id = 0;
 export function initializeChromosome(name, points) { 
+
     let chromosome = {
         id: id++,
         name: name,
         visible: true,
-        points: points,
-        clusters: [],
-        color: {r: Math.random(), g: Math.random(), b: Math.random()}
+        points: [points],
+        clusters: [[], [getEmptyClustering(points.length)]],
+        color: {r: Math.random(), g: Math.random(), b: Math.random()},
+        options: getDefaultOptions(),
     }
-
-    clusterTimestepAsync(points).then(result => {
-        chromosome.clusters = result.slice(0, 16);
-    });
     return chromosome;
+}
+
+function getDefaultOptions() {
+    return {
+        selectedVisualization: VisualisationType.Implicit,
+        radius: 0.1,
+        alpha: 1.0,
+        color: {r: Math.random(), g: Math.random(), b: Math.random()},
+        timestep: 0,
+        blobsAmount: 1,
+    }
+}
+
+function getEmptyClustering(length: number): ClusterNode {
+    return {
+        k: 1,
+        i: 0,
+        from: 0,
+        to: length - 1,
+        delimiters: [],
+        children: [0, 1],
+        points: [],
+        visible: true,
+        color: {
+            h: 0,
+            c: 0,
+            l: 0,
+            rgb: [0, 0, 0]
+        }
+    }
 }
