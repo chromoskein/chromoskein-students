@@ -4,6 +4,7 @@ import { toNumber } from "lodash";
 import { type ArmatusLineModel, type ArmatusModel, type BEDLineModel, type BEDModel, type StandardBEDLineModel, type StandardBEDModel, type HiCMapModel, initializeChromosome } from "./data-models";
 import { parsePdb } from "lib-dataloader";
 import { vec3 } from "gl-matrix";
+import { normalizePointClouds } from "./main";
 
 
 export enum DSVDelimiter
@@ -185,11 +186,14 @@ function parseNumberListString(numberListString: string): number[]
 export function loadNewPdbModels(pdbText) {
     let loadedModels = [];
     let model = parsePdb(pdbText);
+
+    let normalizedData = normalizePointClouds([model.bins.map((v) => vec3.fromValues(v.x, v.y, v.z))])[0];
+
     if (model.ranges.length == 0) {
-      loadedModels.push(initializeChromosome("0", [model.bins.map((v) => vec3.fromValues(v.x, v.y, v.z))]));
+      loadedModels.push(initializeChromosome("0", [normalizedData]));
     } else {
       for (let i = 0; i < model.ranges.length; i++) {
-        loadedModels.push(initializeChromosome(i.toString(), [model.bins.slice(model.ranges[i].from, model.ranges[i].to).map((v) => vec3.fromValues(v.x, v.y, v.z))]));
+        loadedModels.push(initializeChromosome(i.toString(), [normalizedData.slice(model.ranges[i].from, model.ranges[i].to)]));
       }
     }
     return loadedModels;

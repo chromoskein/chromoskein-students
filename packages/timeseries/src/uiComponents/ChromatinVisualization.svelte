@@ -1,6 +1,5 @@
 
 <script lang="ts">
-    import type { Chromosome, ChromosomeVisOptions } from "../utils/data-models";
     import {blobFromPoints, clusterPathlines, clusterTimestep, timestepsToPathlines, VisualisationType} from "../utils/main";
     import type { ClusterBlob, ClusterNode } from "../utils/main";
 
@@ -30,7 +29,7 @@
     let volumeFunction = 0;
 
     // Blobs
-    let radius = 0.08;
+    let radius = 0.01;
     let blobsAmount: number = 1;
     let alpha = 1.0;
 
