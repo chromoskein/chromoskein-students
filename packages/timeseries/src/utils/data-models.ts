@@ -85,23 +85,24 @@ export type Chromosome =
 }
 
 let id = 0;
-export function initializeChromosome(name, points) { 
+export function initializeChromosome(name: string, points: vec3[][]) { 
 
     let chromosome = {
         id: id++,
         name: name,
         visible: true,
-        points: [points],
-        clusters: [[], [getEmptyClustering(points.length)]],
+        points: points,
+        clusters: [[], [getEmptyClustering(points[0].length)]],
         color: {r: Math.random(), g: Math.random(), b: Math.random()},
         options: getDefaultOptions(),
+        visualization: null,
     }
     return chromosome;
 }
 
 function getDefaultOptions() {
     return {
-        selectedVisualization: VisualisationType.Implicit,
+        selectedVisualization: VisualisationType.Pathline,
         radius: 0.1,
         alpha: 1.0,
         color: {r: Math.random(), g: Math.random(), b: Math.random()},

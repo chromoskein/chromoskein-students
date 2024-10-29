@@ -32,7 +32,7 @@
   import Hedgehog from "./objects/Hedgehog.svelte";
   import InteractiveCluster from "./visalizations/InteractiveCluster.svelte";
   import ContinuousTube from "./objects/ContinuousTube.svelte";
-  import type { Chromosome } from "./utils/data-models";
+  import { initializeChromosome, type Chromosome } from "./utils/data-models";
   import ChromosomeItem from "./uiComponents/ChromosomeItem.svelte";
   import Dendrogram from "./uiComponents/Dendrogram.svelte";
   import PcaCone from "./objects/PCACone.svelte";
@@ -124,6 +124,11 @@
     dataPathlines = timestepsToPathlines(dataTimesteps);
     staticDataClustersGivenK = await clusterPathlines(dataPathlines);
     staticDataClustersGivenK = staticDataClustersGivenK.slice(0, 16);
+
+    let baseChromosome = initializeChromosome("Base", dataTimesteps);
+    baseChromosome.clusters = staticDataClustersGivenK;
+    chromosomes = [baseChromosome]
+    selectedChromosome = baseChromosome;
     dataClustersGivenK = staticDataClustersGivenK;
     treeColor(staticDataClustersGivenK);
   });
@@ -180,7 +185,7 @@
   }
 
   let selectedId: number = 0;
-  let selectedChromosome: Chromosome
+  let selectedChromosome: Chromosome;
   function onSelectedChromosomeChanged() {
     for (let chromosome of chromosomes) {
       if (chromosome.id == selectedId) {
@@ -276,7 +281,7 @@
               />
           {/each}
 
-          {#if visualizationSelected == VisualisationType.Spline && dataClustersGivenK && dataClustersGivenK[blobsAmount]}
+          <!-- {#if visualizationSelected == VisualisationType.Spline && dataClustersGivenK && dataClustersGivenK[blobsAmount]}
             {#each dataClustersGivenK[blobsAmount] as cluster, _}
               <Spline
                 points={dataTimesteps[selectedTimestep].slice(cluster.from, cluster.to + 1)}
@@ -391,7 +396,7 @@
                 multicolored={false}
               />
             {/if}
-          {/if}
+          {/if}-->
         </Viewport3D>
       {/if}
     </Pane>
@@ -400,7 +405,6 @@
         <Accordion>
           <AccordionItem open title="Visualisation Parameters">
             <Select size="sm" inline labelText="Model" bind:selected={selectedId} on:change={onSelectedChromosomeChanged}>
-              <!-- <SelectItem value={-1} text="Base"/> -->
               {#each chromosomes as chromosome, i}
                 <SelectItem value={chromosome.id} text={chromosome.name}/>
               {/each}

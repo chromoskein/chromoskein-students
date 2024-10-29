@@ -65,7 +65,6 @@
         }
 
         blobs.push(blobsPointsAtTimestep);
-        console.log("Running.");
         }
     }
         
@@ -93,10 +92,10 @@
     {#if visualizationType == VisualisationType.Pathline && dataClustersGivenK && dataClustersGivenK[options.blobsAmount]}
         {#each dataClustersGivenK[options.blobsAmount] as cluster, _}
             <ContinuousTube
-            points={points[options.timestep].slice(cluster.from, cluster.to + 1)}
-            radius={options.radius}
-            color={vec3.fromValues(options.color.r, options.color.g, options.color.b)}
-            multicolored={false}
+                points={points[options.timestep].slice(cluster.from, cluster.to + 1)}
+                radius={options.radius}
+                color={vec3.fromValues(options.color.r, options.color.g, options.color.b)}
+                multicolored={false}
             />
         {/each}
     {/if}

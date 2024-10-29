@@ -186,10 +186,10 @@ export function loadNewPdbModels(pdbText) {
     let loadedModels = [];
     let model = parsePdb(pdbText);
     if (model.ranges.length == 0) {
-      loadedModels.push(initializeChromosome("0", model.bins.map((v) => vec3.fromValues(v.x, v.y, v.z))));
+      loadedModels.push(initializeChromosome("0", [model.bins.map((v) => vec3.fromValues(v.x, v.y, v.z))]));
     } else {
       for (let i = 0; i < model.ranges.length; i++) {
-        loadedModels.push(initializeChromosome(i.toString(), model.bins.slice(model.ranges[i].from, model.ranges[i].to).map((v) => vec3.fromValues(v.x, v.y, v.z))));
+        loadedModels.push(initializeChromosome(i.toString(), [model.bins.slice(model.ranges[i].from, model.ranges[i].to).map((v) => vec3.fromValues(v.x, v.y, v.z))]));
       }
     }
     return loadedModels;
