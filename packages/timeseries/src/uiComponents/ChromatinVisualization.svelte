@@ -51,8 +51,6 @@
         for (const [clusterIndex, cluster] of clusters.entries()) {
             dataClusteredPathlines[clusterIndex] = dataPathlines.slice(cluster.from, cluster.to + 1);
         }
-
-        console.log("This is running.");
     }
 
     // [timestep][blob]

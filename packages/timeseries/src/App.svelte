@@ -436,6 +436,8 @@
               {#if chromosomeOptions && chromosomeOptions[selectedChromosomeId]}
                 <VisualizationOptions
                   bind:ops={chromosomeOptions[selectedChromosomeId]}
+                  dataClustersGivenK={chromosomes[selectedChromosomeId].clusters}
+                  size={chromosomes[selectedChromosomeId].points[0].length}
                 />            
               {/if}
             {/key}
@@ -515,7 +517,7 @@
               </Select>
             {/if} -->
 
-            {#if dataClustersGivenK && dataPathlines}
+            <!-- {#if dataClustersGivenK && dataPathlines}
               <Dendrogram
                 dataClustersGivenK={dataClustersGivenK}
                 visualizationSelected={visualizationSelected}
@@ -527,7 +529,7 @@
                 bind:interactiveCluster={interactiveClusterRef}
                 update={clustersUpdated}
               />
-            {/if}
+            {/if} -->
           </AccordionItem>
 
           <AccordionItem title="Data Loading">

@@ -5,11 +5,14 @@
     import ChromatinVisualization from "./ChromatinVisualization.svelte";
     import { VisualisationType } from "../utils/main";
     import type { VisOptions, StandardOptions, VolumeOptions } from "../utils/data-models";
+    import Dendrogram from "./Dendrogram.svelte";
   
     //export let selectedVis: ChromatinVisualization;
     export let ops: VisOptions;
+    export let dataClustersGivenK;
+    export let size: number;
 
-
+    let interactiveCluster;
     $: console.log("Changed vis type to:" + ops.visType)
 
 </script>
@@ -59,7 +62,7 @@
       {/if} -->
 
       {#if ops.visType != VisualisationType.Matryoshka && ops.visType != VisualisationType.Composite && ops.visType != VisualisationType.None}
-      <Slider labelText="Cluster amount" fullWidth min={1} max={15} bind:value={ops.blobsAmount} />
+      <Slider labelText="Cluster amount" fullWidth min={1} max={dataClustersGivenK.length - 1} bind:value={ops.blobsAmount} />
       {/if}
       {#if ops.visType == VisualisationType.Implicit || ops.visType == VisualisationType.Matryoshka || ops.visType == VisualisationType.Pathline || ops.visType == VisualisationType.Spheres || ops.visType == VisualisationType.Spline}
         <Slider labelText="Radius" fullWidth min={0.01} max={0.3} step={0.01} bind:value={ops.radius} />
@@ -91,5 +94,20 @@
           <SelectItem text="Last Timestep" value={0} />
           <SelectItem text="Number of Timesteps" value={1} />
         </Select>
+    {/if}
+
+
+    {#if dataClustersGivenK && dataClustersGivenK[1]}
+      <Dendrogram
+        dataClustersGivenK={dataClustersGivenK}
+        visualizationSelected={ops.visType}
+        bind:blobsAmount={ops.blobsAmount}
+        modelSize={size}
+        experimental={false}
+        action={"Merge"}
+        bind:matryoshkaVisibility={ops.matryoshkaBlobsVisible}
+        bind:interactiveCluster={interactiveCluster} 
+        update={false}
+      />
     {/if}
 </div>
