@@ -15,27 +15,17 @@
   import "./styles/splitpanes.css";
   import { Pane, Splitpanes } from "svelte-splitpanes";
 
-  import { loadTimesteps, normalizePointClouds, timestepsToPathlines, loadBitmap, clusterTimestep, clusterPathlines, blobFromPoints, VisualisationType } from "./utils/main";
-  import type { ClusterBlob, ClusterNode } from "./utils/main";
+  import { loadTimesteps, normalizePointClouds, timestepsToPathlines, loadBitmap, clusterPathlines } from "./utils/main";
 
   import "carbon-components-svelte/css/g100.css";
   import { Header, SkipToContent, Checkbox, Accordion, AccordionItem, Select, SelectItem, Button } from "carbon-components-svelte";
   import { Slider } from "carbon-components-svelte";
-  import TimeVolume from "./objects/TimeVolume.svelte";
-  import SignedDistanceGrid from "./objects/SignedDistanceGrid.svelte";
   import { treeColor } from "./utils/treecolors";
-  import Sphere from "./objects/Sphere.svelte";
-  import Spline from "./objects/Spline.svelte";
 
   import "@carbon/charts/styles.css";
-  import MatryoshkaClusters from "./visalizations/MatryoshkaClusters.svelte";
-  import Hedgehog from "./objects/Hedgehog.svelte";
   import InteractiveCluster from "./visalizations/InteractiveCluster.svelte";
-  import ContinuousTube from "./objects/ContinuousTube.svelte";
   import { defaultVisOptions, initializeChromosome, type VisOptions, type Chromosome } from "./utils/data-models";
   import ChromosomeItem from "./uiComponents/ChromosomeItem.svelte";
-  import Dendrogram from "./uiComponents/Dendrogram.svelte";
-  import PcaCone from "./objects/PCACone.svelte";
   import { loadNewPdbModels } from "./utils/data-parser";
   import ChromatinVisualization from "./uiComponents/ChromatinVisualization.svelte";
   import VisualizationOptions from "./uiComponents/VisualizationOptions.svelte";
@@ -65,47 +55,6 @@
     chromosomeOptions = chromosomeOptions.concat(defaultOptions)
   }
 
-  //#region Data
-
-  // Repesents an array of all points for all timesteps in format [timestep][point]
-  let dataTimesteps: vec3[][] = null;  
-
-  // The volume and composite visualizations do not work for time-sensitive clustering so it turns off
-  $: if (visualizationSelected == "Volume" || visualizationSelected == "Composite") {
-    timestepClustering = false;
-  }
-  
-  $: if (timestepClustering) {
-    dataClustersGivenK = clusterTimestep(dataTimesteps[selectedTimestep]).slice(0, 16);
-  }
-
-  $: if (!timestepClustering) {
-    dataClustersGivenK = staticDataClustersGivenK;
-  }
-
-  // Represents an array of all points for all timesteps in format [point][timestep]
-  // aka each inner array contains all positions of a point all timesteps
-  $: dataPathlines = dataTimesteps && timestepsToPathlines(dataTimesteps);
-
-  // Objects which contain the calculated clusters
-  let timestepClustering = false;
-  let staticDataClustersGivenK: ClusterNode[][] | null = null;
-  let dataClustersGivenK: ClusterNode[][] | null = null;
-
-  $: dataClustersGivenK && treeColor(dataClustersGivenK);
-
-  // Splits data pathlines based on clusters
-  // Format [cluster][point][timestep]
-  let dataClusteredPathlines: vec3[][][] | null = null;
-  $: if (dataClustersGivenK && dataClustersGivenK[blobsAmount] && dataPathlines) {
-    const clusters = dataClustersGivenK[blobsAmount];
-
-    dataClusteredPathlines = [];
-    for (const [clusterIndex, cluster] of clusters.entries()) {
-      dataClusteredPathlines[clusterIndex] = dataPathlines.slice(cluster.from, cluster.to + 1);
-    }
-  }
-
   //#endregion Data
 
   //#region Init
@@ -126,44 +75,18 @@
     await getGPU();
     const filenames: string[] = new Array(600).fill(null).map((v, i) => "./timeseries/timestep_" + (i + 1).toString() + ".XYZ");
     const timesteps = await loadTimesteps(filenames);
-    dataTimesteps = normalizePointClouds(timesteps);
-    dataPathlines = timestepsToPathlines(dataTimesteps);
-    staticDataClustersGivenK = await clusterPathlines(dataPathlines);
-    staticDataClustersGivenK = staticDataClustersGivenK.slice(0, 16);
+    const dataTimesteps = normalizePointClouds(timesteps);
+    const dataPathlines = timestepsToPathlines(dataTimesteps);
+    const staticDataClustersGivenK = await clusterPathlines(dataPathlines).slice(0, 16);
 
     let baseChromosome = initializeChromosome("Base", dataTimesteps);
     chromosomeOptions = [defaultVisOptions()]
     baseChromosome.clusters = staticDataClustersGivenK;
+    treeColor(staticDataClustersGivenK);
     chromosomes = [baseChromosome]
     selectedChromosome = baseChromosome;
-    dataClustersGivenK = staticDataClustersGivenK;
-    treeColor(staticDataClustersGivenK);
   });
   //#endregion Init
-
-  // [timestep][blob]
-  let blobs: ClusterBlob[][] = [];
-
-  // Process the clustered pathlines [cluster][point][timestep]
-  // into normalized blobs in format [timestep][blob]
-  $: if (dataClusteredPathlines && blobsAmount) {
-    // Allocate new ones
-    blobs = [];
-    for (let timestep = 0; timestep < dataTimesteps.length; timestep++) {
-      let blobsPointsAtTimestep: {
-        normalizedPoints: vec3[];
-        center: vec3;
-        scale: number;
-      }[] = [];
-      for (const [index, clusteredPathline] of dataClusteredPathlines.entries()) {
-        const points = clusteredPathline.map((pathline) => pathline[timestep]);
-
-        blobsPointsAtTimestep.push(blobFromPoints(points));
-      }
-
-      blobs.push(blobsPointsAtTimestep);
-    }
-  }
 
   $: (async () => {
     let path;
@@ -204,44 +127,16 @@
     }
   }
 
-  //#region Configuration
-  // Volume
-  let abstractVolumes = false;
-  let volumeTransparency = 0.15;
-  let volumeRadius = 0.03;
+
   let volumeColormapChoice = "Cool Warm";
   let volumeColormap: ImageBitmap | null = null;
-  let volumeFunction = 0;
-  let volumeTimeRange = [0, 599];
-  let volumeUseColormap = true;
 
   // Blobs
-  let blobsVisible = true;
-  let blobsRadius = 0.03;
-  let blobsAmount: number = 1;
-  let blobsColored = true;
-  let blobAlpha = 0.4;
-  let experimentalColors = false;
-
-  let visualizationSelected = VisualisationType.Pathline;
-  let showConnectors = false;
-  let selectedTimestep = 0; 
-
-  let matryoshkaBlobsVisible:boolean[] = [false, true, false, true, false, false, false, false, false, false, false, false, false, false, false];
-
-  let preciseQuills: boolean = false;
-  let maxDistance = 1.0;
 
   let clusterVisualization = "AbstractSphere";
   let action = "Change representation";
   let clustersUpdated = false;
   let interactiveClusterRef: InteractiveCluster;
-
-  function updateClustersUpdated(newClustersUpdated) {
-    clustersUpdated = newClustersUpdated;
-  }
-
-  //$: console.log("App selected chromosome type: " + selectedChromosome?.options.visType)
 
   //#endregion Configuration
 </script>
@@ -249,39 +144,15 @@
 
 <main>
   <div class="ui">
-    {#if dataTimesteps}
-      <Slider fullWidth min={0} max={dataTimesteps.length - 1} bind:value={selectedTimestep} />
+    {#if selectedChromosome && selectedChromosome.points.length > 1}
+      <Slider fullWidth min={0} max={selectedChromosome.points.length - 1} bind:value={chromosomeOptions[selectedChromosomeId].timestep} />
     {/if}
   </div>
 
   <Splitpanes theme="chromoskein" horizontal={false}>
     <Pane size={75}>
-      {#if $adapter && $device && $graphicsLibrary && dataTimesteps && dataTimesteps.length > volumeTimeRange[1]}
+      {#if $adapter && $device && $graphicsLibrary}
         <Viewport3D bind:viewport>
-          <!--
-            "Empty" Sphere is put here because there must be at least one object in scene else undefined behavior starts 
-            for reasons completely unknown to me
-          -->
-          <Sphere
-            radius={0}
-            center={[0.0, 0.0, 0.0]}
-            color={[0.0, 0.0, 0.0, 0.0]} 
-          />
-          <!-- {#if visualizationSelected == VisualisationType.Volume}
-            {#each dataClustersGivenK[blobsAmount] as cluster, _}
-              <TimeVolume
-                points={dataTimesteps.map(sequence => sequence.slice(cluster.from, cluster.to + 1))}
-                transparency={volumeTransparency}
-                radius={volumeRadius}
-                colormap={volumeColormap}
-                usecolormap={volumeUseColormap}
-                func={volumeFunction}
-                abstract={abstractVolumes}
-                color={cluster.color.rgb}
-              />
-            {/each}
-          {/if} -->
-
           {#if selectedChromosome}
             <ChromatinVisualization
               points={selectedChromosome.points}
@@ -304,122 +175,6 @@
             {/if}
           {/each}
 
-          <!-- {#if visualizationSelected == VisualisationType.Spline && dataClustersGivenK && dataClustersGivenK[blobsAmount]}
-            {#each dataClustersGivenK[blobsAmount] as cluster, _}
-              <Spline
-                points={dataTimesteps[selectedTimestep].slice(cluster.from, cluster.to + 1)}
-                radius={blobsRadius}
-                color={blobsColored ? vec3.fromValues(cluster.color.rgb[0], cluster.color.rgb[1], cluster.color.rgb[2]) : [1.0, 1.0, 1.0]}
-                multicolored={false}
-              />
-              {/each}
-          {/if}
-
-          {#if visualizationSelected == VisualisationType.Spheres && dataClustersGivenK && dataClustersGivenK[blobsAmount]}
-            {#each dataClustersGivenK[blobsAmount] as cluster, _}
-              {#each dataTimesteps[selectedTimestep].slice(cluster.from, cluster.to + 1) as point, _}
-                <Sphere
-                  radius={blobsRadius}
-                  center={point}
-                  color={blobsColored ? [cluster.color.rgb[0], cluster.color.rgb[1], cluster.color.rgb[2], 1.0] : [1.0, 1.0, 1.0, 1.0]} 
-                />
-              {/each}
-            {/each}
-          {/if}
-
-          {#if visualizationSelected == VisualisationType.Matryoshka}
-            <MatryoshkaClusters
-              selectedTimestep={selectedTimestep}
-              dataClustersGivenK={dataClustersGivenK}
-              dataTimesteps={dataTimesteps}
-              dataPathlines={dataPathlines}
-              blobAlpha={blobAlpha}
-              blobsRadius={blobsRadius}
-              experimentalColors={experimentalColors}
-              matryoshkaBlobsVisible={matryoshkaBlobsVisible} 
-            />
-          {/if}
-
-          {#if visualizationSelected == VisualisationType.Composite}
-            <InteractiveCluster
-              dataClustersGivenK={dataClustersGivenK}
-              pointsAtTimesteps={dataTimesteps}
-              selectedTimestep={selectedTimestep}
-              clusterVisualization={clusterVisualization}
-              showConnections={showConnectors}
-              clustersUpdated={clustersUpdated}
-              updateClustersUpdated={updateClustersUpdated}
-              action={action}
-              bind:this={interactiveClusterRef}
-            />
-          {/if}
-
-          {#if blobs[selectedTimestep] && visualizationSelected == VisualisationType.Implicit}
-            {#each blobs[selectedTimestep] as blob, i}
-              <SignedDistanceGrid
-                points={blob.normalizedPoints}
-                translate={blob.center}
-                scale={blob.scale}
-                radius={blobsRadius}
-                visible={blobsVisible}
-                color={blobsColored ? dataClustersGivenK[blobsAmount][i].color.rgb : vec3.fromValues(1.0, 1.0, 1.0)}
-                outline={false}
-              />
-            {/each}
-          {/if}
-          {#if blobs[selectedTimestep] && visualizationSelected == VisualisationType.AbstractSpheres} 
-            {#each dataClustersGivenK[blobsAmount] as cluster, i}
-              <Sphere
-                radius={(cluster.to - cluster.from + 1) / 1000.0 * 2}
-                center={blobFromPoints(dataTimesteps[selectedTimestep].slice(cluster.from, cluster.to + 1)).center}
-                color={blobsColored ? [dataClustersGivenK[blobsAmount][i].color.rgb[0], dataClustersGivenK[blobsAmount][i].color.rgb[1], dataClustersGivenK[blobsAmount][i].color.rgb[2], 1.0] : [1.0, 1.0, 1.0, 1.0]}
-              />
-            {/each}
-            {#if blobsAmount > 1}
-              <ContinuousTube
-                radius={(1.0 / blobsAmount) / 15.0}
-                points={blobs[selectedTimestep].map(blob => blob.center)}
-                color={[0.9, 0.9, 0.9]}
-                multicolored={false}
-              />
-            {/if}
-          {/if}
-          {#if blobs[selectedTimestep] && visualizationSelected == VisualisationType.Cones}
-            {#each dataClustersGivenK[blobsAmount] as cluster, _}
-              <PcaCone 
-                points={dataTimesteps[selectedTimestep].slice(cluster.from, cluster.to + 1)}
-                color={blobsColored ? [cluster.color.rgb[0], cluster.color.rgb[1], cluster.color.rgb[2]] : [1.0, 1.0, 1.0]}
-              />
-            {/each}
-            {#if blobsAmount > 1}
-              <ContinuousTube
-                radius={(1.0 / blobsAmount) / 15.0}
-                points={blobs[selectedTimestep].map(blob => blob.center)}
-                color={[0.9, 0.9, 0.9]}
-                multicolored={false}
-              />
-            {/if}  
-          {/if}
-          {#if blobs[selectedTimestep] && visualizationSelected == VisualisationType.Hedgehog}
-            {#each blobs[selectedTimestep] as blob, i}
-              <Hedgehog
-                radius = {blob.normalizedPoints.length / 1000.0 * 2}
-                blobs = {blobs[selectedTimestep]}
-                blobID = {i}
-                precise = {preciseQuills}
-                minDistance = {maxDistance}
-                color={blobsColored ? [dataClustersGivenK[blobsAmount][i].color.rgb[0], dataClustersGivenK[blobsAmount][i].color.rgb[1], dataClustersGivenK[blobsAmount][i].color.rgb[2]] : [1.0, 1.0, 1.0]}
-              />
-            {/each}
-            {#if blobsAmount > 1}
-              <ContinuousTube
-                radius={(1.0 / blobsAmount) / 15.0}
-                points={blobs[selectedTimestep].map(blob => blob.center)}
-                color={[0.9, 0.9, 0.9]}
-                multicolored={false}
-              />
-            {/if}
-          {/if}-->
         </Viewport3D>
       {/if}
     </Pane>
@@ -432,6 +187,7 @@
                 <SelectItem value={chromosome.id} text={chromosome.name}/>
               {/each}
             </Select>
+
             {#key selectedChromosomeId}
               {#if chromosomeOptions && chromosomeOptions[selectedChromosomeId]}
                 <VisualizationOptions
@@ -440,96 +196,7 @@
                   size={chromosomes[selectedChromosomeId].points[0].length}
                 />            
               {/if}
-            {/key}
-            <!-- <Select size="sm" inline labelText="Visualization:" bind:selected={visualizationSelected} on:change={() => selectedChromosome?.visualization?.setVisualizationType(visualizationSelected)}>
-              {#each Object.keys(VisualisationType) as key, index}
-                <SelectItem value={key}/>  
-              {/each}
-            </Select>
-
-            {#if visualizationSelected == VisualisationType.Composite}
-            <Select size="sm" inline labelText="Action:" bind:selected={action}>
-              <SelectItem value="Change representation" />
-              <SelectItem value="Split" />
-              <SelectItem value="Merge" />
-            </Select>
-            {/if}
-
-            {#if visualizationSelected == VisualisationType.Composite && action == "Change representation"}
-              <Select size="sm" inline labelText="Visualization type:" bind:selected={clusterVisualization}>
-              {#each Object.keys(VisualisationType) as key, index}
-                {#if key != VisualisationType.None}
-                  <SelectItem value={key}/>  
-                {/if}
-              {/each}
-              </Select>
-            {/if}
-
-            {#if visualizationSelected == VisualisationType.Composite}
-            <Checkbox labelText="Show cluster connections" bind:checked={showConnectors} />
-            {/if}
-
-            {#if visualizationSelected != VisualisationType.Composite && visualizationSelected != VisualisationType.None && visualizationSelected != VisualisationType.Volume && visualizationSelected != VisualisationType.Matryoshka}
-            <Checkbox labelText="Colored" bind:checked={blobsColored} />
-            {/if}
-
-            {#if visualizationSelected != VisualisationType.None && visualizationSelected != VisualisationType.Composite}
-            <Checkbox labelText="Cluster at timestep" bind:checked={timestepClustering} />
-            {/if}
-
-            {#if visualizationSelected == VisualisationType.Matryoshka}
-            <Checkbox labelText="Experimental colors" bind:checked={experimentalColors} />
-            {/if}
-
-            {#if visualizationSelected != VisualisationType.Matryoshka && visualizationSelected != VisualisationType.Composite && visualizationSelected != VisualisationType.None}
-            <Slider labelText="Cluster amount" fullWidth min={1} max={15} bind:value={blobsAmount} />
-            {/if}
-            {#if visualizationSelected == VisualisationType.Implicit || visualizationSelected == VisualisationType.Matryoshka || visualizationSelected == VisualisationType.Pathline || visualizationSelected == VisualisationType.Spheres || visualizationSelected == VisualisationType.Spline}
-              <Slider labelText="Radius" fullWidth min={0.01} max={0.3} step={0.01} bind:value={blobsRadius} />
-            {/if}
-            {#if visualizationSelected == VisualisationType.Matryoshka}
-              <Slider labelText="Alpha" fullWidth min={0.05} max={1.0} step={0.05} bind:value={blobAlpha} />
-            {/if}
-            {#if visualizationSelected == VisualisationType.Hedgehog}
-              <Slider labelText="Max distance" fullWidth min={0.0} max={0.5} step={0.01} bind:value={maxDistance} />
-              <Checkbox labelText="Precise quills" bind:checked={preciseQuills} />
-            {/if}
-
-            {#if visualizationSelected == VisualisationType.Volume}
-              <Checkbox labelText="Abstractize volumes" bind:checked={abstractVolumes} />
-
-              <Slider labelText="Transparency" fullWidth min={0.0} max={1.0} step={0.01} bind:value={volumeTransparency} />
-              <Slider labelText="Radius" fullWidth min={0.01} max={0.1} step={0.01} bind:value={volumeRadius} />
-
-              <Checkbox labelText="Use colormap" bind:checked={volumeUseColormap} />
-
-              <Select labelText="Colormap" bind:selected={volumeColormapChoice}>
-                <SelectItem value="White to Black" />
-                <SelectItem value="Rainbow" />
-                <SelectItem value="Cool Warm" />
-                <SelectItem value="Matplotlib Plasma" />
-                <SelectItem value="Samsel Linear Green" />
-              </Select>
-
-              <Select labelText="Math Function" bind:selected={volumeFunction}>
-                <SelectItem text="Last Timestep" value={0} />
-                <SelectItem text="Number of Timesteps" value={1} />
-              </Select>
-            {/if} -->
-
-            <!-- {#if dataClustersGivenK && dataPathlines}
-              <Dendrogram
-                dataClustersGivenK={dataClustersGivenK}
-                visualizationSelected={visualizationSelected}
-                bind:blobsAmount={blobsAmount}
-                modelSize={dataPathlines.length}
-                experimental={experimentalColors}
-                action={action}
-                bind:matryoshkaVisibility={matryoshkaBlobsVisible}
-                bind:interactiveCluster={interactiveClusterRef}
-                update={clustersUpdated}
-              />
-            {/if} -->
+            {/key}  
           </AccordionItem>
 
           <AccordionItem title="Data Loading">
