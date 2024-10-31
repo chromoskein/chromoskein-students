@@ -69,8 +69,8 @@ export type Chromosome =
     name: string,
     visible: boolean,
     points: vec3[][],
-    clusters: ClusterNode[][];
-    visualization: ChromatinVisualization
+    clusters: ClusterNode[][],
+    visualization: ChromatinVisualization,
 }
 
 let id = 0;
@@ -104,5 +104,60 @@ function getEmptyClustering(length: number): ClusterNode {
             l: 0,
             rgb: [Math.random(), Math.random(), Math.random()]
         }
+    }
+}
+
+export type StandardOptions = {
+    radius: number,
+    blobsAmount: number, 
+    alpha: number,
+    showConnectors: boolean,
+    timestep: number,
+};
+
+export type VolumeOptions = {
+    abstractVolumes: boolean,
+    volumeColormapChoice: string,
+    volumeColormap: ImageBitmap | null,
+    volumeFunction: number,
+};
+
+export type HedgehogOptions = {
+    preciseQuills: boolean,
+    hedgehogDistance: number,
+};
+
+// This is disgusting
+export type VisOptions = {
+    visType: VisualisationType
+    abstractVolumes: boolean
+    volumeColormapChoice: string 
+    volumeColormap: ImageBitmap | null
+    volumeFunction: number 
+    radius: number 
+    blobsAmount: number 
+    alpha: number
+    showConnectors: boolean
+    timestep: number
+    matryoshkaBlobsVisible:boolean[]
+    preciseQuills: boolean
+    hedgehogDistance: number
+}
+
+export function defaultVisOptions() {
+    return {
+        visType: VisualisationType.Pathline,
+        abstractVolumes: false,
+        volumeColormapChoice: "Cool Warm", 
+        volumeColormap: null,
+        volumeFunction: 0 ,
+        radius: 0.01,
+        blobsAmount: 1, 
+        alpha: 1,
+        showConnectors: false,
+        timestep: 0,
+        matryoshkaBlobsVisible: [true],
+        preciseQuills: false,
+        hedgehogDistance: 1.0,
     }
 }

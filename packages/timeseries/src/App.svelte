@@ -32,12 +32,13 @@
   import Hedgehog from "./objects/Hedgehog.svelte";
   import InteractiveCluster from "./visalizations/InteractiveCluster.svelte";
   import ContinuousTube from "./objects/ContinuousTube.svelte";
-  import { initializeChromosome, type Chromosome } from "./utils/data-models";
+  import { defaultVisOptions, initializeChromosome, type VisOptions, type Chromosome } from "./utils/data-models";
   import ChromosomeItem from "./uiComponents/ChromosomeItem.svelte";
   import Dendrogram from "./uiComponents/Dendrogram.svelte";
   import PcaCone from "./objects/PCACone.svelte";
   import { loadNewPdbModels } from "./utils/data-parser";
   import ChromatinVisualization from "./uiComponents/ChromatinVisualization.svelte";
+  import VisualizationOptions from "./uiComponents/VisualizationOptions.svelte";
 
   const adapter: Writable<GPUAdapter | null> = writable(null);
   const device: Writable<GPUDevice | null> = writable(null);
@@ -46,7 +47,7 @@
   let viewport: Graphics.Viewport3D | null = null;
 
   let chromosomes: Chromosome[] = [];
-
+  let chromosomeOptions: VisOptions[] = [];
   
   let pdbFiles;
   function loadFiles() {
@@ -57,6 +58,11 @@
 
   function addChromosomes(models: Chromosome[]) {
     chromosomes = chromosomes.concat(models);
+    let defaultOptions = [];
+    models.forEach(element => {
+      defaultOptions.push(defaultVisOptions())
+    });
+    chromosomeOptions = chromosomeOptions.concat(defaultOptions)
   }
 
   //#region Data
@@ -126,6 +132,7 @@
     staticDataClustersGivenK = staticDataClustersGivenK.slice(0, 16);
 
     let baseChromosome = initializeChromosome("Base", dataTimesteps);
+    chromosomeOptions = [defaultVisOptions()]
     baseChromosome.clusters = staticDataClustersGivenK;
     chromosomes = [baseChromosome]
     selectedChromosome = baseChromosome;
@@ -186,10 +193,12 @@
 
   let selectedId: number = 0;
   let selectedChromosome: Chromosome;
+  let selectedChromosomeId = 0;
   function onSelectedChromosomeChanged() {
-    for (let chromosome of chromosomes) {
-      if (chromosome.id == selectedId) {
-        selectedChromosome = chromosome;
+    for (let i = 0; i < chromosomes.length; i++) {
+      if (chromosomes[i].id == selectedId) {
+        selectedChromosome = chromosomes[i];
+        selectedChromosomeId = i;
         return;
       }
     }
@@ -232,6 +241,8 @@
     clustersUpdated = newClustersUpdated;
   }
 
+  //$: console.log("App selected chromosome type: " + selectedChromosome?.options.visType)
+
   //#endregion Configuration
 </script>
 
@@ -256,7 +267,7 @@
             center={[0.0, 0.0, 0.0]}
             color={[0.0, 0.0, 0.0, 0.0]} 
           />
-          {#if visualizationSelected == VisualisationType.Volume}
+          <!-- {#if visualizationSelected == VisualisationType.Volume}
             {#each dataClustersGivenK[blobsAmount] as cluster, _}
               <TimeVolume
                 points={dataTimesteps.map(sequence => sequence.slice(cluster.from, cluster.to + 1))}
@@ -269,15 +280,28 @@
                 color={cluster.color.rgb}
               />
             {/each}
+          {/if} -->
+
+          {#if selectedChromosome}
+            <ChromatinVisualization
+              points={selectedChromosome.points}
+              visible={selectedChromosome.visible}
+              dataClustersGivenK={selectedChromosome.clusters}
+              ops={chromosomeOptions[selectedChromosomeId]}
+              bind:this={selectedChromosome.visualization}
+            />
           {/if}
 
           {#each chromosomes as chromosome, i}
+            {#if i != selectedChromosomeId}
               <ChromatinVisualization
                 points={chromosome.points}
                 visible={chromosome.visible}
                 dataClustersGivenK={chromosome.clusters}
+                ops={chromosomeOptions[i]}
                 bind:this={chromosome.visualization}
               />
+            {/if}
           {/each}
 
           <!-- {#if visualizationSelected == VisualisationType.Spline && dataClustersGivenK && dataClustersGivenK[blobsAmount]}
@@ -408,8 +432,14 @@
                 <SelectItem value={chromosome.id} text={chromosome.name}/>
               {/each}
             </Select>
-
-            <Select size="sm" inline labelText="Visualization:" bind:selected={visualizationSelected} on:change={() => selectedChromosome?.visualization?.setVisualizationType(visualizationSelected)}>
+            {#key selectedChromosomeId}
+              {#if chromosomeOptions && chromosomeOptions[selectedChromosomeId]}
+                <VisualizationOptions
+                  bind:ops={chromosomeOptions[selectedChromosomeId]}
+                />            
+              {/if}
+            {/key}
+            <!-- <Select size="sm" inline labelText="Visualization:" bind:selected={visualizationSelected} on:change={() => selectedChromosome?.visualization?.setVisualizationType(visualizationSelected)}>
               {#each Object.keys(VisualisationType) as key, index}
                 <SelectItem value={key}/>  
               {/each}
@@ -483,7 +513,7 @@
                 <SelectItem text="Last Timestep" value={0} />
                 <SelectItem text="Number of Timesteps" value={1} />
               </Select>
-            {/if}
+            {/if} -->
 
             {#if dataClustersGivenK && dataPathlines}
               <Dendrogram
