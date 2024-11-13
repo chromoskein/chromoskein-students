@@ -1,8 +1,8 @@
 <script lang="ts">
   import { getContext, onMount } from "svelte";
-  import * as Graphics from "lib-graphics";
+  import * as Graphics from "@chromoskein/lib-graphics";
   import type { Writable } from "svelte/store";
-  import type { Viewport3D } from "lib-graphics";
+  import type { Viewport3D } from "@chromoskein/lib-graphics";
   import { vec3 } from "gl-matrix";
 
   let viewport: Writable<Viewport3D | null> = getContext("viewport");

@@ -9,7 +9,7 @@
 
   import { onMount, setContext } from "svelte";
   import { writable, type Writable } from "svelte/store";
-  import * as Graphics from "lib-graphics";
+  import * as Graphics from "@chromoskein/lib-graphics";
   import Viewport3D from "./viewports/Viewport3D.svelte";
   import { vec3 } from "gl-matrix";
   import "./styles/splitpanes.css";
@@ -54,6 +54,16 @@
     });
     chromosomeOptions = chromosomeOptions.concat(defaultOptions)
   }
+
+ // function foo() {
+ //   new Promise<void>((resolve, reject) => {
+ //     Something long
+//
+  //    resolve(/* some val */);
+  //  }).then((val) => {
+
+   // })
+  //}
 
   //#endregion Data
 
@@ -197,6 +207,9 @@
                 />            
               {/if}
             {/key}  
+
+
+            <Button on:click={() => console.log("I am clicked!!!")}> Click Me </Button>
           </AccordionItem>
 
           <AccordionItem title="Data Loading">

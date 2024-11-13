@@ -1,8 +1,8 @@
 <script lang="ts">
     import { getContext, onMount } from "svelte";
-    import {RoundedCone, Sphere} from "lib-graphics";
+    import {RoundedCone, Sphere} from "@chromoskein/lib-graphics";
     import type { Writable } from "svelte/store";
-    import type { Viewport3D } from "lib-graphics";
+    import type { Viewport3D } from "@chromoskein/lib-graphics";
     import { vec3 } from "gl-matrix";
     import type { ClusterBlob } from "../utils/main";
   

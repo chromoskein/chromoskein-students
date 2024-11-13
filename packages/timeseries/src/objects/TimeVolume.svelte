@@ -3,8 +3,8 @@
 <script lang="ts">
     import { getContext, onMount } from "svelte";
     import type { Writable } from "svelte/store";
-    import type { Viewport3D } from "lib-graphics";
-    import { DynamicVolumeUnit } from "lib-graphics";
+    import type { Viewport3D } from "@chromoskein/lib-graphics";
+    import { DynamicVolumeUnit } from "@chromoskein/lib-graphics";
     import { vec4, vec3 } from "gl-matrix";
     import { blobFromPoints } from "../utils/main";
 

@@ -1,6 +1,6 @@
 <script lang="ts">
     import { getContext, onMount } from "svelte";
-    import * as Graphics from "lib-graphics";
+    import * as Graphics from "@chromoskein/lib-graphics";
     import type { Writable } from "svelte/store";
     import { vec3 } from "gl-matrix";
   

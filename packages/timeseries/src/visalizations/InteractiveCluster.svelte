@@ -5,9 +5,9 @@
     import { HedgehogClusterVisualisation, SphereSimplificationClusterVisualisation, PCAClusterVisualisation, SDGClusterVisualisation, PathlineClusterVisualization, SplineClusterVisualisation, SpheresClusterVisualization, AbstractVolumeClusterVisualisation, VolumeClusterVisualisation } from "../interactiveClusters/visualisations/index";
     import { getContext, onMount } from "svelte";
     import type { Writable } from "svelte/store";
-    import type { Viewport3D } from "lib-graphics";
+    import type { Viewport3D } from "@chromoskein/lib-graphics";
     import type { vec3 } from "gl-matrix";
-    import * as Graphics from "lib-graphics";
+    import * as Graphics from "@chromoskein/lib-graphics";
     import { vec2 } from "gl-matrix";
     import { ClusterHighlighter } from "../interactiveClusters/clusterHighlighter";
 

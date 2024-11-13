@@ -2,8 +2,8 @@
 <script lang="ts">
     import { getContext, onMount } from "svelte";
     import type { Writable } from "svelte/store";
-    import type { Viewport3D } from "lib-graphics";
-    import { SignedDistanceGrid } from "lib-graphics";
+    import type { Viewport3D } from "@chromoskein/lib-graphics";
+    import { SignedDistanceGrid } from "@chromoskein/lib-graphics";
     import { vec3, vec4 } from "gl-matrix";
 
     export let visible = true;

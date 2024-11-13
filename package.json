@@ -12,10 +12,11 @@
     "chromatin-n-out-dev": "concurrently \"npm:build-watch --workspace=lib-graphics\" \"npm:dev --workspace=chromatin-n-out\"",
     "yarn-simplification-dev": "npm run build --workspace=lib-graphics & npm run dev --workspace=yarn-simplification",
     "yarn-simplification-dev-with-deps": "concurrently \"npm:build-watch --workspace=lib-graphics\" \"npm:dev --workspace=yarn-simplification\"",
-    "timeseries-dev": "npm run build --workspace=lib-graphics & npm run build --workspace=lib-dataloader & npm run dev --workspace=timeseries",
+    "timeseries-dev": "npm npm run build --workspace=lib-dataloader & npm run dev --workspace=timeseries",
     "timeseries-dev-with-deps": "concurrently \"npm:build-watch --workspace=lib-graphics\" \"npm:dev --workspace=timeseries\""
   },
   "dependencies": {
+    "@chromoskein/lib-graphics": "^1.0.2",
     "carbon-components-svelte": "^0.70.13",
     "chroma-js": "^2.4.2",
     "concurrently": "^7.4.0"

@@ -2,9 +2,9 @@
     import { getContext, onMount } from "svelte";
     import PCA from 'pca-js';
 
-    import { RoundedCone } from "lib-graphics";
+    import { RoundedCone } from "@chromoskein/lib-graphics";
     import type { Writable } from "svelte/store";
-    import type { Viewport3D } from "lib-graphics";
+    import type { Viewport3D } from "@chromoskein/lib-graphics";
     import { vec3 } from "gl-matrix";
     import { blobFromPoints } from "../utils/main";
 

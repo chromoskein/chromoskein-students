@@ -22,7 +22,7 @@
   import { simplify } from "../utils/simplifyLine";
   import Viewport3D from "./Viewport3D.svelte";
 
-  import { BoundingBoxFromPoints, OrbitCamera, toRadian, normalizePointsByBoundingBox } from "lib-graphics";
+  import { BoundingBoxFromPoints, OrbitCamera, toRadian, normalizePointsByBoundingBox } from "@chromoskein/lib-graphics";
 
   export let dataPathlines: vec3[][] = null;
   export let dataClustersGivenK: ClusterNode[][] | null = null;

@@ -1,6 +1,6 @@
 import { vec3 } from "gl-matrix";
-import * as Graphics from "lib-graphics";
-import type { Viewport3D } from "lib-graphics";
+import * as Graphics from "@chromoskein/lib-graphics";
+import type { Viewport3D } from "@chromoskein/lib-graphics";
 import type { ClusterNode } from "../../utils/main";
 import type { CompositeClusters } from "../compositeClusters";
 import { AbstractClusterVisualisation } from "./abstractVisualization";

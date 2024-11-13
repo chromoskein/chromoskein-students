@@ -1,7 +1,7 @@
 <script lang="ts">
   import { getContext, onMount, setContext } from "svelte";
   import { writable, type Writable } from "svelte/store";
-  import type * as Graphics from "lib-graphics";
+  import type * as Graphics from "@chromoskein/lib-graphics";
 
   // Context
   let device: Writable<GPUDevice> = getContext("device");

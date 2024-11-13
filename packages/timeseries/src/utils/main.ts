@@ -4,10 +4,10 @@ import { deindexTriangles_meshView } from 'triangles-index';
 
 import { CsvDelimiter, parseXyz } from "lib-dataloader";
 import { clusterData, clusterDataSequential } from "./hclust";
-import * as Graphics from "lib-graphics";
+import * as Graphics from "@chromoskein/lib-graphics";
 
 import type { Writable } from "svelte/store";
-import type { Viewport3D } from "lib-graphics";
+import type { Viewport3D } from "@chromoskein/lib-graphics";
 import { intros } from "svelte/internal";
 
 export const clamp = (num: number, min: number, max: number) => Math.min(Math.max(num, min), max);
