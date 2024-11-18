@@ -22,23 +22,41 @@
     let sphereID: number | null = null;
     let quills: vec3[] = [];
 
-    function findClosestPoint(blob1: ClusterBlob, blob2: ClusterBlob, minDistance: number): vec3 | null {
-      let foundMinDistance = Infinity;
-      let closestPoint: vec3 | null = null;
+    function findClosestPoint(blob1: ClusterBlob, blob2: ClusterBlob, minDistance: number): vec3[] {
+
+      let closestPoints: {
+        point: vec3,
+        dist: number
+      }[] = [];
 
       for (let i = 0; i < blob1.normalizedPoints.length; i++) {
           for (let j = 0; j < blob2.normalizedPoints.length; j++) {
             let a = vec3.add(vec3.create(), vec3.scale(vec3.create(), blob1.normalizedPoints[i], blob1.scale), blob1.center); 
             let b = vec3.add(vec3.create(), vec3.scale(vec3.create(), blob2.normalizedPoints[j], blob2.scale), blob2.center);
               let distance = vec3.dist(a, b);
-              if (distance < foundMinDistance && distance < minDistance) {
-                foundMinDistance = distance;
-                closestPoint = a;
+
+              if (distance < minDistance) {
+                closestPoints.push({
+                  //point: a,
+                  point: vec3.lerp(vec3.create(), a, b, 0.25),
+                  dist: distance,
+                });
               }
           } 
       }
-    
-      return closestPoint;
+
+      // Sorts the found points in descending order
+      closestPoints.sort((a, b) => { return a.dist - b.dist });
+      let result: vec3[] = [];
+      
+      const threshold = 0.5;
+      for (let candidate of closestPoints) {
+        if (result.filter(a => vec3.dist(candidate.point, a) < threshold).length == 0) {
+          result.push(candidate.point);
+        }
+      }
+
+      return result;
     }
 
   
@@ -63,10 +81,10 @@
       quills = [];
       for (let i = 0; i < blobs.length; i++) {
         if (i != blobID) {
-          let closestPoint = findClosestPoint(blobs[blobID], blobs[i], minDistance); 
-          if (closestPoint != null) {
+          let closestPoints = findClosestPoint(blobs[blobID], blobs[i], minDistance); 
+          if (closestPoints.length > 0) {
             if (precise) {
-              quills.push(closestPoint);
+              closestPoints.forEach(element => quills.push(element));
             }
             else {
               quills.push(vec3.lerp(vec3.create(), blobs[blobID].center, blobs[i].center, 0.5));

@@ -211,7 +211,7 @@
     {#if blobs[ops.timestep] && ops.visType == VisualisationType.Hedgehog}
         {#each blobs[ops.timestep] as blob, i}
             <Hedgehog
-                radius = {blob.normalizedPoints.length / 1000.0 * 2}
+                radius = {blob.normalizedPoints.length / 600.0}
                 blobs = {blobs[ops.timestep]}
                 blobID = {i}
                 precise = {ops.preciseQuills}
