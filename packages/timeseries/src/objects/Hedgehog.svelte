@@ -28,8 +28,8 @@
 
       for (let i = 0; i < blob1.normalizedPoints.length; i++) {
           for (let j = 0; j < blob2.normalizedPoints.length; j++) {
-            let a = vec3.add(vec3.create(), blob1.normalizedPoints[i], blob1.center); 
-            let b = vec3.add(vec3.create(), blob2.normalizedPoints[j], blob2.center);
+            let a = vec3.add(vec3.create(), vec3.scale(vec3.create(), blob1.normalizedPoints[i], blob1.scale), blob1.center); 
+            let b = vec3.add(vec3.create(), vec3.scale(vec3.create(), blob2.normalizedPoints[j], blob2.scale), blob2.center);
               let distance = vec3.dist(a, b);
               if (distance < foundMinDistance && distance < minDistance) {
                 foundMinDistance = distance;
