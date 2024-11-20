@@ -417,7 +417,7 @@ export type ClusterBlob = {
     scale: number;   
 }
 
-export function blobFromPoints(points: vec3[]) {
+export function blobFromPoints(points: vec3[]): ClusterBlob {
     let bb = Graphics.boundingBoxFromPoints(points);
     Graphics.boundingBoxCalculateCenter(bb);
     

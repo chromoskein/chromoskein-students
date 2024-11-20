@@ -6,13 +6,14 @@
     import type { Writable } from "svelte/store";
     import type { Viewport3D } from "@chromoskein/lib-graphics";
     import { vec3 } from "gl-matrix";
-    import { blobFromPoints } from "../utils/main";
+    import { blobFromPoints, ClusterBlob } from "../utils/main";
+    import { calculateSphereParameters } from "../utils/abstractClustersUtils";
 
     export let points: vec3[] = [];
     export let color: vec3 = vec3.fromValues(1.0, 1.0, 1.0);
     
     let viewport: Writable<Viewport3D | null> = getContext("viewport");
-    let normalizedData;
+    let center:vec3;
     let firstPCVec: vec3;
     let firstPCVal: number = 0.0;
     let secondPCVal:number = 0.0;
@@ -30,7 +31,8 @@
   
 
     $: if (points) {
-        normalizedData = blobFromPoints(points);
+        let normalizedData: ClusterBlob = blobFromPoints(points);
+        center = calculateSphereParameters(points).center;
 
         let result = PCA.getEigenVectors(normalizedData.normalizedPoints);
         firstPCVec = result[0].vector;
@@ -52,22 +54,22 @@
   
     $: if (coneUp && coneDown) {
 
-      coneUp.properties.start = [normalizedData.center[0], normalizedData.center[1], normalizedData.center[2]];
+      coneUp.properties.start = [center[0], center[1], center[2]];
       coneUp.properties.end = [
-        normalizedData.center[0] + firstPCVal * firstPCVec[0],
-        normalizedData.center[1] + firstPCVal * firstPCVec[1],
-        normalizedData.center[2] + firstPCVal * firstPCVec[2],
+        center[0] + firstPCVal * firstPCVec[0],
+        center[1] + firstPCVal * firstPCVec[1],
+        center[2] + firstPCVal * firstPCVec[2],
       ];
       coneUp.properties.startRadius = secondPCVal;
       coneUp.properties.endRadius = 0.0001;
       coneUp.properties.color = [color[0], color[1], color[2], 1.0];
       coneUp.setDirtyCPU();
 
-      coneDown.properties.start = [normalizedData.center[0], normalizedData.center[1], normalizedData.center[2]];
+      coneDown.properties.start = [center[0], center[1], center[2]];
       coneDown.properties.end = [
-        normalizedData.center[0] - firstPCVal * firstPCVec[0],
-        normalizedData.center[1] - firstPCVal * firstPCVec[1],
-        normalizedData.center[2] - firstPCVal * firstPCVec[2],
+        center[0] - firstPCVal * firstPCVec[0],
+        center[1] - firstPCVal * firstPCVec[1],
+        center[2] - firstPCVal * firstPCVec[2],
       ];
       coneDown.properties.startRadius = secondPCVal;
       coneDown.properties.endRadius = 0.0001;
