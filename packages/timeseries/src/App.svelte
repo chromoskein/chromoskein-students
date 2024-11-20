@@ -18,7 +18,7 @@
   import { loadTimesteps, normalizePointClouds, timestepsToPathlines, loadBitmap, clusterPathlines } from "./utils/main";
 
   import "carbon-components-svelte/css/g100.css";
-  import { Header, SkipToContent, Checkbox, Accordion, AccordionItem, Select, SelectItem, Button } from "carbon-components-svelte";
+  import { Header, SkipToContent, Accordion, AccordionItem, Select, SelectItem, Button } from "carbon-components-svelte";
   import { Slider } from "carbon-components-svelte";
   import { treeColor } from "./utils/treecolors";
 
@@ -106,30 +106,9 @@
   });
   //#endregion Init
 
-  $: (async () => {
-    let path;
-    switch (volumeColormapChoice) {
-      case "White to Black":
-        path = "./colormaps/blackwhite.png";
-        break;
-      case "Rainbow":
-        path = "./colormaps/rainbow.png";
-        break;
-      case "Cool Warm":
-        path = "./colormaps/cool-warm-paraview.png";
-        break;
-      case "Matplotlib Plasma":
-        path = "./colormaps/matplotlib-plasma.png";
-        break;
-      case "Samsel Linear Green":
-        path = "./colormaps/samsel-linear-green.png";
-        break;
-    }
-    volumeColormap = await loadBitmap(path);
-  })();
-
-  $: if (volumeColormap && viewport != null && viewport.scene != null) {
-    viewport.scene.setColorMapFromBitmap(volumeColormap);
+  // Set default colormap on viewport change
+  $: if (viewport && viewport.scene) {
+    loadBitmap("./colormaps/cool-warm-paraview.png").then((colormap) =>  viewport.scene.setColorMapFromBitmap(colormap));
   }
 
   let selectedId: number = 0;
@@ -145,12 +124,7 @@
     }
   }
 
-
-  let volumeColormapChoice = "Cool Warm";
-  let volumeColormap: ImageBitmap | null = null;
-
   // Blobs
-
   let clusterVisualization = "AbstractSphere";
   let action = "Change representation";
   let clustersUpdated = false;
