@@ -1,5 +1,5 @@
 <script lang="ts">
-    import {blobFromPoints, clusterPathlines, clusterTimestep, timestepsToPathlines, VisualisationType} from "../utils/main";
+    import {blobFromPoints, timestepsToPathlines, VisualisationType} from "../utils/main";
     import type { ClusterBlob, ClusterNode } from "../utils/main";
 
     import TimeVolume from "../objects/TimeVolume.svelte";
@@ -8,25 +8,26 @@
     import Spline from "../objects/Spline.svelte";;
     import MatryoshkaClusters from "../visalizations/MatryoshkaClusters.svelte";
     import Hedgehog from "../objects/Hedgehog.svelte";
-    import InteractiveCluster from "../visalizations/InteractiveCluster.svelte";
     import ContinuousTube from "../objects/ContinuousTube.svelte";
     import PcaCone from "../objects/PCACone.svelte";
 
     import { vec3 } from "gl-matrix";
-    import type { HedgehogOptions, StandardOptions, VisOptions, VolumeOptions } from "../utils/data-models";
+    import type { VisOptions } from "../utils/data-models";
+    import { calculateSphereParameters } from "../utils/abstractClustersUtils";
 
     export let visible: boolean = true;
     export let points: vec3[][];
     export let dataClustersGivenK: ClusterNode[][] = [];
     export let ops: VisOptions;
 
-    let visType;
-    let clustersAmount = 1;
-    let alpha = 1.0;
-    let radius;
-    let abstractVolumes;
+    let visType: VisualisationType;
+    let clustersAmount: number = 1;
+    let alpha: number = 1.0;
+    let radius: number = 0.2;
+    let abstractVolumes: boolean;
     let volumeColormap;
-    let volumeFunction;
+    let volumeFunction: number;
+    let timestep: number = 0;
 
     $: visType = ops.visType;
     $: clustersAmount = ops.blobsAmount;
@@ -35,11 +36,26 @@
     $: abstractVolumes = ops.abstractVolumes;
     $: volumeColormap = ops.volumeColormap;
     $: volumeFunction = ops.volumeFunction;
+    $: timestep = ops.timestep;
 
     $: if (dataClustersGivenK) {
         ops.matryoshkaBlobsVisible = new Array(dataClustersGivenK.length - 1).fill(false);
         ops.matryoshkaBlobsVisible[0] = true;
     }
+
+
+    // Stores the average point in each cluster and radius that encapsulates all points
+    let clusterCenters: {
+        center: vec3,
+        radius: number,
+    }[] = [];
+    $: {
+        clusterCenters = [];
+        dataClustersGivenK[clustersAmount].forEach(cluster => {
+            clusterCenters.push(calculateSphereParameters(points[timestep].slice(cluster.from, cluster.to + 1)));
+        });
+    }
+
     // Splits data pathlines based on clusters
     // Format [cluster][point][timestep]
     let dataClusteredPathlines: vec3[][][] | null = null;
@@ -74,8 +90,7 @@
 
         blobs.push(blobsPointsAtTimestep);
         }
-    }
-        
+    }       
 </script>
 
 <div>
@@ -97,33 +112,33 @@
     {/each}
     {/if}
 
-    {#if ops.visType == VisualisationType.Pathline && dataClustersGivenK && dataClustersGivenK[ops.blobsAmount]}
-        {#each dataClustersGivenK[ops.blobsAmount] as cluster, _}
+    {#if visType == VisualisationType.Pathline && dataClustersGivenK && dataClustersGivenK[clustersAmount]}
+        {#each dataClustersGivenK[clustersAmount] as cluster, _}
             <ContinuousTube
-                points={points[ops.timestep].slice(cluster.from, cluster.to + 1)}
-                radius={ops.radius}
+                points={points[timestep].slice(cluster.from, cluster.to + 1)}
+                radius={radius}
                 color={vec3.fromValues(cluster.color.rgb[0], cluster.color.rgb[1], cluster.color.rgb[2])}
                 multicolored={false}
             />
         {/each}
     {/if}
 
-    {#if ops.visType == VisualisationType.Spline && dataClustersGivenK && dataClustersGivenK[ops.blobsAmount]}
-        {#each dataClustersGivenK[ops.blobsAmount] as cluster, _}
+    {#if visType == VisualisationType.Spline && dataClustersGivenK && dataClustersGivenK[clustersAmount]}
+        {#each dataClustersGivenK[clustersAmount] as cluster, _}
             <Spline
-                points={points[ops.timestep].slice(cluster.from, cluster.to + 1)}
-                radius={ops.radius}
+                points={points[timestep].slice(cluster.from, cluster.to + 1)}
+                radius={radius}
                 color={vec3.fromValues(cluster.color.rgb[0], cluster.color.rgb[1], cluster.color.rgb[2])}
                 multicolored={false}
             />
         {/each}
     {/if}
 
-    {#if ops.visType == VisualisationType.Spheres && dataClustersGivenK && dataClustersGivenK[ops.blobsAmount]}
-        {#each dataClustersGivenK[ops.blobsAmount] as cluster, _}
-            {#each points[ops.timestep].slice(cluster.from, cluster.to + 1) as point, _}
+    {#if visType == VisualisationType.Spheres && dataClustersGivenK && dataClustersGivenK[clustersAmount]}
+        {#each dataClustersGivenK[clustersAmount] as cluster, _}
+            {#each points[timestep].slice(cluster.from, cluster.to + 1) as point, _}
                 <Sphere
-                    radius={ops.radius}
+                    radius={radius}
                     center={point}
                     color={[cluster.color.rgb[0], cluster.color.rgb[1], cluster.color.rgb[2], 1.0]} 
                 />
@@ -132,14 +147,14 @@
     {/if}
 
     
-    {#if ops.visType == VisualisationType.Matryoshka}
+    {#if visType == VisualisationType.Matryoshka}
         <MatryoshkaClusters
-            selectedTimestep={ops.timestep}
+            selectedTimestep={timestep}
             dataClustersGivenK={dataClustersGivenK}
             dataTimesteps={points}
             dataPathlines={timestepsToPathlines(points)}
-            blobAlpha={ops.alpha}
-            blobsRadius={ops.radius}
+            blobAlpha={alpha}
+            blobsRadius={radius}
             experimentalColors={false}
             matryoshkaBlobsVisible={ops.matryoshkaBlobsVisible} 
         />
@@ -162,67 +177,67 @@
     {/if}
     -->
 
-    {#if blobs[ops.timestep] && ops.visType == VisualisationType.Implicit}
-    {#each blobs[ops.timestep] as blob, i}
+    {#if blobs[timestep] && visType == VisualisationType.Implicit}
+    {#each blobs[timestep] as blob, i}
         <SignedDistanceGrid
             points={blob.normalizedPoints}
             translate={blob.center}
             scale={blob.scale}
-            radius={ops.radius}
+            radius={radius}
             visible={true}
-            color={vec3.fromValues(dataClustersGivenK[ops.blobsAmount][i].color.rgb[0], dataClustersGivenK[ops.blobsAmount][i].color.rgb[1], dataClustersGivenK[ops.blobsAmount][i].color.rgb[2])}
+            color={vec3.fromValues(dataClustersGivenK[clustersAmount][i].color.rgb[0], dataClustersGivenK[clustersAmount][i].color.rgb[1], dataClustersGivenK[clustersAmount][i].color.rgb[2])}
             outline={false}
         />
     {/each}
     {/if}
-    {#if blobs[ops.timestep] && ops.visType == VisualisationType.AbstractSpheres} 
-        {#each dataClustersGivenK[ops.blobsAmount] as cluster, i}
+    {#if visType == VisualisationType.AbstractSpheres} 
+        {#each dataClustersGivenK[clustersAmount] as cluster, i}
             <Sphere
-                radius={(cluster.to - cluster.from + 1) / 1000.0 * 2}
-                center={blobFromPoints(points[ops.timestep].slice(cluster.from, cluster.to + 1)).center}
-                color={[dataClustersGivenK[ops.blobsAmount][i].color.rgb[0], dataClustersGivenK[ops.blobsAmount][i].color.rgb[1], dataClustersGivenK[ops.blobsAmount][i].color.rgb[2], 1.0]}
+                radius={clusterCenters[i].radius / 4}
+                center={clusterCenters[i].center}
+                color={[dataClustersGivenK[clustersAmount][i].color.rgb[0], dataClustersGivenK[clustersAmount][i].color.rgb[1], dataClustersGivenK[clustersAmount][i].color.rgb[2], 1.0]}
             />
         {/each}
-        {#if ops.blobsAmount > 1}
+        {#if clustersAmount > 1}
             <ContinuousTube
-                radius={(1.0 / ops.blobsAmount) / 15.0}
-                points={blobs[ops.timestep].map(blob => blob.center)}
+                radius={(1.0 / clustersAmount) / 15.0}
+                points={clusterCenters.map(cluster => cluster.center)}
                 color={[0.9, 0.9, 0.9]}
                 multicolored={false}
             />
         {/if}
     {/if}
-    {#if blobs[ops.timestep] && ops.visType == VisualisationType.Cones}
-        {#each dataClustersGivenK[ops.blobsAmount] as cluster, _}
+    {#if visType == VisualisationType.Cones}
+        {#each dataClustersGivenK[clustersAmount] as cluster, _}
             <PcaCone 
-                points={points[ops.timestep].slice(cluster.from, cluster.to + 1)}
+                points={points[timestep].slice(cluster.from, cluster.to + 1)}
                 color={[cluster.color.rgb[0], cluster.color.rgb[1], cluster.color.rgb[2]]}
             />
         {/each}
-        {#if ops.blobsAmount > 1}
+        {#if clustersAmount > 1}
             <ContinuousTube
-                radius={(1.0 / ops.blobsAmount) / 15.0}
-                points={blobs[ops.timestep].map(blob => blob.center)}
+                radius={(1.0 / clustersAmount) / 15.0}
+                points={clusterCenters.map(cluster => cluster.center)}
                 color={[0.9, 0.9, 0.9]}
                 multicolored={false}
             />
         {/if}  
     {/if}
-    {#if blobs[ops.timestep] && ops.visType == VisualisationType.Hedgehog}
-        {#each blobs[ops.timestep] as blob, i}
+    {#if visType == VisualisationType.Hedgehog}
+        {#each blobs[timestep] as blob, i}
             <Hedgehog
-                radius = {blob.normalizedPoints.length / 600.0}
-                blobs = {blobs[ops.timestep]}
+                radius = {clusterCenters[i].radius / 8.0}
+                blobs = {blobs[timestep]}
                 blobID = {i}
                 precise = {ops.preciseQuills}
                 minDistance = {ops.hedgehogDistance}
-                color={[dataClustersGivenK[ops.blobsAmount][i].color.rgb[0], dataClustersGivenK[ops.blobsAmount][i].color.rgb[1], dataClustersGivenK[ops.blobsAmount][i].color.rgb[2]]}
+                color={[dataClustersGivenK[clustersAmount][i].color.rgb[0], dataClustersGivenK[clustersAmount][i].color.rgb[1], dataClustersGivenK[clustersAmount][i].color.rgb[2]]}
             />
         {/each}
-        {#if ops.blobsAmount > 1}
+        {#if clustersAmount > 1}
                 <ContinuousTube
-                radius={(1.0 / ops.blobsAmount) / 15.0}
-                points={blobs[ops.timestep].map(blob => blob.center)}
+                radius={(1.0 / clustersAmount) / 15.0}
+                points={blobs[timestep].map(blob => blob.center)}
                 color={[0.9, 0.9, 0.9]}
                 multicolored={false}
             />
