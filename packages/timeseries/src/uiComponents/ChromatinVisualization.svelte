@@ -224,20 +224,20 @@
         {/if}  
     {/if}
     {#if visType == VisualisationType.Hedgehog}
-        {#each blobs[timestep] as blob, i}
+        {#each dataClustersGivenK[clustersAmount] as cluster, i}
             <Hedgehog
-                radius = {clusterCenters[i].radius / 8.0}
-                blobs = {blobs[timestep]}
-                blobID = {i}
+                points = {points[timestep]}
+                clusters = {dataClustersGivenK[clustersAmount]}
+                clusterID = {i}
                 precise = {ops.preciseQuills}
                 minDistance = {ops.hedgehogDistance}
                 color={[dataClustersGivenK[clustersAmount][i].color.rgb[0], dataClustersGivenK[clustersAmount][i].color.rgb[1], dataClustersGivenK[clustersAmount][i].color.rgb[2]]}
             />
         {/each}
         {#if clustersAmount > 1}
-                <ContinuousTube
+            <ContinuousTube
                 radius={(1.0 / clustersAmount) / 15.0}
-                points={blobs[timestep].map(blob => blob.center)}
+                points={clusterCenters.map(cluster => cluster.center)}
                 color={[0.9, 0.9, 0.9]}
                 multicolored={false}
             />
