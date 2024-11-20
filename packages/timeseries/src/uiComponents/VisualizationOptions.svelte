@@ -2,18 +2,44 @@
 <script lang="ts">
 
     import {  Select, SelectItem, Checkbox, Slider} from "carbon-components-svelte";
-    import ChromatinVisualization from "./ChromatinVisualization.svelte";
-    import { VisualisationType } from "../utils/main";
-    import type { VisOptions, StandardOptions, VolumeOptions } from "../utils/data-models";
+    import { ClusterNode, loadBitmap, VisualisationType } from "../utils/main";
+    import type { VisOptions } from "../utils/data-models";
     import Dendrogram from "./Dendrogram.svelte";
+    import * as Graphics from "@chromoskein/lib-graphics";
   
     //export let selectedVis: ChromatinVisualization;
+    export let viewport: Graphics.Viewport3D;
     export let ops: VisOptions;
-    export let dataClustersGivenK;
+    export let dataClustersGivenK: ClusterNode[][];
     export let size: number;
-
+    
     let interactiveCluster;
-    $: console.log("Changed vis type to:" + ops.visType)
+
+    async function changeColormap(volumeColormapChoice) {
+      let path;
+      switch (volumeColormapChoice) {
+        case "White to Black":
+          path = "./colormaps/blackwhite.png";
+          break;
+        case "Rainbow":
+          path = "./colormaps/rainbow.png";
+          break;
+        case "Cool Warm":
+          path = "./colormaps/cool-warm-paraview.png";
+          break;
+        case "Matplotlib Plasma":
+          path = "./colormaps/matplotlib-plasma.png";
+          break;
+        case "Samsel Linear Green":
+          path = "./colormaps/samsel-linear-green.png";
+          break;
+      }
+      let volumeColormap = await loadBitmap(path);
+
+      if (viewport && viewport.scene) {
+        viewport.scene.setColorMapFromBitmap(volumeColormap);
+      }
+  }
 
 </script>
 
@@ -82,7 +108,7 @@
 
         <!-- <Checkbox labelText="Use colormap" bind:checked={true} /> -->
 
-        <Select labelText="Colormap" bind:selected={ops.volumeColormapChoice}>
+        <Select labelText="Colormap" bind:selected={ops.volumeColormapChoice} on:change={(event) => changeColormap(event.detail)}>
           <SelectItem value="White to Black" />
           <SelectItem value="Rainbow" />
           <SelectItem value="Cool Warm" />
