@@ -30,9 +30,21 @@
   import ChromatinVisualization from "./uiComponents/ChromatinVisualization.svelte";
   import VisualizationOptions from "./uiComponents/VisualizationOptions.svelte";
 
+  import workerUrl from './utils/clusteringWorker.ts?worker';
+
   const adapter: Writable<GPUAdapter | null> = writable(null);
   const device: Writable<GPUDevice | null> = writable(null);
   const graphicsLibrary: Writable<Graphics.GraphicsLibrary | null> = writable(null);
+
+  const clusteringWorker = new workerUrl();
+
+  clusteringWorker.onmessage = (event) => {
+    console.log("Worker sent a message", event);
+  };
+
+  clusteringWorker.onerror = (error) => {
+    console.error("Worker error:", error);
+  };
 
   let viewport: Graphics.Viewport3D | null = null;
 
@@ -55,15 +67,11 @@
     chromosomeOptions = chromosomeOptions.concat(defaultOptions)
   }
 
- // function foo() {
- //   new Promise<void>((resolve, reject) => {
- //     Something long
-//
-  //    resolve(/* some val */);
-  //  }).then((val) => {
 
-   // })
-  //}
+  function foo() {
+    console.log("Starting worker");
+    clusteringWorker.postMessage("start");
+  }
 
   //#endregion Data
 
@@ -209,7 +217,7 @@
             {/key}  
 
 
-            <Button on:click={() => console.log("I am clicked!!!")}> Click Me </Button>
+            <Button on:click={() => { console.log("I am clicked!!!"); foo() }}> Click Me </Button>
           </AccordionItem>
 
           <AccordionItem title="Data Loading">

@@ -35,10 +35,11 @@
     "lib-dataloader": "*",
     "lib-graphics": "*",
     "marching-cubes-fast": "^0.0.17",
+    "papaparse": "^5.4.1",
     "pca-js": "^1.0.2",
     "restructure": "^3.0.0",
     "sigma": "^3.0.0-alpha3",
     "triangles-index": "^0.0.42",
-    "papaparse": "^5.4.1"
+    "vite-plugin-worker": "^1.0.4"
   }
 }
