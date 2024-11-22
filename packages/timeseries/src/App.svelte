@@ -18,7 +18,7 @@
   import { loadTimesteps, normalizePointClouds, timestepsToPathlines, loadBitmap, clusterPathlines } from "./utils/main";
 
   import "carbon-components-svelte/css/g100.css";
-  import { Header, SkipToContent, Accordion, AccordionItem, Select, SelectItem, Button } from "carbon-components-svelte";
+  import { Header, SkipToContent, Accordion, AccordionItem, Select, SelectItem, Button, Checkbox } from "carbon-components-svelte";
   import { Slider } from "carbon-components-svelte";
   import { treeColor } from "./utils/treecolors";
 
@@ -32,7 +32,6 @@
 
   import workerUrl from './utils/clusteringWorker.ts?worker';
   import Viewport2D from "./viewports/Viewport2D.svelte";
-  import DistanceMap from "./objects/DistanceMap.svelte";
 
   const adapter: Writable<GPUAdapter | null> = writable(null);
   const device: Writable<GPUDevice | null> = writable(null);
@@ -129,6 +128,9 @@
     }
   }
 
+  // Distance map
+  let showDistanceMap = false;
+
   // Blobs
   let clusterVisualization = "AbstractSphere";
   let action = "Change representation";
@@ -147,13 +149,15 @@
   </div>
 
   <Splitpanes theme="chromoskein" horizontal={false}>
-    <Pane size={10}>
-      {#if $adapter && $device && $graphicsLibrary && selectedChromosome}
-        <Viewport2D
-          points={selectedChromosome.points[chromosomeOptions[selectedChromosomeId].timestep]}
-        /> 
-      {/if}
-    </Pane>
+    {#if showDistanceMap}
+      <Pane size={10}>
+        {#if $adapter && $device && $graphicsLibrary && selectedChromosome}
+          <Viewport2D
+            points={selectedChromosome.points[chromosomeOptions[selectedChromosomeId].timestep]}
+          /> 
+        {/if}
+      </Pane>
+    {/if}
     <Pane size={75}>
       {#if $adapter && $device && $graphicsLibrary}
         <Viewport3D bind:viewport>
@@ -191,6 +195,8 @@
                 <SelectItem value={chromosome.id} text={chromosome.name}/>
               {/each}
             </Select>
+
+            <Checkbox labelText="Show Distance Map" bind:checked={showDistanceMap} />
 
             {#key selectedChromosomeId}
               {#if chromosomeOptions && chromosomeOptions[selectedChromosomeId]}
