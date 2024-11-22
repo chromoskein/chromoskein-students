@@ -2,15 +2,16 @@
     import { getContext, onMount, setContext } from "svelte";
     import { writable, type Writable } from "svelte/store";
     import type * as Graphics from "@chromoskein/lib-graphics";
-  
+    import { vec3 } from "gl-matrix";
+
     // Context
     let device: Writable<GPUDevice> = getContext("device");
-    let graphicsLibrary: Writable<Graphics.GraphicsLibrary> =
-      getContext("graphicsLibrary");
+    let graphicsLibrary: Writable<Graphics.GraphicsLibrary> = getContext("graphicsLibrary");
   
     let context: GPUCanvasContext | null = null;
     let viewportInner: Writable<Graphics.DistanceViewport | null> = writable(null);
     
+    export let points: vec3[] = [];
     export let viewport = $viewportInner;
     //export let afterCameraUpdate = (camera: Graphics.OrbitCamera) => {};
   
@@ -18,6 +19,10 @@
       viewport = $viewportInner;
     }
   
+    $: {
+      viewport.setPositions(points)
+    };
+
     setContext("viewport", viewportInner);
   
     $: {
@@ -89,24 +94,21 @@
       if (!$viewportInner) return;
   
       $viewportInner.camera.onWheelEvent(event);
-  
+      $viewportInner?.recalculateLoD();       
       //afterCameraUpdate($viewportInner.camera as Graphics.OrbitCamera);
     }
   
     onMount(() => {
       const resizeObserver = new ResizeObserver((entries) => {
         const entry = entries.at(0);
-  
+
         if (
           entry instanceof ResizeObserverEntry &&
           entry.devicePixelContentBoxSize
         ) {
           width = entry.devicePixelContentBoxSize[0].inlineSize;
           height = entry.devicePixelContentBoxSize[0].blockSize;
-  
-          if ($viewportInner) {
-            $viewportInner.resize(width, height);
-          }
+          $viewportInner?.resize(width, height);       
         }
       });
   

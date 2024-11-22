@@ -31,6 +31,8 @@
   import VisualizationOptions from "./uiComponents/VisualizationOptions.svelte";
 
   import workerUrl from './utils/clusteringWorker.ts?worker';
+  import Viewport2D from "./viewports/Viewport2D.svelte";
+  import DistanceMap from "./objects/DistanceMap.svelte";
 
   const adapter: Writable<GPUAdapter | null> = writable(null);
   const device: Writable<GPUDevice | null> = writable(null);
@@ -51,11 +53,12 @@
   let chromosomes: Chromosome[] = [];
   let chromosomeOptions: VisOptions[] = [];
   
-  let pdbFiles;
+  let pdbFiles: FileList;
   function loadFiles() {
-		for (const file of pdbFiles) {
+    for (let i = 0; i < pdbFiles.length; i++) {
+      const file = pdbFiles.item(i);
       file.text().then(pdbText => addChromosomes(loadNewPdbModels(pdbText)));
-		}
+    }
   }
 
   function addChromosomes(models: Chromosome[]) {
@@ -91,6 +94,8 @@
 
   onMount(async () => {
     await getGPU();
+    console.log("Main device:" + device)
+
     const filenames: string[] = new Array(600).fill(null).map((v, i) => "./timeseries/timestep_" + (i + 1).toString() + ".XYZ");
     const timesteps = await loadTimesteps(filenames);
     const dataTimesteps = normalizePointClouds(timesteps);
@@ -142,6 +147,13 @@
   </div>
 
   <Splitpanes theme="chromoskein" horizontal={false}>
+    <Pane size={10}>
+      {#if $adapter && $device && $graphicsLibrary && selectedChromosome}
+        <Viewport2D
+          points={selectedChromosome.points[chromosomeOptions[selectedChromosomeId].timestep]}
+        /> 
+      {/if}
+    </Pane>
     <Pane size={75}>
       {#if $adapter && $device && $graphicsLibrary}
         <Viewport3D bind:viewport>
