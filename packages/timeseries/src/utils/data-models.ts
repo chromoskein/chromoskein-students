@@ -81,21 +81,40 @@ export function initializeChromosome(name: string, points: vec3[][]) {
         name: name,
         visible: true,
         points: points,
-        clusters: [[], [getEmptyClustering(points[0].length)]],
+        clusters: [[], [getEmptyClustering(points[0].length - 1)]],
         visualization: null,
     }
     return chromosome;
 }
 
 
-function getEmptyClustering(length: number): ClusterNode {
+export function getClustering(from: number, to: number, k: number, i: number) {
+    return {
+        k: k,
+        i: i,
+        from: from,
+        to: to,
+        delimiters: [],
+        children: [],
+        points: [],
+        visible: true,
+        color: {
+            h: 0,
+            c: 0,
+            l: 0,
+            rgb: [Math.random(), Math.random(), Math.random()]
+        }
+    }
+}
+
+export function getEmptyClustering(length: number): ClusterNode {
     return {
         k: 1,
         i: 0,
         from: 0,
-        to: length - 1,
+        to: length,
         delimiters: [],
-        children: [0, 1],
+        children: [],
         points: [],
         visible: true,
         color: {

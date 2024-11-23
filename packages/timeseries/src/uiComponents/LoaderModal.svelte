@@ -1,9 +1,9 @@
 <script lang="ts">
     import { Button, Checkbox, DataTable, Modal, Toggle } from "carbon-components-svelte";
-    import { loadNewPdbModels } from "../utils/data-parser";
     import { ChromatinModel, parsePdb } from "lib-dataloader";
     import { vec3 } from "gl-matrix";
-    import { every } from "d3";
+    import { normalizePointClouds } from "../utils/main";
+    import { getClustering, getEmptyClustering, initializeChromosome } from "../utils/data-models";
   
     export let open = false;
 
@@ -55,6 +55,40 @@
         separate = false;
     }
 
+
+    function finalizeData() {
+        let filteredData = loadedData.filter((item, index) => item.include);
+
+        let modelPoints = filteredData.map((item, index) => points.slice(item.from, item.to + 1));
+
+        if (normalize) {
+            modelPoints = normalizePointClouds(modelPoints);
+        }
+
+        let chromosomes = [];
+        if (!separate) {
+            let concatPoints: vec3[] = modelPoints.flat();
+            let chromosome = initializeChromosome("Chromosome", [concatPoints]);
+            let clusters = [[], [getEmptyClustering(modelPoints.length - 1)]]
+            let modelClusterIndices = [];
+            let modelClusters = [];
+            filteredData.forEach((model, index) => {
+                modelClusters.push(getClustering(model.from, model.to, 2, index));
+                modelClusterIndices.push(index);
+            });
+            clusters[1][0].children = modelClusterIndices;
+            clusters.push(modelClusters);
+
+            chromosomes = [chromosome];
+        } else {
+            filteredData.forEach((model, index) => {
+                chromosomes.push(initializeChromosome(model.name, [modelPoints[index]]));
+            });
+        }
+
+    }
+
+
 </script>
   
 <div>
@@ -66,7 +100,7 @@
     on:click:button--secondary={() => open = false}
     on:open={() => reset()}
     on:close
-    on:submit={() => open = false}
+    on:submit={() => {finalizeData(); open = false}}
   >
 
     <input type="file"  accept=".pdb,.PDB" id="file-input" on:change={(event) => loadFiles(event)}/>
