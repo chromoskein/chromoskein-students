@@ -32,6 +32,7 @@
 
   import workerUrl from './utils/clusteringWorker.ts?worker';
   import Viewport2D from "./viewports/Viewport2D.svelte";
+  import LoaderModal from "./uiComponents/LoaderModal.svelte";
 
   const adapter: Writable<GPUAdapter | null> = writable(null);
   const device: Writable<GPUDevice | null> = writable(null);
@@ -128,6 +129,10 @@
     }
   }
 
+  // Loader
+  let loaderOpen: boolean = false;
+  $: console.log(loaderOpen)
+
   // Distance map
   let showDistanceMap = false;
 
@@ -214,7 +219,16 @@
           </AccordionItem>
 
           <AccordionItem title="Data Loading">
-            <input type="file"  accept=".pdb,.PDB" id="file-input" bind:files={pdbFiles} on:change={loadFiles}/>
+            
+            <LoaderModal bind:open={loaderOpen} />
+            <Button
+              kind="secondary"
+              size="field"
+              on:click={() => loaderOpen = true}
+            >  
+              Load Files
+            </Button>
+            
             <Button
               kind="secondary"
               size="field"
