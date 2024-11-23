@@ -50,6 +50,13 @@
 
   let viewport: Graphics.Viewport3D | null = null;
 
+  let loadedChromosomes: Chromosome[] = [];
+
+  $: if (loadedChromosomes) {
+    addChromosomes(loadedChromosomes);
+    loadedChromosomes = [];
+  }
+
   let chromosomes: Chromosome[] = [];
   let chromosomeOptions: VisOptions[] = [];
   
@@ -217,7 +224,7 @@
 
           <AccordionItem title="Data Loading">
             
-            <LoaderModal bind:open={loaderOpen} />
+            <LoaderModal bind:outputChromosomes={loadedChromosomes} bind:open={loaderOpen} />
             <Button
               kind="secondary"
               size="field"

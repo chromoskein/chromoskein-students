@@ -3,10 +3,10 @@
     import { ChromatinModel, parsePdb } from "lib-dataloader";
     import { vec3 } from "gl-matrix";
     import { normalizePointClouds } from "../utils/main";
-    import { getClustering, getEmptyClustering, initializeChromosome } from "../utils/data-models";
-  
-    export let open = false;
+    import { getClustering, getEmptyClustering, initializeChromosome, type Chromosome } from "../utils/data-models";
 
+    export let open = false;
+    export let outputChromosomes: Chromosome[] = [];
 
     let normalize: boolean = false;
     let separate: boolean = false;
@@ -69,7 +69,7 @@
         if (!separate) {
             let concatPoints: vec3[] = modelPoints.flat();
             let chromosome = initializeChromosome("Chromosome", [concatPoints]);
-            let clusters = [[], [getEmptyClustering(modelPoints.length - 1)]]
+            let clusters = [[], [getEmptyClustering(points.length - 1)]]
             let modelClusterIndices = [];
             let modelClusters = [];
             filteredData.forEach((model, index) => {
@@ -79,6 +79,7 @@
             clusters[1][0].children = modelClusterIndices;
             clusters.push(modelClusters);
 
+            chromosome.clusters = clusters;
             chromosomes = [chromosome];
         } else {
             filteredData.forEach((model, index) => {
@@ -86,9 +87,8 @@
             });
         }
 
+        outputChromosomes = chromosomes;
     }
-
-
 </script>
   
 <div>
