@@ -1,5 +1,5 @@
 import { vec3 } from "gl-matrix"
-import { clusterTimestepAsync, VisualisationType } from "./main"
+import { VisualisationType } from "./main"
 import type { ClusterNode } from "./main"
 import ChromatinVisualization from "../uiComponents/ChromatinVisualization.svelte";
 
@@ -125,26 +125,6 @@ export function getEmptyClustering(length: number): ClusterNode {
         }
     }
 }
-
-export type StandardOptions = {
-    radius: number,
-    blobsAmount: number, 
-    alpha: number,
-    showConnectors: boolean,
-    timestep: number,
-};
-
-export type VolumeOptions = {
-    abstractVolumes: boolean,
-    volumeColormapChoice: string,
-    volumeColormap: ImageBitmap | null,
-    volumeFunction: number,
-};
-
-export type HedgehogOptions = {
-    preciseQuills: boolean,
-    hedgehogDistance: number,
-};
 
 // This is disgusting
 export type VisOptions = {

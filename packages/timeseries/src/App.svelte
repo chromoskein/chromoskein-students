@@ -26,7 +26,6 @@
   import InteractiveCluster from "./visalizations/InteractiveCluster.svelte";
   import { defaultVisOptions, initializeChromosome, type VisOptions, type Chromosome } from "./utils/data-models";
   import ChromosomeItem from "./uiComponents/ChromosomeItem.svelte";
-  import { loadNewPdbModels } from "./utils/data-parser";
   import ChromatinVisualization from "./uiComponents/ChromatinVisualization.svelte";
   import VisualizationOptions from "./uiComponents/VisualizationOptions.svelte";
 
@@ -60,14 +59,6 @@
   let chromosomes: Chromosome[] = [];
   let chromosomeOptions: VisOptions[] = [];
   
-  let pdbFiles: FileList;
-  function loadFiles() {
-    for (let i = 0; i < pdbFiles.length; i++) {
-      const file = pdbFiles.item(i);
-      file.text().then(pdbText => addChromosomes(loadNewPdbModels(pdbText)));
-    }
-  }
-
   function addChromosomes(models: Chromosome[]) {
     chromosomes = chromosomes.concat(models);
     let defaultOptions = [];
@@ -233,13 +224,6 @@
               Load Files
             </Button>
             
-            <Button
-              kind="secondary"
-              size="field"
-              on:click={() => document.getElementById("file-input").click()}
-            >  
-              Load PDB File
-            </Button>
             {#each chromosomes as chromosome, i}
               <ChromosomeItem bind:visible={chromosome.visible} name={chromosome.name} />
             {/each}

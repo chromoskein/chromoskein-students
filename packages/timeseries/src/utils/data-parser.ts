@@ -182,20 +182,3 @@ function parseNumberListString(numberListString: string): number[]
 
     return papaParseResult.data[0].slice();
 }
-
-export function loadNewPdbModels(pdbText) {
-    let loadedModels = [];
-    let model = parsePdb(pdbText);
-
-    let normalizedData = normalizePointClouds([model.bins.map((v) => vec3.fromValues(v.x, v.y, v.z))])[0];
-
-    if (model.ranges.length == 0) {
-      loadedModels.push(initializeChromosome("0", [normalizedData]));
-    } else {
-      for (let i = 0; i < model.ranges.length; i++) {
-        loadedModels.push(initializeChromosome(i.toString(), [normalizedData.slice(model.ranges[i].from, model.ranges[i].to)]));
-      }
-    }
-    return loadedModels;
-  }
-
