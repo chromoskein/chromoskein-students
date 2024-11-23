@@ -94,8 +94,6 @@
 
   onMount(async () => {
     await getGPU();
-    console.log("Main device:" + device)
-
     const filenames: string[] = new Array(600).fill(null).map((v, i) => "./timeseries/timestep_" + (i + 1).toString() + ".XYZ");
     const timesteps = await loadTimesteps(filenames);
     const dataTimesteps = normalizePointClouds(timesteps);
@@ -131,7 +129,6 @@
 
   // Loader
   let loaderOpen: boolean = false;
-  $: console.log(loaderOpen)
 
   // Distance map
   let showDistanceMap = false;

@@ -1,40 +1,112 @@
 <script lang="ts">
-    import { Button, Modal } from "carbon-components-svelte";
+    import { Button, Checkbox, DataTable, Modal, Toggle } from "carbon-components-svelte";
+    import { loadNewPdbModels } from "../utils/data-parser";
+    import { ChromatinModel, parsePdb } from "lib-dataloader";
+    import { vec3 } from "gl-matrix";
+    import { every } from "d3";
   
     export let open = false;
 
 
-    let loadedFiles: FileList = null;
+    let normalize: boolean = false;
+    let separate: boolean = false;
+    
+    type TableItem = {
+        id: number,
+        name: string,
+        from: number,
+        to: number,
+        include: boolean,
+    }
 
+    let loadedData: TableItem[] = [];
+    let points: vec3[] = [];
 
-    function loadFiles() {
-        console.log("Henlo")
+    let id = 0;
+    function loadFiles(event: Event) {
+        const input = event.target as HTMLInputElement; 
+        const loadedFiles = input.files;
+        for (let i = 0; i < loadedFiles.length; i++) {
+            const file = loadedFiles.item(i);
+            file.text().then(pdbText => {
+                let chromatinModel: ChromatinModel = parsePdb(pdbText);
+                points = chromatinModel.bins.map((v) => vec3.fromValues(v.x, v.y, v.z))
+
+                loadedData = [];
+                chromatinModel.ranges.forEach((model, index) => {
+                    const name = model.name + " " + (index + 1);
+                    loadedData.push({
+                        id: id++,
+                        name: name,
+                        from: model.from,
+                        to: model.to,
+                        include: true
+                    })
+                });
+            });
+        }
+        input.value = null;
+    }
+
+    function reset() {
+        loadedData = [];
+        points = [];
+        normalize = false;
+        separate = false;
     }
 
 </script>
   
 <div>
-
   <Modal
     bind:open
     modalHeading="Load Models"
-    primaryButtonText="Confirm"
+    primaryButtonText="Add"
     secondaryButtonText="Cancel"
-    on:click:button--secondary={() => (open = false)}
-    on:open
+    on:click:button--secondary={() => open = false}
+    on:open={() => reset()}
     on:close
     on:submit={() => open = false}
   >
 
-
-    <input type="file"  accept=".pdb,.PDB" id="file-input" bind:files={loadedFiles} on:change={loadFiles}/>
+    <input type="file"  accept=".pdb,.PDB" id="file-input" on:change={(event) => loadFiles(event)}/>
     <Button
         kind="secondary"
         size="field"
-        on:click={() => document.getElementById("file-input").click()}
+        on:click={() => { document.getElementById("file-input").click()}}
     >  
-        Load File
+        Upload
     </Button>
+
+    <Checkbox labelText="Normalize Data" bind:checked={normalize} />
+    <Checkbox labelText="Separate Models" bind:checked={separate} />
+
+    {#if loadedData.length > 0}
+        <DataTable
+            title="Loaded models:"
+            headers={[
+            { key: "name", value: "Name" },
+            { key: "from", value: "Start" },
+            { key: "to", value: "End" },
+            { key: "include", value: "Include" },
+            ]}
+            rows={loadedData}
+        >
+            <svelte:fragment slot="cell" let:row let:cell>
+                {#if cell.key === "include"}
+                    <Toggle labelText="Include" hideLabel toggled={cell.value} labelA="No" labelB="Yes"  on:change={() => { 
+                        // This seems like quite a disgusting way of doing this, but it works
+                        let item = loadedData.filter(item => item.id == row.id)[0];
+                        item.include = !item.include;
+                    }}
+                    />
+                {:else}
+                    {cell.value}
+                {/if}
+            </svelte:fragment>
+        </DataTable>
+    {/if}
+
   </Modal>
 </div>
 
