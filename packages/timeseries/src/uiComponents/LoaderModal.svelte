@@ -68,6 +68,15 @@
         let chromosomes = [];
         if (!separate) {
             let concatPoints: vec3[] = modelPoints.flat();
+            // Update the from and to indexes of data based on filtering done in selection
+            let indexStart = 0;
+            for (let i = 0; i < filteredData.length; i++) {
+                console.log("From: " + filteredData[i].from + " To: "+ filteredData[i].to + " Length: " + modelPoints[i].length);
+                filteredData[i].from = indexStart;
+                filteredData[i].to = indexStart + modelPoints[i].length - 1;
+                indexStart = indexStart + modelPoints[i].length;
+            }
+
             let chromosome = initializeChromosome("Chromosome", [concatPoints]);
             let clusters = [[], [getEmptyClustering(points.length - 1)]]
             let modelClusterIndices = [];
