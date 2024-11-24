@@ -3,6 +3,7 @@ import type * as Graphics from "@chromoskein/lib-graphics";
 import type { Viewport3D } from "@chromoskein/lib-graphics";
 import type { ClusterNode } from "../../utils/main";
 import type { CompositeClusters } from "../compositeClusters";
+import { VisOptions } from "../../utils/data-models";
 
 /**
  * This class holds the scene objects used by ClusterCompositeNodes to render clusters
@@ -48,6 +49,8 @@ export abstract class AbstractClusterVisualisation {
      * Returns the constructor of this class
      */
     abstract getConstructor();  
+
+    abstract updateParameters(options: VisOptions);
 
     /**
      * Used by the clusterHighlighter to highlight this clusters

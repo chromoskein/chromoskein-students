@@ -4,6 +4,7 @@ import type { Viewport3D } from "@chromoskein/lib-graphics";
 import { blobFromPoints, type ClusterNode } from "../../utils/main";
 import type { CompositeClusters } from "../compositeClusters";
 import { AbstractClusterVisualisation } from "./abstractVisualization";
+import { VisOptions } from "../../utils/data-models";
 
 export class VolumeClusterVisualisation extends AbstractClusterVisualisation {
     private cluster: ClusterNode;
@@ -20,6 +21,11 @@ export class VolumeClusterVisualisation extends AbstractClusterVisualisation {
         this.volumeUnit.transparency = 0.3;
         this.volumeUnit.func = 1;
         this.setColor(this.cluster.color.rgb);
+    }
+
+
+    public updateParameters(options: VisOptions) {
+        // Do nothing 
     }
 
     public updateCluster(cluster: ClusterNode) {

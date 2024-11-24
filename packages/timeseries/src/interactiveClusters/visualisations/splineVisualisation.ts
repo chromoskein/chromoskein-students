@@ -5,12 +5,14 @@ import type { ClusterNode } from "../../utils/main";
 import type { CompositeClusters } from "../compositeClusters";
 import { AbstractClusterVisualisation } from "./abstractVisualization";
 import { lineToSpline } from "../../utils/lineToSpline";
+import { VisOptions } from "../../utils/data-models";
 
 export class SplineClusterVisualisation extends AbstractClusterVisualisation {
     private cluster: ClusterNode;
     private viewport: Viewport3D;
     private spline: Graphics.Spline;
     private splineID: number | null = null;
+    private radius: number = 0.1;
     private n_instances: number = 0;
     private startPoint: vec3 = vec3.fromValues(0, 0, 0);
     private endPoint: vec3 = vec3.fromValues(0, 0, 0);
@@ -20,6 +22,17 @@ export class SplineClusterVisualisation extends AbstractClusterVisualisation {
 
         this.viewport = viewport;
         this.updateCluster(cluster);
+    }
+
+
+    public updateParameters(options: VisOptions) {
+        this.radius = options.radius;
+        for (let i = 0; i < this.spline.properties.length; i++) {
+            this.spline.properties[i].p0[3] = this.radius;
+            this.spline.properties[i].p1[3] = this.radius;
+            this.spline.properties[i].p2[3] = this.radius;
+        }
+        this.spline.setDirtyCPU();
     }
 
     public updateCluster(cluster: ClusterNode) {
@@ -42,12 +55,11 @@ export class SplineClusterVisualisation extends AbstractClusterVisualisation {
             this.setColor(this.cluster.color.rgb);
         }
         
-        const radius = 0.03;
+
         for (let i = 0; i < spline.length / 3; i++) {
-            this.spline.properties[i].p0 = [spline[i * 3 + 0][0], spline[i * 3 + 0][1], spline[i * 3 + 0][2], radius];
-            this.spline.properties[i].p1 = [spline[i * 3 + 1][0], spline[i * 3 + 1][1], spline[i * 3 + 1][2], radius];
-            this.spline.properties[i].p2 = [spline[i * 3 + 2][0], spline[i * 3 + 2][1], spline[i * 3 + 2][2], radius];
-      
+            this.spline.properties[i].p0 = [spline[i * 3 + 0][0], spline[i * 3 + 0][1], spline[i * 3 + 0][2], this.radius];
+            this.spline.properties[i].p1 = [spline[i * 3 + 1][0], spline[i * 3 + 1][1], spline[i * 3 + 1][2], this.radius];
+            this.spline.properties[i].p2 = [spline[i * 3 + 2][0], spline[i * 3 + 2][1], spline[i * 3 + 2][2], this.radius];
         }
         this.spline.setDirtyCPU();
     }

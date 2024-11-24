@@ -4,6 +4,7 @@ import type { Viewport3D } from "@chromoskein/lib-graphics";
 import { blobFromPoints, type ClusterNode } from "../../utils/main";
 import type { CompositeClusters } from "../compositeClusters";
 import { AbstractClusterVisualisation } from "./abstractVisualization";
+import { VisOptions } from "../../utils/data-models";
 
 export class AbstractVolumeClusterVisualisation extends AbstractClusterVisualisation {
     private cluster: ClusterNode;
@@ -48,6 +49,10 @@ export class AbstractVolumeClusterVisualisation extends AbstractClusterVisualisa
         let volumeRadius = slicedPointsAtTimestep[0].length / 1000.0 * 2 + 0.05;
         this.volumeUnit.fromPoints(this.manager.getDevice(), volumePoints, volumeRadius);
 
+    }
+
+    public updateParameters(options: VisOptions) {
+        // Do nothing 
     }
 
     public setColor(color: vec3) {

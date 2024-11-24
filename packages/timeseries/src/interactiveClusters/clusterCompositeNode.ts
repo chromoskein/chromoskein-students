@@ -6,6 +6,8 @@ import type { AbstractClusterVisualisation } from "./visualisations/abstractVisu
 import type { CompositeClusters } from "./compositeClusters";
 import { ClusterConnector } from "./clusterConnector";
 import { SphereSimplificationClusterVisualisation } from "./visualisations/sphereSimplificationClusterVisualisation";
+import { VisOptions } from "../utils/data-models";
+import { PathlineClusterVisualization } from "./visualisations";
 
 /**
  * Represents a single node in the clusternode tree maintaned for the composite visualization
@@ -31,7 +33,7 @@ export class ClusterCompositeNode {
         this.viewport = viewport;
         this.manager = manager;
 
-        this.setVisualisation(SphereSimplificationClusterVisualisation);
+        this.setVisualisation(PathlineClusterVisualization);
         this.setVisible(true);
     }
 
@@ -84,6 +86,11 @@ export class ClusterCompositeNode {
         this.cluster = clustersGivenK[this.cluster.k][this.cluster.i];
         if (this.isLeaf && this.visualisation) 
             this.visualisation.updateCluster(this.cluster);        
+    }
+
+    public updateParameters(options: VisOptions) {
+        if (this.isLeaf && this.visualisation) 
+            this.visualisation.updateParameters(options);  
     }
 
     /**

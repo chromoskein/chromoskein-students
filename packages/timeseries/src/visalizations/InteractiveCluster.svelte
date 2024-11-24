@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type { ClusterNode } from "../utils/main";
+    import { VisualisationType, type ClusterNode } from "../utils/main";
     import { CompositeClusters } from "../interactiveClusters/compositeClusters";
     import type { ClusterCompositeNode } from "../interactiveClusters/clusterCompositeNode";
     import { HedgehogClusterVisualisation, SphereSimplificationClusterVisualisation, PCAClusterVisualisation, SDGClusterVisualisation, PathlineClusterVisualization, SplineClusterVisualisation, SpheresClusterVisualization, AbstractVolumeClusterVisualisation, VolumeClusterVisualisation } from "../interactiveClusters/visualisations/index";
@@ -10,6 +10,7 @@
     import * as Graphics from "@chromoskein/lib-graphics";
     import { vec2 } from "gl-matrix";
     import { ClusterHighlighter } from "../interactiveClusters/clusterHighlighter";
+    import { VisOptions } from "../utils/data-models";
 
     let viewport: Writable<Viewport3D | null> = getContext("viewport");
     let device: Writable<GPUDevice> = getContext("device");
@@ -20,7 +21,8 @@
     export let selectedTimestep = 0;
     export let clustersUpdated;
     export let updateClustersUpdated;
-    
+    export let options: VisOptions;
+
     let showConnections: Boolean = false;
     let clusterVisualization: string = "Pathline";
     let action: string = "Split";
@@ -29,9 +31,9 @@
     let canvas: HTMLElement | null = null;
 
     const representations = {
-      "AbstractSphere": SphereSimplificationClusterVisualisation,
+      "AbstractSpheres": SphereSimplificationClusterVisualisation,
       "Hedgehog": HedgehogClusterVisualisation,
-      "Cone": PCAClusterVisualisation,
+      "Cones": PCAClusterVisualisation,
       "Implicit": SDGClusterVisualisation,
       "Pathline": PathlineClusterVisualization,
       "AbstractVolume": AbstractVolumeClusterVisualisation,
@@ -39,7 +41,7 @@
       "Spline": SplineClusterVisualisation,
       "Spheres": SpheresClusterVisualization,
     };
-
+  
     export function setShowConnections(show: boolean) {
       showConnections = show;
     }
@@ -106,7 +108,7 @@
 
     $: if ($viewport) {
       if (clusterObjects == null) {
-        clusterObjects = new CompositeClusters(dataClustersGivenK, pointsAtTimesteps, selectedTimestep, $viewport, $device);
+        clusterObjects = new CompositeClusters(dataClustersGivenK, pointsAtTimesteps, selectedTimestep, $viewport, $device, options);
         canvas = document.getElementById("canvas");
         canvas?.addEventListener("mousedown", onElementLeftButtonClick);
         canvas?.addEventListener("mousemove", onMouseMoveEvent);
@@ -119,6 +121,10 @@
 
     $: if ($viewport && pointsAtTimesteps && selectedTimestep) {
       clusterObjects.updatePoints(pointsAtTimesteps, selectedTimestep);
+    }
+
+    $: if (options) {
+      clusterObjects.updateOptions(options);
     }
 
     /*

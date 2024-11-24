@@ -16,3 +16,35 @@ export function calculateSphereParameters(points: vec3[]) {
         radius: maxDist,
     };
 }
+
+export function findClosestPoint(cluster1: vec3[], cluster2: vec3[], minDistance: number, threshold: number): vec3[] {
+    let closestPoints: {
+      point: vec3,
+      dist: number
+    }[] = [];
+
+    for (let i = 0; i < cluster1.length; i++) {
+        for (let j = 0; j < cluster2.length; j++) {
+            let distance = vec3.dist(cluster1[i], cluster2[j]);
+
+            if (distance < minDistance) {
+              closestPoints.push({
+                point: vec3.lerp(vec3.create(), cluster1[i], cluster2[j], 0.25),
+                dist: distance,
+              });
+            }
+        } 
+    }
+
+    // Sorts the found points in descending order
+    closestPoints.sort((a, b) => { return a.dist - b.dist });
+    let result: vec3[] = [];
+    
+    for (let candidate of closestPoints) {
+      if (result.filter(a => vec3.dist(candidate.point, a) < threshold).length == 0) {
+        result.push(candidate.point);
+      }
+    }
+
+    return result;
+  }

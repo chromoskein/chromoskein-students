@@ -4,6 +4,8 @@ import type { Viewport3D } from "@chromoskein/lib-graphics";
 import type { ClusterNode } from "../../utils/main";
 import type { CompositeClusters } from "../compositeClusters";
 import { AbstractClusterVisualisation } from "./abstractVisualization";
+import { VisOptions } from "../../utils/data-models";
+import { calculateSphereParameters } from "../../utils/abstractClustersUtils";
 
 export class SphereSimplificationClusterVisualisation extends AbstractClusterVisualisation {
     private sphere: Graphics.Sphere;
@@ -19,6 +21,11 @@ export class SphereSimplificationClusterVisualisation extends AbstractClusterVis
         this.setColor(cluster.color.rgb);
     }
 
+    
+    public updateParameters(options: VisOptions) {
+        // Do nothing 
+    }
+
     public updateCluster(cluster: ClusterNode) {
         this.cluster = cluster;
     }
@@ -27,10 +34,10 @@ export class SphereSimplificationClusterVisualisation extends AbstractClusterVis
         let objectPoints = pointsAtTimestep[selectedTimestep].slice(this.cluster.from, this.cluster.to + 1);
         // It is rather inefficient to create an entire axis aligned bounding box
         // just to calculate the mean position of a bunch of points...
-        let bb = Graphics.boundingBoxFromPoints(objectPoints);
-        this.sphere.properties.center = [bb.center[0], bb.center[1], bb.center[2]];
-        this.center = bb.center;
-        this.sphere.properties.radius = objectPoints.length / 1000.0 * 2;
+        let params = calculateSphereParameters(objectPoints)
+        this.sphere.properties.center = [params.center[0], params.center[1], params.center[2]];
+        this.center = params.center;
+        this.sphere.properties.radius = params.radius / 4.0;
 
         this.sphere.setDirtyCPU();
     }

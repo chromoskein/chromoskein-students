@@ -4,6 +4,7 @@ import type { Viewport3D } from "@chromoskein/lib-graphics";
 import type { ClusterNode } from "../../utils/main";
 import type { CompositeClusters } from "../compositeClusters";
 import { AbstractClusterVisualisation } from "./abstractVisualization";
+import { VisOptions } from "../../utils/data-models";
 
 export class SpheresClusterVisualization extends AbstractClusterVisualisation {
     private cluster: ClusterNode;
@@ -11,14 +12,25 @@ export class SpheresClusterVisualization extends AbstractClusterVisualisation {
     private spheres: Graphics.Sphere[] = [];
     private sphereIDs: number[] = [];
     private n_instances: number = 0;
+    private radius: number = 0.1;
     private startPoint: vec3 = vec3.fromValues(0, 0, 0);
     private endPoint: vec3 = vec3.fromValues(0, 0, 0);
 
     constructor(manager: CompositeClusters, cluster: ClusterNode, viewport: Viewport3D) {
         super(manager, cluster, viewport);
 
+        this.radius = manager.getOptions().radius;
         this.viewport = viewport;
         this.updateCluster(cluster);
+    }
+
+
+    public updateParameters(options: VisOptions) {
+        this.radius = options.radius;
+        for (let i = 0; i < this.spheres.length; i++) {
+            this.spheres[i].properties.radius = this.radius;    
+            this.spheres[i].setDirtyCPU();
+        }
     }
 
     public updateCluster(cluster: ClusterNode) {
@@ -45,7 +57,7 @@ export class SpheresClusterVisualization extends AbstractClusterVisualisation {
 
         for (let i = 0; i < clusterPoints.length; i++) {
             this.spheres[i].properties.center = [clusterPoints[i][0], clusterPoints[i][1], clusterPoints[i][2]];
-            this.spheres[i].properties.radius = 0.075;    
+            this.spheres[i].properties.radius = this.radius;    
             this.spheres[i].setDirtyCPU();
         }
     }

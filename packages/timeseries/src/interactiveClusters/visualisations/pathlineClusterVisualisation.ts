@@ -4,6 +4,7 @@ import type { Viewport3D } from "@chromoskein/lib-graphics";
 import type { ClusterNode } from "../../utils/main";
 import type { CompositeClusters } from "../compositeClusters";
 import { AbstractClusterVisualisation } from "./abstractVisualization";
+import { VisOptions } from "../../utils/data-models";
 
 export class PathlineClusterVisualization extends AbstractClusterVisualisation {
     private cluster: ClusterNode;
@@ -13,16 +14,28 @@ export class PathlineClusterVisualization extends AbstractClusterVisualisation {
     private n_instances: number = 0;
     private startPoint: vec3 = vec3.fromValues(0, 0, 0);
     private endPoint: vec3 = vec3.fromValues(0, 0, 0);
+    private radius: number = 0.2;
+
 
     constructor(manager: CompositeClusters, cluster: ClusterNode, viewport: Viewport3D) {
         super(manager, cluster, viewport);
 
         this.viewport = viewport;
+        this.radius = manager.getOptions().radius;
         this.updateCluster(cluster);
     }
 
     public updateCluster(cluster: ClusterNode) {
         this.cluster = cluster;
+    }
+
+    public updateParameters(options: VisOptions) {
+        this.radius = options.radius;
+        for (let i = 0; i < this.pathline.properties.length - 1; i++) {
+            this.pathline.properties[i].startRadius = this.radius;
+            this.pathline.properties[i].endRadius = this.radius;
+          }
+          this.pathline.setDirtyCPU();
     }
 
     public updatePoints(pointsAtTimestep: vec3[][], selectedTimestep: number) {
@@ -48,8 +61,8 @@ export class PathlineClusterVisualization extends AbstractClusterVisualisation {
                 clusterPoints[i + 1][2],
             ];
       
-            this.pathline.properties[i].startRadius = 0.04;
-            this.pathline.properties[i].endRadius = 0.04;
+            this.pathline.properties[i].startRadius = this.radius;
+            this.pathline.properties[i].endRadius = this.radius;
       
           }
           this.pathline.setDirtyCPU();

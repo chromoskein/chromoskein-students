@@ -4,6 +4,7 @@ import type { Viewport3D } from "@chromoskein/lib-graphics";
 import type { ClusterNode } from "../utils/main";
 import { ClusterCompositeNode } from "./clusterCompositeNode";
 import { ClusterConnector } from "./clusterConnector";
+import { VisOptions } from "../utils/data-models";
 
 export class CompositeClusters {
     private root: ClusterCompositeNode;
@@ -11,8 +12,14 @@ export class CompositeClusters {
     private viewport: Viewport3D;
     private showConnectors: Boolean = false;
     private highlightedClusters: ClusterCompositeNode[] = [];
+    private options: VisOptions;
+    private points: vec3[][] = [];
+    private timestep: number = 0;
 
-    constructor(clustersGivenK: ClusterNode[][], pointsAtTimeStep: vec3[][], selectedTimestep: number, viewport: Viewport3D, device: GPUDevice) {
+    constructor(clustersGivenK: ClusterNode[][], pointsAtTimeStep: vec3[][], selectedTimestep: number, viewport: Viewport3D, device: GPUDevice, options: VisOptions) {
+        this.points = pointsAtTimeStep;
+        this.timestep = selectedTimestep;
+        this.options = options;
         this.root = new ClusterCompositeNode(clustersGivenK[1][0], viewport, null, this);
         this.root.updatePoints(pointsAtTimeStep, selectedTimestep);
         this.viewport = viewport;
@@ -24,6 +31,26 @@ export class CompositeClusters {
      */
     public getRoot() {
         return this.root;
+    }
+
+    public getOptions() {
+        return this.options;
+    }
+
+    public getTimestep() {
+        return this.timestep;
+    }
+
+    public getPoints() {
+        return this.points;
+    }
+
+    public updateOptions(options: VisOptions) {
+        this.options = options;
+        let inorder = this.root.getInorder();
+        for (let cluster of inorder) {
+            cluster.updateParameters(options);
+        }
     }
 
     /**
@@ -64,6 +91,8 @@ export class CompositeClusters {
      * @param selectedTimestep Current selected timestep
      */
     public updatePoints(pointsAtTimesteps: vec3[][], selectedTimestep: number) {
+        this.points = pointsAtTimesteps;
+        this.timestep = selectedTimestep;
         let inorder = this.root.getInorder();
         for (let cluster of inorder) {
             cluster.updatePoints(pointsAtTimesteps, selectedTimestep);

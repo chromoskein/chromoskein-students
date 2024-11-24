@@ -1,11 +1,13 @@
 import { vec3 } from "gl-matrix";
 import * as Graphics from "@chromoskein/lib-graphics";
 import type { Viewport3D } from "@chromoskein/lib-graphics";
-import type { ClusterNode } from "../../utils/main";
+import type { ClusterBlob, ClusterNode } from "../../utils/main";
 import type { CompositeClusters } from "../compositeClusters";
 import { AbstractClusterVisualisation } from "./abstractVisualization";
 import { blobFromPoints } from "../../utils/main";
 import PCA from 'pca-js';
+import { VisOptions } from "../../utils/data-models";
+import { calculateSphereParameters } from "../../utils/abstractClustersUtils";
 
 export class PCAClusterVisualisation extends AbstractClusterVisualisation {
     private cluster: ClusterNode;
@@ -28,36 +30,41 @@ export class PCAClusterVisualisation extends AbstractClusterVisualisation {
         this.setColor(cluster.color.rgb);
     }
 
+    public updateParameters(options: VisOptions) {
+        // Do nothing 
+    }
+
     public updateCluster(cluster: ClusterNode) {
         this.cluster = cluster;
     }
 
     public updatePoints(pointsAtTimestep: vec3[][], selectedTimestep: number) {
-        let blob = blobFromPoints(pointsAtTimestep[selectedTimestep].slice(this.cluster.from, this.cluster.to + 1))
-        let result = PCA.getEigenVectors(blob.normalizedPoints);
-        this.center = blob.center;
-       
-        const coneHeight = result[0].eigenvalue / 40.0 + 0.1;
-        const coneOrientation = vec3.fromValues(result[0].vector[0], result[0].vector[1], result[0].vector[2]);
-        const coneStartRadius = result[1].eigenvalue / 40.0 + 0.1;
+        let points: vec3[] = pointsAtTimestep[selectedTimestep].slice(this.cluster.from, this.cluster.to + 1);
+        let blob: ClusterBlob = blobFromPoints(points);
+        this.center = calculateSphereParameters(points).center;
 
-        this.coneUp.properties.start = [blob.center[0], blob.center[1], blob.center[2]];
+        let result = PCA.getEigenVectors(blob.normalizedPoints);
+        let firstPCVec = result[0].vector;
+        let firstPCVal =  result[0].eigenvalue / 10.0;
+        let secondPCVal = result[1].eigenvalue / 10.0;  
+       
+        this.coneUp.properties.start = [this.center[0], this.center[1], this.center[2]];
         this.coneUp.properties.end = [
-            blob.center[0] + coneHeight * coneOrientation[0],
-            blob.center[1] + coneHeight * coneOrientation[1],
-            blob.center[2] + coneHeight * coneOrientation[2],
+            this.center[0] + firstPCVal * firstPCVec[0],
+            this.center[1] + firstPCVal * firstPCVec[1],
+            this.center[2] + firstPCVal * firstPCVec[2],
         ];
-        this.coneUp.properties.startRadius = coneStartRadius;
+        this.coneUp.properties.startRadius = secondPCVal;
         this.coneUp.properties.endRadius = 0.0001;
         this.coneUp.setDirtyCPU();
   
-        this.coneDown.properties.start = [blob.center[0], blob.center[1], blob.center[2]];
+        this.coneDown.properties.start = [this.center[0], this.center[1], this.center[2]];
         this.coneDown.properties.end = [
-            blob.center[0] - coneHeight * coneOrientation[0],
-            blob.center[1] - coneHeight * coneOrientation[1],
-            blob.center[2] - coneHeight * coneOrientation[2],
+            this.center[0] - firstPCVal * firstPCVec[0],
+            this.center[1] - firstPCVal * firstPCVec[1],
+            this.center[2] - firstPCVal * firstPCVec[2],
         ];
-        this.coneDown.properties.startRadius = coneStartRadius;
+        this.coneDown.properties.startRadius = secondPCVal;
         this.coneDown.properties.endRadius = 0.0001;
         this.coneDown.setDirtyCPU();
     }
@@ -85,7 +92,7 @@ export class PCAClusterVisualisation extends AbstractClusterVisualisation {
             return null;
         }
         
-        return (downIntersection == null || upIntersection.t < downIntersection.t) ? upIntersection : downIntersection;
+        return (downIntersection == null || (upIntersection != null && upIntersection.t < downIntersection.t)) ? upIntersection : downIntersection;
     }
     
     public delete(viewport: Graphics.Viewport3D) {

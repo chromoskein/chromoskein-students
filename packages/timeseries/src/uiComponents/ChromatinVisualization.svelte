@@ -30,7 +30,9 @@
     let volumeFunction: number;
     let timestep: number = 0;
     let interactiveCluster: InteractiveCluster | null = null;
+    let options: VisOptions;
 
+    $: options = ops;
     $: visType = ops.visType;
     $: clustersAmount = ops.blobsAmount;
     $: alpha = ops.alpha;
@@ -173,6 +175,7 @@
     {#if visType == VisualisationType.Composite}
         <InteractiveCluster
             dataClustersGivenK={dataClustersGivenK}
+            options={options}
             pointsAtTimesteps={points}
             selectedTimestep={timestep}
             clustersUpdated={false}

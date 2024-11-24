@@ -150,13 +150,13 @@ export function defaultVisOptions() {
         volumeColormapChoice: "Cool Warm", 
         volumeColormap: null,
         volumeFunction: 0 ,
-        radius: 0.01,
+        radius: 0.05,
         blobsAmount: 1, 
         alpha: 1,
         showConnectors: false,
         timestep: 0,
         matryoshkaBlobsVisible: [true],
         preciseQuills: false,
-        hedgehogDistance: 1.0,
+        hedgehogDistance: 0.5,
     }
 }

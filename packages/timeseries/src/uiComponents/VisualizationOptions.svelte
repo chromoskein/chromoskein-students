@@ -66,21 +66,22 @@
     </Select>
 
       {#if visType == VisualisationType.Composite}
-        <Select size="sm" inline labelText="Action:" on:change={(event) => {console.log(event); visualization.getInteractiveCluster()?.setAction(event.detail)}}>
+        <Select size="sm" selected="Split" inline labelText="Action:" on:change={(event) => {visualization.getInteractiveCluster()?.setAction(event.detail)}}>
           <SelectItem value="Change representation" />
           <SelectItem value="Split" />
           <SelectItem value="Merge" />
         </Select>
 
-        <Select size="sm" inline labelText="Visualization type:" on:change={(event) => {console.log(event); visualization.getInteractiveCluster()?.setRepresentation(event.detail)}}>
-        {#each Object.keys(VisualisationType) as key, index}
-          {#if key != VisualisationType.None}
-            <SelectItem value={key}/>  
-          {/if}
-        {/each}
+        <Select size="sm" inline selected="Pathline" labelText="Visualization type:" on:change={(event) => {visualization.getInteractiveCluster()?.setRepresentation(event.detail)}}>
+          {#each Object.keys(VisualisationType) as key, index}
+            {#if key != VisualisationType.None && key != VisualisationType.Composite}
+              <SelectItem value={key}/>  
+            {/if}
+          {/each}
+          <SelectItem value="AbstractVolume" />
         </Select>
 
-        <Checkbox labelText="Show cluster connections" on:check={(event) => {console.log(event); visualization.getInteractiveCluster()?.setShowConnections(event.detail)}}/>
+        <Checkbox labelText="Show cluster connections" on:check={(event) => {visualization.getInteractiveCluster()?.setShowConnections(event.detail)}}/>
       {/if} 
 
       <!-- {#if visType != VisualisationType.Composite && visType != VisualisationType.None && visType != VisualisationType.Volume && visType != VisualisationType.Matryoshka}
@@ -98,13 +99,13 @@
       {#if ops.visType != VisualisationType.Matryoshka && ops.visType != VisualisationType.Composite && ops.visType != VisualisationType.None}
       <Slider labelText="Cluster amount" fullWidth min={1} max={dataClustersGivenK.length - 1} bind:value={ops.blobsAmount} />
       {/if}
-      {#if ops.visType == VisualisationType.Implicit || ops.visType == VisualisationType.Matryoshka || ops.visType == VisualisationType.Pathline || ops.visType == VisualisationType.Spheres || ops.visType == VisualisationType.Spline}
+      {#if ops.visType == VisualisationType.Implicit || ops.visType == VisualisationType.Matryoshka || ops.visType == VisualisationType.Pathline || ops.visType == VisualisationType.Spheres || ops.visType == VisualisationType.Spline || ops.visType == VisualisationType.Composite}
         <Slider labelText="Radius" fullWidth min={0.01} max={0.3} step={0.01} bind:value={ops.radius} />
       {/if}
       {#if ops.visType == VisualisationType.Matryoshka || ops.visType == VisualisationType.Volume}
         <Slider labelText="Alpha" fullWidth min={0.05} max={1.0} step={0.05} bind:value={ops.alpha} />
       {/if}
-      {#if ops.visType == VisualisationType.Hedgehog}
+      {#if ops.visType == VisualisationType.Hedgehog || visType == VisualisationType.Composite}
         <Slider labelText="Max distance" fullWidth min={0.0} max={0.5} step={0.01} bind:value={ops.hedgehogDistance} />
         <Checkbox labelText="Precise quills" bind:checked={ops.preciseQuills} />
       {/if}
