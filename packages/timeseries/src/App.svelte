@@ -202,6 +202,7 @@
               {#if chromosomeOptions && chromosomeOptions[selectedChromosomeId]}
                 <VisualizationOptions
                   viewport={viewport}
+                  visualization={selectedChromosome.visualization}
                   bind:ops={chromosomeOptions[selectedChromosomeId]}
                   dataClustersGivenK={chromosomes[selectedChromosomeId].clusters}
                   size={chromosomes[selectedChromosomeId].points[0].length}

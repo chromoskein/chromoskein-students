@@ -18,11 +18,12 @@
     export let dataClustersGivenK: ClusterNode[][] | null = null;
     export let pointsAtTimesteps: vec3[][] = [];
     export let selectedTimestep = 0;
-    export let clusterVisualization: string;
-    export let showConnections: Boolean = false;
     export let clustersUpdated;
     export let updateClustersUpdated;
-    export let action;
+    
+    let showConnections: Boolean = false;
+    let clusterVisualization: string = "Pathline";
+    let action: string = "Split";
 
     let clusterObjects: CompositeClusters = null;
     let canvas: HTMLElement | null = null;
@@ -38,6 +39,18 @@
       "Spline": SplineClusterVisualisation,
       "Spheres": SpheresClusterVisualization,
     };
+
+    export function setShowConnections(show: boolean) {
+      showConnections = show;
+    }
+
+    export function setAction(newAction) {
+      action = newAction;
+    }
+
+    export function setRepresentation(newRepresentation) {
+      clusterVisualization = newRepresentation;
+    }
 
     export function getClusterComposite(cluster) {
       let root = clusterObjects.getRoot();

@@ -14,6 +14,7 @@
     import { vec3 } from "gl-matrix";
     import type { VisOptions } from "../utils/data-models";
     import { calculateSphereParameters } from "../utils/abstractClustersUtils";
+    import InteractiveCluster from "../visalizations/InteractiveCluster.svelte";
 
     export let visible: boolean = true;
     export let points: vec3[][];
@@ -28,6 +29,7 @@
     let volumeColormap;
     let volumeFunction: number;
     let timestep: number = 0;
+    let interactiveCluster: InteractiveCluster | null = null;
 
     $: visType = ops.visType;
     $: clustersAmount = ops.blobsAmount;
@@ -37,6 +39,12 @@
     $: volumeColormap = ops.volumeColormap;
     $: volumeFunction = ops.volumeFunction;
     $: timestep = ops.timestep;
+
+    export function getInteractiveCluster() {
+        if (visType == VisualisationType.Composite)
+            return interactiveCluster;
+        return null;
+    }
 
     $: if (dataClustersGivenK) {
         ops.matryoshkaBlobsVisible = new Array(dataClustersGivenK.length - 1).fill(false);
@@ -161,21 +169,17 @@
     {/if}
     
 
-    <!--
-    {#if options.selectedVisualization == VisualisationType.Composite}
-    <InteractiveCluster
-        dataClustersGivenK={dataClustersGivenK}
-        pointsAtTimesteps={chromosome.points}
-        selectedTimestep={options.timestep}
-        clusterVisualization={clusterVisualization}
-        showConnections={showConnectors}
-        clustersUpdated={clustersUpdated}
-        updateClustersUpdated={updateClustersUpdated}
-        action={action}
-        bind:this={interactiveClusterRef}
-    />
+    
+    {#if visType == VisualisationType.Composite}
+        <InteractiveCluster
+            dataClustersGivenK={dataClustersGivenK}
+            pointsAtTimesteps={points}
+            selectedTimestep={timestep}
+            clustersUpdated={false}
+            updateClustersUpdated={() => {}}
+            bind:this={interactiveCluster}
+        />
     {/if}
-    -->
 
     {#if blobs[timestep] && visType == VisualisationType.Implicit}
     {#each blobs[timestep] as blob, i}
