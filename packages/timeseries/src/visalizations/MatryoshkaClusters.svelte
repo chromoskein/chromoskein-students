@@ -17,7 +17,6 @@
     export let matryoshkaBlobsVisible: boolean[] = [false, true, false, true, false, false, false, false, false, false, false, false, false, false, false];
 
     let matryoshkaColors: vec3[] = [];
-    let matryoshkaExperiemntalColors: vec3[] = [];
     let matryoshkaRadius: number[] = [];
     let matryoshkaBlobDepth: number[] = [];
     let matryoshkaBlobs: ClusterBlob[][] = [];
@@ -44,7 +43,6 @@
     $: if (dataClustersGivenK && dataPathlines) {
         matryoshkaBlobs = [];
         matryoshkaColors = [];
-        matryoshkaExperiemntalColors = [];
         matryoshkaRadius = [];
         matryoshkaOutline = [];
 
@@ -52,24 +50,36 @@
         let depth = 0.0;
         let radiusOffset = 0.0;
         let clusterPoints = [];
+        let included: {
+            from: number,
+            to: number,
+        }[] = [];
         for (let i = matryoshkaBlobsVisible.length; i > 0; i--) {
             if (!matryoshkaBlobsVisible[i - 1]) {
                 continue;
             }
 
             let clusters = dataClustersGivenK[i];
-
+            let changed = false;
             for (const [_, cluster] of clusters.entries()) {
-                    clusterPoints.push(dataPathlines.slice(cluster.from, cluster.to + 1));
-                    matryoshkaColors.push(cluster.color.rgb);
-                    matryoshkaExperiemntalColors.push(staticColors[cluster.i % staticColors.length]);
-                    matryoshkaRadius.push(radiusOffset);
-                    matryoshkaBlobDepth.push(depth);
-                    matryoshkaOutline.push(lowest)
+                // Ensure that already included clusters are not included twice
+                if (included.filter((c) => c.to == cluster.to && c.from == cluster.from).length != 0) continue;
+                included.push({from: cluster.from, to: cluster.to});
+                changed = true;
+
+                clusterPoints.push(dataPathlines.slice(cluster.from, cluster.to + 1));
+                matryoshkaColors.push(cluster.color.rgb);
+                matryoshkaRadius.push(radiusOffset);
+                matryoshkaBlobDepth.push(depth);
+                matryoshkaOutline.push(lowest)
             }
-            lowest = false;
-            depth++;
-            radiusOffset += 0.03;
+
+            // Only increase depth if a cluster was added in the previous call
+            if (changed) {
+                lowest = false;
+                depth++;
+                radiusOffset += 0.03;
+            }
         }
 
         for (let timestep = 0; timestep < dataTimesteps.length; timestep++) {
@@ -88,7 +98,7 @@
         points={matryoshkaBlobs[selectedTimestep].filter((_, index) => matryoshkaOutline[index]).map(blob => blob.normalizedPoints)}
         scales={matryoshkaBlobs[selectedTimestep].filter((_, index) => matryoshkaOutline[index]).map(blob => blob.scale)}
         translates={matryoshkaBlobs[selectedTimestep].filter((_, index) => matryoshkaOutline[index]).map(blob => blob.center)}
-        colors={(!experimentalColors) ? matryoshkaColors.filter((_, index) => matryoshkaOutline[index])  : matryoshkaExperiemntalColors.filter((_, index) => matryoshkaOutline[index])}
+        colors={matryoshkaColors.filter((_, index) => matryoshkaOutline[index])}
         radius={blobsRadius}
         radiusOffsets={matryoshkaRadius.filter((_, index) => matryoshkaOutline[index])}
         alpha={blobAlpha}
@@ -103,7 +113,7 @@
                 scale={blob.scale}
                 radius={blobsRadius + matryoshkaRadius[i]}
                 visible={true}
-                color={(!experimentalColors) ? matryoshkaColors[i] : matryoshkaExperiemntalColors[i]}
+                color={matryoshkaColors[i]}
                 outline={true}
               />
         {/if}
