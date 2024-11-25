@@ -94,7 +94,7 @@
 </script>
 
 <div>
-    <SignedDistanceGridBlended
+    <!-- <SignedDistanceGridBlended
         points={matryoshkaBlobs[selectedTimestep].filter((_, index) => matryoshkaOutline[index]).map(blob => blob.normalizedPoints)}
         scales={matryoshkaBlobs[selectedTimestep].filter((_, index) => matryoshkaOutline[index]).map(blob => blob.scale)}
         translates={matryoshkaBlobs[selectedTimestep].filter((_, index) => matryoshkaOutline[index]).map(blob => blob.center)}
@@ -103,20 +103,18 @@
         radiusOffsets={matryoshkaRadius.filter((_, index) => matryoshkaOutline[index])}
         alpha={blobAlpha}
         depths={matryoshkaBlobDepth.filter((_, index) => matryoshkaOutline[index])}
-    />
+    /> -->
 
     {#each matryoshkaBlobs[selectedTimestep] as blob, i}
-        {#if !matryoshkaOutline[i]}
-              <SignedDistanceGrid
-                points={blob.normalizedPoints}
-                translate={blob.center}
-                scale={blob.scale}
-                radius={blobsRadius + matryoshkaRadius[i]}
-                visible={true}
-                color={matryoshkaColors[i]}
-                outline={true}
-              />
-        {/if}
+        <SignedDistanceGrid
+            points={blob.normalizedPoints}
+            translate={blob.center}
+            scale={blob.scale}
+            radius={blobsRadius + matryoshkaRadius[i]}
+            visible={true}
+            color={matryoshkaColors[i]}
+            outline={!matryoshkaOutline[i]}
+        />
     {/each}
 
 </div>
