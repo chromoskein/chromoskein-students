@@ -1,9 +1,3 @@
-<script context="module" lang="ts">
-  export const colors: Array<vec3> = new Array(100).fill(undefined).map((i) => {
-    return vec3.fromValues(Math.random(), Math.random(), Math.random());
-  });
-</script>
-
 <script lang="ts">
   // @hmr:keep-all
 
@@ -15,7 +9,7 @@
   import "./styles/splitpanes.css";
   import { Pane, Splitpanes } from "svelte-splitpanes";
 
-  import { loadTimesteps, normalizePointClouds, timestepsToPathlines, loadBitmap, clusterPathlines } from "./utils/main";
+  import { loadTimesteps, normalizePointClouds, timestepsToPathlines, loadBitmap, clusterPathlines, ClusterNode } from "./utils/main";
 
   import "carbon-components-svelte/css/g100.css";
   import { Header, SkipToContent, Accordion, AccordionItem, Select, SelectItem, Button, Checkbox } from "carbon-components-svelte";
@@ -23,7 +17,6 @@
   import { treeColor } from "./utils/treecolors";
 
   import "@carbon/charts/styles.css";
-  import InteractiveCluster from "./visalizations/InteractiveCluster.svelte";
   import { defaultVisOptions, initializeChromosome, type VisOptions, type Chromosome } from "./utils/data-models";
   import ChromosomeItem from "./uiComponents/ChromosomeItem.svelte";
   import ChromatinVisualization from "./uiComponents/ChromatinVisualization.svelte";
@@ -68,6 +61,19 @@
     chromosomeOptions = chromosomeOptions.concat(defaultOptions)
   }
 
+  async function loadClustering(event: Event) {
+    const input = event.target as HTMLInputElement; 
+    const json = input.files.item(0);
+    let result: ClusterNode[][] = JSON.parse(await json.text());
+    treeColor(result);
+    setNewClusters(result);
+  }
+
+  function setNewClusters(clusters: ClusterNode[][]) {
+    selectedChromosome.clusters = clusters;
+    chromosomes[selectedChromosomeId].clusters = clusters;
+    chromosomeOptions[selectedChromosomeId].blobsAmount = 1;
+  }
 
   function foo() {
     console.log("Starting worker");
@@ -109,7 +115,7 @@
 
   // Set default colormap on viewport change
   $: if (viewport && viewport.scene) {
-    loadBitmap("./colormaps/cool-warm-paraview.png").then((colormap) =>  viewport.scene.setColorMapFromBitmap(colormap));
+    loadBitmap("./colormaps/cool-warm-paraview.png").then((colormap) =>  viewport?.scene?.setColorMapFromBitmap(colormap));
   }
 
   let selectedId: number = 0;
@@ -131,11 +137,6 @@
   // Distance map
   let showDistanceMap = false;
 
-  // Blobs
-  let clusterVisualization = "AbstractSphere";
-  let action = "Change representation";
-  let clustersUpdated = false;
-  let interactiveClusterRef: InteractiveCluster;
 
   //#endregion Configuration
 </script>
@@ -211,7 +212,15 @@
             {/key}  
 
 
-            <Button on:click={() => { console.log("I am clicked!!!"); foo() }}> Click Me </Button>
+            <input type="file"  accept=".json" id="clustering-input" on:change={(event) => loadClustering(event)}/>
+            <Button
+                kind="secondary"
+                size="field"
+                on:click={() => { document.getElementById("clustering-input").click()}}
+            >  
+                Upload Clusters
+            </Button>
+            <!-- <Button on:click={() => { console.log("I am clicked!!!"); foo() }}> Click Me </Button> -->
           </AccordionItem>
 
           <AccordionItem title="Data Loading">
@@ -263,7 +272,7 @@
     padding: 8px;
   }
 
-  #file-input {
+  #clustering-input {
     display: none;
   }
 </style>
