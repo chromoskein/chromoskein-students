@@ -10,7 +10,7 @@
     import * as Graphics from "@chromoskein/lib-graphics";
     import { vec2 } from "gl-matrix";
     import { ClusterHighlighter } from "../interactiveClusters/clusterHighlighter";
-    import { VisOptions } from "../utils/data-models";
+    import type { VisOptions } from "../utils/data-models";
 
     let viewport: Writable<Viewport3D | null> = getContext("viewport");
     let device: Writable<GPUDevice> = getContext("device");

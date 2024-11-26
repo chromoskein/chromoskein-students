@@ -6,7 +6,7 @@ import type { AbstractClusterVisualisation } from "./visualisations/abstractVisu
 import type { CompositeClusters } from "./compositeClusters";
 import { ClusterConnector } from "./clusterConnector";
 import { SphereSimplificationClusterVisualisation } from "./visualisations/sphereSimplificationClusterVisualisation";
-import { VisOptions } from "../utils/data-models";
+import type { VisOptions } from "../utils/data-models";
 import { PathlineClusterVisualization } from "./visualisations";
 
 /**

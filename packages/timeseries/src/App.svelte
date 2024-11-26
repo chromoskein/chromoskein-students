@@ -9,7 +9,7 @@
   import "./styles/splitpanes.css";
   import { Pane, Splitpanes } from "svelte-splitpanes";
 
-  import { loadTimesteps, normalizePointClouds, timestepsToPathlines, loadBitmap, clusterPathlines, ClusterNode } from "./utils/main";
+  import { loadTimesteps, normalizePointClouds, timestepsToPathlines, loadBitmap, clusterPathlines, type ClusterNode } from "./utils/main";
 
   import "carbon-components-svelte/css/g100.css";
   import { Header, SkipToContent, Accordion, AccordionItem, Select, SelectItem, Button, Checkbox } from "carbon-components-svelte";

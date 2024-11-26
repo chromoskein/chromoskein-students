@@ -5,7 +5,7 @@ import type { ClusterBlob, ClusterNode } from "../../utils/main";
 import type { CompositeClusters } from "../compositeClusters";
 import { AbstractClusterVisualisation } from "./abstractVisualization";
 import { blobFromPoints } from "../../utils/main";
-import { VisOptions } from "../../utils/data-models";
+import type { VisOptions } from "../../utils/data-models";
 
 export class SDGClusterVisualisation extends AbstractClusterVisualisation {
     private cluster: ClusterNode;

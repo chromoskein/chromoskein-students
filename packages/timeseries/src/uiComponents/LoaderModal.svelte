@@ -1,6 +1,6 @@
 <script lang="ts">
     import { Button, Checkbox, DataTable, Modal, Toggle } from "carbon-components-svelte";
-    import { ChromatinModel, parsePdb } from "lib-dataloader";
+    import { type ChromatinModel, parsePdb } from "lib-dataloader";
     import { vec3 } from "gl-matrix";
     import { normalizePointClouds } from "../utils/main";
     import { getClustering, getEmptyClustering, initializeChromosome, type Chromosome } from "../utils/data-models";

@@ -6,7 +6,7 @@ import type { CompositeClusters } from "../compositeClusters";
 import { AbstractClusterVisualisation } from "./abstractVisualization";
 import { blobFromPoints } from "../../utils/main";
 import PCA from 'pca-js';
-import { VisOptions } from "../../utils/data-models";
+import type { VisOptions } from "../../utils/data-models";
 import { calculateSphereParameters } from "../../utils/abstractClustersUtils";
 
 export class PCAClusterVisualisation extends AbstractClusterVisualisation {

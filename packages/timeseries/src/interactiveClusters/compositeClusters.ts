@@ -4,7 +4,7 @@ import type { Viewport3D } from "@chromoskein/lib-graphics";
 import type { ClusterNode } from "../utils/main";
 import { ClusterCompositeNode } from "./clusterCompositeNode";
 import { ClusterConnector } from "./clusterConnector";
-import { VisOptions } from "../utils/data-models";
+import type { VisOptions } from "../utils/data-models";
 
 export class CompositeClusters {
     private root: ClusterCompositeNode;

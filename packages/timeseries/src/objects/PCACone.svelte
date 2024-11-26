@@ -6,7 +6,7 @@
     import type { Writable } from "svelte/store";
     import type { Viewport3D } from "@chromoskein/lib-graphics";
     import { vec3 } from "gl-matrix";
-    import { blobFromPoints, ClusterBlob } from "../utils/main";
+    import { blobFromPoints, type ClusterBlob } from "../utils/main";
     import { calculateSphereParameters } from "../utils/abstractClustersUtils";
 
     export let points: vec3[] = [];

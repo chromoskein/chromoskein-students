@@ -2,7 +2,7 @@
 <script lang="ts">
 
     import {  Select, SelectItem, Checkbox, Slider} from "carbon-components-svelte";
-    import { ClusterNode, loadBitmap, VisualisationType } from "../utils/main";
+    import { type ClusterNode, loadBitmap, VisualisationType } from "../utils/main";
     import type { VisOptions } from "../utils/data-models";
     import Dendrogram from "./Dendrogram.svelte";
     import * as Graphics from "@chromoskein/lib-graphics";

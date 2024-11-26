@@ -5,7 +5,7 @@ import type { ClusterNode } from "../../utils/main";
 import type { CompositeClusters } from "../compositeClusters";
 import { AbstractClusterVisualisation } from "./abstractVisualization";
 import { lineToSpline } from "../../utils/lineToSpline";
-import { VisOptions } from "../../utils/data-models";
+import type { VisOptions } from "../../utils/data-models";
 
 export class SplineClusterVisualisation extends AbstractClusterVisualisation {
     private cluster: ClusterNode;
