@@ -2,7 +2,7 @@
     import { getContext, onMount, setContext } from "svelte";
     import { writable, type Writable } from "svelte/store";
     import type * as Graphics from "@chromoskein/lib-graphics";
-    import { vec3 } from "gl-matrix";
+    import { vec3, vec2 } from "gl-matrix";
 
     // Context
     let device: Writable<GPUDevice> = getContext("device");
@@ -69,6 +69,9 @@
   
       $viewportInner.camera.onMouseDown(event);
   
+      const pixelRatio = window.devicePixelRatio;
+      const result = $viewportInner.getHoveredElement(vec2.fromValues(event.offsetX * pixelRatio, event.offsetY * pixelRatio), 0);
+      console.log(result);
       //afterCameraUpdate($viewportInner.camera as Graphics.OrbitCamera);
     }
   
