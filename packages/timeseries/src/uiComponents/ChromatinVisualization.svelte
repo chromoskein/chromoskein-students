@@ -31,6 +31,7 @@
     let volumeFunction: number;
     let timestep: number = 0;
     let options: VisOptions;
+    let outlines: boolean = false;
 
     $: options = ops;
     $: visType = ops.visType;
@@ -41,6 +42,7 @@
     $: volumeColormap = ops.volumeColormap;
     $: volumeFunction = ops.volumeFunction;
     $: timestep = ops.timestep;
+    $: outlines = ops.outlines;
 
     export function foo() {
         console.log("Foo");
@@ -250,6 +252,19 @@
                 multicolored={false}
             />
         {/if}
+    {/if}
+    {#if outlines}
+        {#each blobs[timestep] as blob, i}
+        <SignedDistanceGrid
+            points={blob.normalizedPoints}
+            translate={blob.center}
+            scale={blob.scale}
+            radius={radius}
+            visible={true}
+            color={vec3.fromValues(dataClustersGivenK[clustersAmount][i].color.rgb[0], dataClustersGivenK[clustersAmount][i].color.rgb[1], dataClustersGivenK[clustersAmount][i].color.rgb[2])}
+            outline={true}
+        />
+        {/each} 
     {/if}
     {/if}
 </div>

@@ -127,6 +127,7 @@
         </Select>
     {/if}
 
+    <Checkbox labelText="Outlines" bind:checked={ops.outlines} />
 
     {#if dataClustersGivenK && dataClustersGivenK[1]}
       <Dendrogram
