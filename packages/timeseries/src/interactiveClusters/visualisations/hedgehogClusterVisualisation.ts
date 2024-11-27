@@ -5,7 +5,7 @@ import type { ClusterNode } from "../../utils/main";
 import type { CompositeClusters } from "../compositeClusters";
 import { AbstractClusterVisualisation } from "./abstractVisualization";
 import type { VisOptions } from "../../utils/data-models";
-import { calculateSphereParameters, findClosestPoint } from "../../utils/abstractClustersUtils";
+import { calculateSphereParameters, findClosestPoints } from "../../utils/abstractClustersUtils";
 
 export class HedgehogClusterVisualisation extends AbstractClusterVisualisation {
     private cluster: ClusterNode;
@@ -16,7 +16,8 @@ export class HedgehogClusterVisualisation extends AbstractClusterVisualisation {
     private sphereID: number = null;
     private center: vec3 = vec3.fromValues(0, 0, 0);
     private radius: number = 0.1;
-    private threshold: number = 0.3;
+    private threshold: number = 0.5;
+    private secondPoint: boolean = false;
     private minDistance = 0.1;
     private precise: boolean = false;
 
@@ -24,6 +25,8 @@ export class HedgehogClusterVisualisation extends AbstractClusterVisualisation {
         super(manager, cluster, viewport);
         this.minDistance = manager.getOptions().hedgehogDistance;
         this.precise = manager.getOptions().preciseQuills;
+        this.secondPoint = manager.getOptions().secondPoint;    
+        this.threshold = manager.getOptions().hedgehogThreshold;    
         this.viewport = viewport;
 
         this.updateCluster(cluster);
@@ -38,6 +41,8 @@ export class HedgehogClusterVisualisation extends AbstractClusterVisualisation {
     public updateParameters(options: VisOptions) {
         this.minDistance = options.hedgehogDistance;
         this.precise = options.preciseQuills;
+        this.secondPoint = options.secondPoint;        
+        this.threshold = options.hedgehogThreshold;
         this.updatePoints(this.manager.getPoints(), this.manager.getTimestep());
         // Do nothing 
     }
@@ -55,7 +60,7 @@ export class HedgehogClusterVisualisation extends AbstractClusterVisualisation {
           if (clusters[i] == this.cluster) continue;
   
           let otherClusterPoints = pointsAtTimestep[selectedTimestep].slice(clusters[i].from, clusters[i].to + 1);
-          let closestPoints = findClosestPoint(clusterPoints, otherClusterPoints, this.minDistance, this.threshold); 
+          let closestPoints = findClosestPoints(clusterPoints, otherClusterPoints, this.minDistance, this.threshold, this.secondPoint); 
           if (this.precise) {
             closestPoints.forEach(element => quills.push(element));
           }

@@ -238,6 +238,8 @@
                 clusterID = {i}
                 precise = {ops.preciseQuills}
                 minDistance = {ops.hedgehogDistance}
+                secondPoint = {ops.secondPoint}
+                threshold={ops.hedgehogThreshold}
                 color={[dataClustersGivenK[clustersAmount][i].color.rgb[0], dataClustersGivenK[clustersAmount][i].color.rgb[1], dataClustersGivenK[clustersAmount][i].color.rgb[2]]}
             />
         {/each}

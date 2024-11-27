@@ -17,7 +17,7 @@ export function calculateSphereParameters(points: vec3[]) {
     };
 }
 
-export function findClosestPoint(cluster1: vec3[], cluster2: vec3[], minDistance: number, threshold: number): vec3[] {
+export function findClosestPoints(cluster1: vec3[], cluster2: vec3[], minDistance: number, threshold: number, secondPoint: boolean): vec3[] {
     let closestPoints: {
       point: vec3,
       dist: number
@@ -29,9 +29,9 @@ export function findClosestPoint(cluster1: vec3[], cluster2: vec3[], minDistance
 
             if (distance < minDistance) {
               closestPoints.push({
-                point: vec3.lerp(vec3.create(), cluster1[i], cluster2[j], 0.25),
+                point: (secondPoint) ? cluster2[j] : vec3.lerp(vec3.create(), cluster1[i], cluster2[j], 0.25),
                 dist: distance,
-              });
+              });  
             }
         } 
     }

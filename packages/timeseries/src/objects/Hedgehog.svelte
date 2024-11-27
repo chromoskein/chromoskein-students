@@ -5,7 +5,7 @@
     import type { Viewport3D } from "@chromoskein/lib-graphics";
     import { vec3 } from "gl-matrix";
     import type { ClusterNode } from "../utils/main";
-    import { calculateSphereParameters, findClosestPoint } from "../utils/abstractClustersUtils";
+    import { calculateSphereParameters, findClosestPoints } from "../utils/abstractClustersUtils";
   
     let viewport: Writable<Viewport3D | null> = getContext("viewport");
     
@@ -16,7 +16,7 @@
     export let threshold: number = 0.5;
     export let color: vec3 = vec3.fromValues(1.0, 1.0, 1.0);
     export let precise: boolean = false;
-
+    export let secondPoint: boolean = false;
 
     let cones: RoundedCone[] = [];
     let coneIDs: number[] = [];
@@ -55,7 +55,7 @@
         if (i == clusterID) continue;
 
         let otherClusterPoints = points.slice(clusters[i].from, clusters[i].to + 1);
-        let closestPoints = findClosestPoint(clusterPoints, otherClusterPoints, minDistance, threshold); 
+        let closestPoints = findClosestPoints(clusterPoints, otherClusterPoints, minDistance, threshold, secondPoint); 
         if (precise) {
           closestPoints.forEach(element => quills.push(element));
         }

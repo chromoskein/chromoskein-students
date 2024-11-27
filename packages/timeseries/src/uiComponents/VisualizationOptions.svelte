@@ -108,6 +108,10 @@
       {#if ops.visType == VisualisationType.Hedgehog || visType == VisualisationType.Composite}
         <Slider labelText="Max distance" fullWidth min={0.0} max={0.5} step={0.01} bind:value={ops.hedgehogDistance} />
         <Checkbox labelText="Precise quills" bind:checked={ops.preciseQuills} />
+        {#if ops.preciseQuills}
+          <Checkbox labelText="Point to enemy" bind:checked={ops.secondPoint} />
+          <Slider labelText="Threshold" fullWidth min={0.0} max={1.0} step={0.01} bind:value={ops.hedgehogThreshold} />
+        {/if}  
       {/if}
 
       {#if ops.visType == VisualisationType.Volume}

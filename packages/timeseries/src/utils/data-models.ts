@@ -141,6 +141,8 @@ export type VisOptions = {
     matryoshkaBlobsVisible:boolean[]
     preciseQuills: boolean
     hedgehogDistance: number
+    hedgehogThreshold: number,
+    secondPoint: boolean
 }
 
 export function defaultVisOptions() {
@@ -158,5 +160,7 @@ export function defaultVisOptions() {
         matryoshkaBlobsVisible: [true],
         preciseQuills: false,
         hedgehogDistance: 0.5,
+        hedgehogThreshold: 0.5,
+        secondPoint: false,
     }
 }
