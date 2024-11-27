@@ -7,24 +7,18 @@
     import Dendrogram from "./Dendrogram.svelte";
     import * as Graphics from "@chromoskein/lib-graphics";
     import InteractiveCluster from "../visalizations/InteractiveCluster.svelte";
-    import ChromatinVisualization from "./ChromatinVisualization.svelte";
   
     //export let selectedVis: ChromatinVisualization;
     export let viewport: Graphics.Viewport3D;
     export let ops: VisOptions;
     export let dataClustersGivenK: ClusterNode[][];
     export let size: number;
-    export let visualization: ChromatinVisualization;
 
-    let interactiveCluster: InteractiveCluster | null = null;
+    export let interactiveCluster: InteractiveCluster | null = null;
 
     let visType: VisualisationType;
 
     $: visType = ops.visType;
-
-    $: if (visType == VisualisationType.Composite) {
-      interactiveCluster = visualization?.getInteractiveCluster();
-    }
 
 
     async function changeColormap(volumeColormapChoice) {
@@ -56,8 +50,6 @@
 </script>
 
 
-
-
 <div>
     <Select size="sm" inline labelText="Visualization:" bind:selected={ops.visType}>
       {#each Object.keys(VisualisationType) as key, index}
@@ -65,14 +57,14 @@
       {/each}
     </Select>
 
-      {#if visType == VisualisationType.Composite}
-        <Select size="sm" selected="Split" inline labelText="Action:" on:change={(event) => {visualization.getInteractiveCluster()?.setAction(event.detail)}}>
+      {#if visType == VisualisationType.Composite && interactiveCluster}
+        <Select size="sm" selected="Split" inline labelText="Action:" on:change={(event) => {interactiveCluster.setAction(event.detail)}}>
           <SelectItem value="Change representation" />
           <SelectItem value="Split" />
           <SelectItem value="Merge" />
         </Select>
 
-        <Select size="sm" inline selected="Pathline" labelText="Visualization type:" on:change={(event) => {visualization.getInteractiveCluster()?.setRepresentation(event.detail)}}>
+        <Select size="sm" inline selected="Pathline" labelText="Visualization type:" on:change={(event) => {interactiveCluster.setRepresentation(event.detail)}}>
           {#each Object.keys(VisualisationType) as key, index}
             {#if key != VisualisationType.None && key != VisualisationType.Composite}
               <SelectItem value={key}/>  
@@ -81,7 +73,7 @@
           <SelectItem value="AbstractVolume" />
         </Select>
 
-        <Checkbox labelText="Show cluster connections" on:check={(event) => {visualization.getInteractiveCluster()?.setShowConnections(event.detail)}}/>
+        <Checkbox labelText="Show cluster connections" on:check={(event) => {interactiveCluster.setShowConnections(event.detail)}}/>
       {/if} 
 
       <!-- {#if visType != VisualisationType.Composite && visType != VisualisationType.None && visType != VisualisationType.Volume && visType != VisualisationType.Matryoshka}

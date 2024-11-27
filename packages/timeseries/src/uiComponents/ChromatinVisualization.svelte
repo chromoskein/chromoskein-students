@@ -20,6 +20,7 @@
     export let points: vec3[][];
     export let dataClustersGivenK: ClusterNode[][] = [];
     export let ops: VisOptions;
+    export let interactiveCluster: InteractiveCluster | null = null;
 
     let visType: VisualisationType;
     let clustersAmount: number = 1;
@@ -29,7 +30,6 @@
     let volumeColormap;
     let volumeFunction: number;
     let timestep: number = 0;
-    let interactiveCluster: InteractiveCluster | null = null;
     let options: VisOptions;
 
     $: options = ops;
@@ -42,10 +42,9 @@
     $: volumeFunction = ops.volumeFunction;
     $: timestep = ops.timestep;
 
-    export function getInteractiveCluster() {
-        if (visType == VisualisationType.Composite)
-            return interactiveCluster;
-        return null;
+    export function foo() {
+        console.log("Foo");
+        return interactiveCluster
     }
 
     $: if (dataClustersGivenK) {

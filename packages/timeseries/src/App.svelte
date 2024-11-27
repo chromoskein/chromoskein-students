@@ -25,6 +25,7 @@
   import workerUrl from './utils/clusteringWorker.ts?worker';
   import Viewport2D from "./viewports/Viewport2D.svelte";
   import LoaderModal from "./uiComponents/LoaderModal.svelte";
+  import InteractiveCluster from "./visalizations/InteractiveCluster.svelte";
 
   const adapter: Writable<GPUAdapter | null> = writable(null);
   const device: Writable<GPUDevice | null> = writable(null);
@@ -131,6 +132,11 @@
     }
   }
 
+
+  let selectedInteractiveCluster: InteractiveCluster | null = null;
+
+  $: console.log("Changed in app", selectedInteractiveCluster)
+
   // Loader
   let loaderOpen: boolean = false;
 
@@ -169,6 +175,7 @@
               dataClustersGivenK={selectedChromosome.clusters}
               ops={chromosomeOptions[selectedChromosomeId]}
               bind:this={selectedChromosome.visualization}
+              bind:interactiveCluster={selectedInteractiveCluster}
             />
           {/if}
 
@@ -203,7 +210,7 @@
               {#if chromosomeOptions && chromosomeOptions[selectedChromosomeId]}
                 <VisualizationOptions
                   viewport={viewport}
-                  visualization={selectedChromosome.visualization}
+                  interactiveCluster={selectedInteractiveCluster}
                   bind:ops={chromosomeOptions[selectedChromosomeId]}
                   dataClustersGivenK={chromosomes[selectedChromosomeId].clusters}
                   size={chromosomes[selectedChromosomeId].points[0].length}
