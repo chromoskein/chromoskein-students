@@ -27,6 +27,7 @@
 
     if ($graphicsLibrary) {
       $viewportInner = $graphicsLibrary.create3DViewport();
+      $viewportInner.setClearColor({ r: 1.0, g: 1.0, b: 1.0, a: 1.0 })
       afterCameraUpdate($viewportInner.camera as Graphics.OrbitCamera);
     }
   }
