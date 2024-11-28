@@ -75,7 +75,7 @@
       {/if}
         
       {#if visType == VisualisationType.Composite || visType == VisualisationType.Cones || visType == VisualisationType.AbstractSpheres}
-        <Checkbox labelText="Show cluster connections" bind:value={ops.showConnectors} on:check={(event) => {interactiveCluster?.setShowConnections(event.detail)}}/>
+        <Checkbox labelText="Show cluster connections" bind:checked={ops.showConnectors} on:check={(event) => {interactiveCluster?.setShowConnections(event.detail)}}/>
       {/if}
         <!-- {#if visType != VisualisationType.Composite && visType != VisualisationType.None && visType != VisualisationType.Volume && visType != VisualisationType.Matryoshka}
       <Checkbox labelText="Colored" bind:checked={blobsColored} />
