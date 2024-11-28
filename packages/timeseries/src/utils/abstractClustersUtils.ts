@@ -29,7 +29,7 @@ export function findClosestPoints(cluster1: vec3[], cluster2: vec3[], minDistanc
 
             if (distance < minDistance) {
               closestPoints.push({
-                point: (secondPoint) ? cluster2[j] : vec3.lerp(vec3.create(), cluster1[i], cluster2[j], 0.25),
+                point: (secondPoint) ? cluster2[j] : vec3.lerp(vec3.create(), cluster1[i], cluster2[j], 0.5),
                 dist: distance,
               });  
             }

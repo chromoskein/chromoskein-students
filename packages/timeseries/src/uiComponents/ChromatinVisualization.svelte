@@ -168,6 +168,7 @@
             blobsRadius={radius}
             experimentalColors={false}
             matryoshkaBlobsVisible={ops.matryoshkaBlobsVisible} 
+            outlines={false}
         />
     {/if}
     
@@ -246,7 +247,7 @@
                 color={[dataClustersGivenK[clustersAmount][i].color.rgb[0], dataClustersGivenK[clustersAmount][i].color.rgb[1], dataClustersGivenK[clustersAmount][i].color.rgb[2]]}
             />
         {/each}
-        {#if clustersAmount > 1}
+        {#if showConnectors && clustersAmount > 1}
             <ContinuousTube
                 radius={(1.0 / clustersAmount) / 15.0}
                 points={clusterCenters.map(cluster => cluster.center)}

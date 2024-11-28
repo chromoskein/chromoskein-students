@@ -1,9 +1,7 @@
 <script lang="ts">
 
     import type { vec3 } from "gl-matrix";
-    import { staticColors } from "../utils/treecolors";
     import type { ClusterBlob, ClusterNode } from "../utils/main";
-    import SignedDistanceGridBlended from "../objects/SignedDistanceGridBlended.svelte";
     import SignedDistanceGrid from "../objects/SignedDistanceGrid.svelte";
     import { blobFromPoints } from "../utils/main";
 
@@ -15,6 +13,7 @@
     export let blobsRadius: number;
     export let experimentalColors: boolean;
     export let matryoshkaBlobsVisible: boolean[] = [false, true, false, true, false, false, false, false, false, false, false, false, false, false, false];
+    export let outlines: boolean = false;
 
     let matryoshkaColors: vec3[] = [];
     let matryoshkaRadius: number[] = [];
@@ -105,7 +104,8 @@
         depths={matryoshkaBlobDepth.filter((_, index) => matryoshkaOutline[index])}
     /> -->
 
-    {#each matryoshkaBlobs[selectedTimestep] as blob, i}
+    {#if outlines}
+        {#each matryoshkaBlobs[selectedTimestep] as blob, i}
         <SignedDistanceGrid
             points={blob.normalizedPoints}
             translate={blob.center}
@@ -113,8 +113,21 @@
             radius={blobsRadius + matryoshkaRadius[i]}
             visible={true}
             color={matryoshkaColors[i]}
-            outline={!matryoshkaOutline[i]}
+            outline={true}
         />
     {/each}
+    {:else}
+        {#each matryoshkaBlobs[selectedTimestep] as blob, i}
+            <SignedDistanceGrid
+                points={blob.normalizedPoints}
+                translate={blob.center}
+                scale={blob.scale}
+                radius={blobsRadius + matryoshkaRadius[i]}
+                visible={true}
+                color={matryoshkaColors[i]}
+                outline={!matryoshkaOutline[i]}
+            />
+        {/each}
+    {/if}
 
 </div>
