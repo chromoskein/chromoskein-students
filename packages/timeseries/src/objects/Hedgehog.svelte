@@ -17,6 +17,7 @@
     export let color: vec3 = vec3.fromValues(1.0, 1.0, 1.0);
     export let precise: boolean = false;
     export let secondPoint: boolean = false;
+    export let radiusMultiplier: number = 8.0;
 
     let cones: RoundedCone[] = [];
     let coneIDs: number[] = [];
@@ -48,7 +49,7 @@
       quills = [];
       let clusterPoints = points.slice(clusters[clusterID].from, clusters[clusterID].to + 1);
       let params = calculateSphereParameters(clusterPoints);
-      radius = params.radius / 6.0;
+      radius = params.radius / radiusMultiplier;
       center = params.center;
 
       for (let i = 0; i < clusters.length; i++) {

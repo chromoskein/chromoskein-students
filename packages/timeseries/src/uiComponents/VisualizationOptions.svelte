@@ -72,11 +72,12 @@
           {/each}
           <SelectItem value="AbstractVolume" />
         </Select>
-
-        <Checkbox labelText="Show cluster connections" on:check={(event) => {interactiveCluster.setShowConnections(event.detail)}}/>
-      {/if} 
-
-      <!-- {#if visType != VisualisationType.Composite && visType != VisualisationType.None && visType != VisualisationType.Volume && visType != VisualisationType.Matryoshka}
+      {/if}
+        
+      {#if visType == VisualisationType.Composite || visType == VisualisationType.Cones || visType == VisualisationType.AbstractSpheres}
+        <Checkbox labelText="Show cluster connections" bind:value={ops.showConnectors} on:check={(event) => {interactiveCluster?.setShowConnections(event.detail)}}/>
+      {/if}
+        <!-- {#if visType != VisualisationType.Composite && visType != VisualisationType.None && visType != VisualisationType.Volume && visType != VisualisationType.Matryoshka}
       <Checkbox labelText="Colored" bind:checked={blobsColored} />
       {/if} -->
 
@@ -104,6 +105,10 @@
           <Checkbox labelText="Point to enemy" bind:checked={ops.secondPoint} />
           <Slider labelText="Threshold" fullWidth min={0.0} max={1.0} step={0.01} bind:value={ops.hedgehogThreshold} />
         {/if}  
+      {/if}
+
+      {#if visType == VisualisationType.Hedgehog || visType == VisualisationType.AbstractSpheres || visType == VisualisationType.Cones}
+        <Slider labelText="Size divider" fullWidth min={2} max={250} step={1} bind:value={ops.abstractionMultiplier} />
       {/if}
 
       {#if ops.visType == VisualisationType.Volume}

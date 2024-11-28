@@ -143,7 +143,8 @@ export type VisOptions = {
     hedgehogDistance: number
     hedgehogThreshold: number,
     secondPoint: boolean,
-    outlines: boolean
+    outlines: boolean,
+    abstractionMultiplier: number,
 }
 
 export function defaultVisOptions() {
@@ -164,5 +165,6 @@ export function defaultVisOptions() {
         hedgehogThreshold: 0.5,
         secondPoint: false,
         outlines: false,
+        abstractionMultiplier: 4.0,
     }
 }

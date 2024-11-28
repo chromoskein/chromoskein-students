@@ -32,6 +32,8 @@
     let timestep: number = 0;
     let options: VisOptions;
     let outlines: boolean = false;
+    let showConnectors: boolean = false;
+    let abstractionMultiplier: number = 2.0;
 
     $: options = ops;
     $: visType = ops.visType;
@@ -43,11 +45,9 @@
     $: volumeFunction = ops.volumeFunction;
     $: timestep = ops.timestep;
     $: outlines = ops.outlines;
+    $: showConnectors = ops.showConnectors;
+    $: abstractionMultiplier = ops.abstractionMultiplier;
 
-    export function foo() {
-        console.log("Foo");
-        return interactiveCluster
-    }
 
     $: if (dataClustersGivenK) {
         ops.matryoshkaBlobsVisible = new Array(dataClustersGivenK.length - 1).fill(false);
@@ -201,12 +201,12 @@
     {#if visType == VisualisationType.AbstractSpheres} 
         {#each dataClustersGivenK[clustersAmount] as cluster, i}
             <Sphere
-                radius={clusterCenters[i].radius / 4}
+                radius={clusterCenters[i].radius / abstractionMultiplier}
                 center={clusterCenters[i].center}
                 color={[dataClustersGivenK[clustersAmount][i].color.rgb[0], dataClustersGivenK[clustersAmount][i].color.rgb[1], dataClustersGivenK[clustersAmount][i].color.rgb[2], 1.0]}
             />
         {/each}
-        {#if clustersAmount > 1}
+        {#if showConnectors && clustersAmount > 1}
             <ContinuousTube
                 radius={(1.0 / clustersAmount) / 15.0}
                 points={clusterCenters.map(cluster => cluster.center)}
@@ -219,10 +219,11 @@
         {#each dataClustersGivenK[clustersAmount] as cluster, _}
             <PcaCone 
                 points={points[timestep].slice(cluster.from, cluster.to + 1)}
+                radiusMultiplier={abstractionMultiplier}
                 color={[cluster.color.rgb[0], cluster.color.rgb[1], cluster.color.rgb[2]]}
             />
         {/each}
-        {#if clustersAmount > 1}
+        {#if showConnectors && clustersAmount > 1}
             <ContinuousTube
                 radius={(1.0 / clustersAmount) / 15.0}
                 points={clusterCenters.map(cluster => cluster.center)}
@@ -239,6 +240,7 @@
                 clusterID = {i}
                 precise = {ops.preciseQuills}
                 minDistance = {ops.hedgehogDistance}
+                radiusMultiplier={abstractionMultiplier}
                 secondPoint = {ops.secondPoint}
                 threshold={ops.hedgehogThreshold}
                 color={[dataClustersGivenK[clustersAmount][i].color.rgb[0], dataClustersGivenK[clustersAmount][i].color.rgb[1], dataClustersGivenK[clustersAmount][i].color.rgb[2]]}

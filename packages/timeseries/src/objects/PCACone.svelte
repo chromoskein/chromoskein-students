@@ -11,6 +11,7 @@
 
     export let points: vec3[] = [];
     export let color: vec3 = vec3.fromValues(1.0, 1.0, 1.0);
+    export let radiusMultiplier: number = 2.0;
     
     let viewport: Writable<Viewport3D | null> = getContext("viewport");
     let center:vec3;
@@ -36,8 +37,8 @@
 
         let result = PCA.getEigenVectors(normalizedData.normalizedPoints);
         firstPCVec = result[0].vector;
-        firstPCVal =  result[0].eigenvalue / 10.0;
-        secondPCVal = result[1].eigenvalue / 10.0;
+        firstPCVal =  result[0].eigenvalue / radiusMultiplier;
+        secondPCVal = result[1].eigenvalue / radiusMultiplier;
     } 
 
 
