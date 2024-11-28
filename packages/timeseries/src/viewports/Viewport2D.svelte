@@ -13,8 +13,14 @@
     
     export let points: vec3[] = [];
     export let viewport = $viewportInner;
+    export let clearColor = {r: 1.0, g: 1.0,  b: 1.0,  a: 1.0};
+
     //export let afterCameraUpdate = (camera: Graphics.OrbitCamera) => {};
   
+    $: if (viewport) {
+      viewport.clearColor = clearColor;
+    }
+
     $: if ($viewportInner) {
       viewport = $viewportInner;
     }
@@ -32,6 +38,7 @@
   
       if ($graphicsLibrary) {
         $viewportInner = $graphicsLibrary.create2DViewport();
+        $viewportInner.clearColor = clearColor;
         //afterCameraUpdate($viewportInner.camera as Graphics.OrbitCamera);
       }
     }

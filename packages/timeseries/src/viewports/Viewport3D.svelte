@@ -13,6 +13,9 @@
   
   export let viewport = $viewportInner;
   export let afterCameraUpdate = (camera: Graphics.OrbitCamera) => {};
+  export let clearColor = { r: 1.0, g: 1.0, b: 1.0, a: 1.0 }
+
+  $: $viewportInner?.setClearColor(clearColor);
 
   $: if ($viewportInner) {
     viewport = $viewportInner;

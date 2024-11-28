@@ -11,12 +11,13 @@
 
   import { loadTimesteps, normalizePointClouds, timestepsToPathlines, loadBitmap, clusterPathlines, type ClusterNode } from "./utils/main";
 
-  import "carbon-components-svelte/css/g100.css";
-  import { Header, SkipToContent, Accordion, AccordionItem, Select, SelectItem, Button, Checkbox } from "carbon-components-svelte";
+  import "carbon-components-svelte/css/all.css";
+  import { Header, SkipToContent, Accordion, AccordionItem, Select, SelectItem, Button, Checkbox, HeaderUtilities, Theme, HeaderGlobalAction, Toggle } from "carbon-components-svelte";
   import { Slider } from "carbon-components-svelte";
   import { treeColor } from "./utils/treecolors";
 
   import "@carbon/charts/styles.css";
+
   import { defaultVisOptions, initializeChromosome, type VisOptions, type Chromosome } from "./utils/data-models";
   import ChromosomeItem from "./uiComponents/ChromosomeItem.svelte";
   import ChromatinVisualization from "./uiComponents/ChromatinVisualization.svelte";
@@ -26,10 +27,27 @@
   import Viewport2D from "./viewports/Viewport2D.svelte";
   import LoaderModal from "./uiComponents/LoaderModal.svelte";
   import InteractiveCluster from "./visalizations/InteractiveCluster.svelte";
+  import type { CarbonTheme } from "carbon-components-svelte/types/Theme/Theme.svelte";
 
   const adapter: Writable<GPUAdapter | null> = writable(null);
   const device: Writable<GPUDevice | null> = writable(null);
   const graphicsLibrary: Writable<Graphics.GraphicsLibrary | null> = writable(null);
+
+
+  let theme: CarbonTheme = "white";
+  let clearColor = {r: 1.0, g: 1.0,  b: 1.0,  a: 1.0};
+
+  function changeTheme(event: CustomEvent) {
+    const toggled = event.detail.toggled;
+
+    if (toggled) {
+      theme = "g90";
+      clearColor = {r: 0.0, g: 0.0,  b: 0.0,  a: 1.0};
+    } else {
+      theme = "white";
+      clearColor = {r: 1.0, g: 1.0,  b: 1.0,  a: 1.0};
+    }
+  }
 
   const clusteringWorker = new workerUrl();
 
@@ -149,17 +167,19 @@
 
 
 <main>
+  <Theme bind:theme />
+  
   <div class="ui">
     {#if selectedChromosome && selectedChromosome.points.length > 1}
       <Slider fullWidth min={0} max={selectedChromosome.points.length - 1} bind:value={chromosomeOptions[selectedChromosomeId].timestep} />
     {/if}
   </div>
 
-  <Splitpanes theme="chromoskein" horizontal={false}>
+  <Splitpanes theme="chromoskein" horizontal={false} style="padding-bottom:5%">
     {#if showDistanceMap}
       <Pane size={10}>
         {#if $adapter && $device && $graphicsLibrary && selectedChromosome}
-          <Viewport2D
+          <Viewport2D clearColor={clearColor}
             points={selectedChromosome.points[chromosomeOptions[selectedChromosomeId].timestep]}
           /> 
         {/if}
@@ -167,7 +187,7 @@
     {/if}
     <Pane size={75}>
       {#if $adapter && $device && $graphicsLibrary}
-        <Viewport3D bind:viewport>
+        <Viewport3D bind:viewport clearColor={clearColor}>
           {#if selectedChromosome}
             <ChromatinVisualization
               points={selectedChromosome.points}
@@ -195,7 +215,7 @@
       {/if}
     </Pane>
     <Pane size={25}>
-      <div style="padding: 8px; color:white; overflow: auto; height: calc(90vh);">
+      <div style="padding: 8px; overflow: auto; height: calc(90vh);">
         <Accordion>
           <AccordionItem open title="Visualisation Parameters">
             <Select size="sm" inline labelText="Model" bind:selected={selectedId} on:change={onSelectedChromosomeChanged}>
@@ -256,6 +276,14 @@
   <svelte:fragment slot="skip-to-content">
     <SkipToContent />
   </svelte:fragment>
+  <div style="position: fixed; right: 120px;">
+    <HeaderUtilities>
+      <Toggle labelText="Include" hideLabel on:toggle={(event) => changeTheme(event) }>
+        <span slot="labelA" style="color: white">Light theme</span>
+        <span slot="labelB" style="color: white">Dark theme</span>
+      </Toggle>
+    </HeaderUtilities>
+  </div>
 </Header>
 
 <style>
@@ -267,9 +295,6 @@
   .ui {
     position: fixed;
     z-index: 100;
-
-    color: white;
-    background: black;
 
     bottom: 0px;
     left: 0px;
