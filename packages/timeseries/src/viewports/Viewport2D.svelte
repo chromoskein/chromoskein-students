@@ -17,8 +17,8 @@
 
     //export let afterCameraUpdate = (camera: Graphics.OrbitCamera) => {};
   
-    $: if (viewport) {
-      viewport.clearColor = clearColor;
+    $: if ($viewportInner) {
+      $viewportInner.setClearColor(clearColor);
     }
 
     $: if ($viewportInner) {
@@ -38,7 +38,6 @@
   
       if ($graphicsLibrary) {
         $viewportInner = $graphicsLibrary.create2DViewport();
-        $viewportInner.clearColor = clearColor;
         //afterCameraUpdate($viewportInner.camera as Graphics.OrbitCamera);
       }
     }
