@@ -107,7 +107,7 @@
         {/if}  
       {/if}
 
-      {#if visType == VisualisationType.Hedgehog || visType == VisualisationType.AbstractSpheres || visType == VisualisationType.Cones}
+      {#if visType == VisualisationType.Hedgehog || visType == VisualisationType.AbstractSpheres || visType == VisualisationType.Cones || visType == VisualisationType.Composite}
         <Slider labelText="Size divider" fullWidth min={2} max={250} step={1} bind:value={ops.abstractionMultiplier} />
       {/if}
 

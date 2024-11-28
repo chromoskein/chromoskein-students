@@ -12,10 +12,12 @@ export class SphereSimplificationClusterVisualisation extends AbstractClusterVis
     private sphereID: number;
     private cluster: ClusterNode;
     private center: vec3 = vec3.fromValues(0, 0, 0);
+    private radiusMultiplier: number = 4.0;
 
     constructor(manager: CompositeClusters, cluster: ClusterNode, viewport: Viewport3D) {
         super(manager, cluster, viewport);
 
+        this.radiusMultiplier = manager.getOptions().abstractionMultiplier;
         [this.sphere, this.sphereID] = viewport.scene.addObject(Graphics.Sphere);
         this.updateCluster(cluster);
         this.setColor(cluster.color.rgb);
@@ -23,7 +25,10 @@ export class SphereSimplificationClusterVisualisation extends AbstractClusterVis
 
     
     public updateParameters(options: VisOptions) {
-        // Do nothing 
+        if (this.radiusMultiplier != options.abstractionMultiplier) {
+            this.radiusMultiplier = options.abstractionMultiplier;
+            this.updatePoints(this.manager.getPoints(), this.manager.getTimestep());
+        }
     }
 
     public updateCluster(cluster: ClusterNode) {
@@ -37,7 +42,7 @@ export class SphereSimplificationClusterVisualisation extends AbstractClusterVis
         let params = calculateSphereParameters(objectPoints)
         this.sphere.properties.center = [params.center[0], params.center[1], params.center[2]];
         this.center = params.center;
-        this.sphere.properties.radius = params.radius / 4.0;
+        this.sphere.properties.radius = params.radius / this.radiusMultiplier;
 
         this.sphere.setDirtyCPU();
     }

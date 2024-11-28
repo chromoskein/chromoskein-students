@@ -20,6 +20,7 @@ export class HedgehogClusterVisualisation extends AbstractClusterVisualisation {
     private secondPoint: boolean = false;
     private minDistance = 0.1;
     private precise: boolean = false;
+    private radiusMultiplier: number = 4.0;
 
     constructor(manager: CompositeClusters, cluster: ClusterNode, viewport: Viewport3D) {
         super(manager, cluster, viewport);
@@ -28,6 +29,7 @@ export class HedgehogClusterVisualisation extends AbstractClusterVisualisation {
         this.secondPoint = manager.getOptions().secondPoint;    
         this.threshold = manager.getOptions().hedgehogThreshold;    
         this.viewport = viewport;
+        this.radiusMultiplier = manager.getOptions().abstractionMultiplier;
 
         this.updateCluster(cluster);
         this.setColor(cluster.color.rgb);
@@ -43,6 +45,7 @@ export class HedgehogClusterVisualisation extends AbstractClusterVisualisation {
         this.precise = options.preciseQuills;
         this.secondPoint = options.secondPoint;        
         this.threshold = options.hedgehogThreshold;
+        this.radiusMultiplier = options.abstractionMultiplier;
         this.updatePoints(this.manager.getPoints(), this.manager.getTimestep());
         // Do nothing 
     }
@@ -52,7 +55,7 @@ export class HedgehogClusterVisualisation extends AbstractClusterVisualisation {
         let quills = [];
         let clusterPoints = pointsAtTimestep[selectedTimestep].slice(this.cluster.from, this.cluster.to + 1);
         let params = calculateSphereParameters(clusterPoints);
-        this.radius = params.radius / 6.0;
+        this.radius = params.radius / this.radiusMultiplier;
         this.center = params.center;
   
         let clusters: ClusterNode[] = this.manager.getClusters();

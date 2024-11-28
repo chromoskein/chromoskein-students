@@ -16,9 +16,11 @@ export class PCAClusterVisualisation extends AbstractClusterVisualisation {
     private coneDown: Graphics.RoundedCone;
     private coneDownID: number | null = null;
     private center: vec3 = vec3.fromValues(0, 0, 0);
+    private radiusMultiplier: number = 4.0;
 
     constructor(manager: CompositeClusters, cluster: ClusterNode, viewport: Viewport3D) {
         super(manager, cluster, viewport);
+        this.radiusMultiplier = manager.getOptions().abstractionMultiplier;
 
         [this.coneUp, this.coneUpID] = viewport.scene.addObject(Graphics.RoundedCone);
         this.coneUp.setDirtyCPU();
@@ -31,7 +33,10 @@ export class PCAClusterVisualisation extends AbstractClusterVisualisation {
     }
 
     public updateParameters(options: VisOptions) {
-        // Do nothing 
+        if (this.radiusMultiplier != options.abstractionMultiplier) {
+            this.radiusMultiplier = options.abstractionMultiplier;
+            this.updatePoints(this.manager.getPoints(), this.manager.getTimestep());
+        }
     }
 
     public updateCluster(cluster: ClusterNode) {
@@ -45,8 +50,8 @@ export class PCAClusterVisualisation extends AbstractClusterVisualisation {
 
         let result = PCA.getEigenVectors(blob.normalizedPoints);
         let firstPCVec = result[0].vector;
-        let firstPCVal =  result[0].eigenvalue / 10.0;
-        let secondPCVal = result[1].eigenvalue / 10.0;  
+        let firstPCVal =  result[0].eigenvalue / this.radiusMultiplier;
+        let secondPCVal = result[1].eigenvalue / this.radiusMultiplier;  
        
         this.coneUp.properties.start = [this.center[0], this.center[1], this.center[2]];
         this.coneUp.properties.end = [
