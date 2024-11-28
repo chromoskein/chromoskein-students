@@ -145,6 +145,7 @@ export type VisOptions = {
     secondPoint: boolean,
     outlines: boolean,
     abstractionMultiplier: number,
+    secondaryVis: VisualisationType,
 }
 
 export function defaultVisOptions() {
@@ -166,5 +167,6 @@ export function defaultVisOptions() {
         secondPoint: false,
         outlines: false,
         abstractionMultiplier: 4.0,
+        secondaryVis: VisualisationType.AbstractSpheres,
     }
 }

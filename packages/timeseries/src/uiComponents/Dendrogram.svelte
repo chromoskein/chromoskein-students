@@ -17,7 +17,7 @@
     export let update:boolean;
 
     function onDendrogramClick(depth, cluster) {
-        if (visualizationSelected == VisualisationType.Matryoshka) {
+        if (visualizationSelected == VisualisationType.Matryoshka || visualizationSelected == VisualisationType.Test) {
             dendrogramClickMatryoshka(depth);
         }
         else if (visualizationSelected == VisualisationType.Composite) {
@@ -111,7 +111,7 @@
                 style={`
                   width: ${100.0 * ((cluster.to - cluster.from + 1) / modelSize)}%;
                   background-color: rgb(${fetchColor(cluster, i, experimental)});
-                  border: 2px solid ${ (visualizationSelected == VisualisationType.Matryoshka && matryoshkaVisibility[clusterLevel]) || (visualizationSelected != VisualisationType.Matryoshka && blobsAmount == clusterLevel + 1) ? "white" : "black"}
+                  border: 2px solid ${((visualizationSelected == VisualisationType.Test || visualizationSelected == VisualisationType.Matryoshka) && matryoshkaVisibility[clusterLevel]) || (visualizationSelected != VisualisationType.Matryoshka && blobsAmount == clusterLevel + 1) ? "white" : "black"}
                 `}
               />
             {/each}

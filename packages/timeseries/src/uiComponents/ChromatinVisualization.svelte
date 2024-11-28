@@ -34,6 +34,7 @@
     let outlines: boolean = false;
     let showConnectors: boolean = false;
     let abstractionMultiplier: number = 2.0;
+    let secondaryVis: VisualisationType;
 
     $: options = ops;
     $: visType = ops.visType;
@@ -47,7 +48,7 @@
     $: outlines = ops.outlines;
     $: showConnectors = ops.showConnectors;
     $: abstractionMultiplier = ops.abstractionMultiplier;
-
+    $: secondaryVis = ops.secondaryVis;
 
     $: if (dataClustersGivenK) {
         ops.matryoshkaBlobsVisible = new Array(dataClustersGivenK.length - 1).fill(false);
@@ -268,6 +269,52 @@
             outline={true}
         />
         {/each} 
+    {/if}
+    {#if visType == VisualisationType.Test}
+        <MatryoshkaClusters
+            selectedTimestep={timestep}
+            dataClustersGivenK={dataClustersGivenK}
+            dataTimesteps={points}
+            dataPathlines={timestepsToPathlines(points)}
+            blobAlpha={alpha}
+            blobsRadius={radius}
+            experimentalColors={false}
+            matryoshkaBlobsVisible={ops.matryoshkaBlobsVisible} 
+            outlines={true}
+        />
+        {#if secondaryVis == VisualisationType.AbstractSpheres} 
+            {#each dataClustersGivenK[clustersAmount] as cluster, i}
+                <Sphere
+                    radius={clusterCenters[i].radius / abstractionMultiplier}
+                    center={clusterCenters[i].center}
+                    color={[dataClustersGivenK[clustersAmount][i].color.rgb[0], dataClustersGivenK[clustersAmount][i].color.rgb[1], dataClustersGivenK[clustersAmount][i].color.rgb[2], 1.0]}
+                />
+            {/each}
+        {/if}
+        {#if secondaryVis == VisualisationType.Cones}
+            {#each dataClustersGivenK[clustersAmount] as cluster, _}
+                <PcaCone 
+                    points={points[timestep].slice(cluster.from, cluster.to + 1)}
+                    radiusMultiplier={abstractionMultiplier}
+                    color={[cluster.color.rgb[0], cluster.color.rgb[1], cluster.color.rgb[2]]}
+                />
+            {/each} 
+        {/if}
+        {#if secondaryVis == VisualisationType.Hedgehog}
+            {#each dataClustersGivenK[clustersAmount] as cluster, i}
+                <Hedgehog
+                    points = {points[timestep]}
+                    clusters = {dataClustersGivenK[clustersAmount]}
+                    clusterID = {i}
+                    precise = {ops.preciseQuills}
+                    minDistance = {ops.hedgehogDistance}
+                    radiusMultiplier={abstractionMultiplier}
+                    secondPoint = {ops.secondPoint}
+                    threshold={ops.hedgehogThreshold}
+                    color={[dataClustersGivenK[clustersAmount][i].color.rgb[0], dataClustersGivenK[clustersAmount][i].color.rgb[1], dataClustersGivenK[clustersAmount][i].color.rgb[2]]}
+                />
+            {/each}
+        {/if}
     {/if}
     {/if}
 </div>

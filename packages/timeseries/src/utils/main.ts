@@ -453,7 +453,8 @@ export enum VisualisationType {
     AbstractSpheres = "AbstractSpheres",
     Cones = "Cones",
     Hedgehog = "Hedgehog",
-    Composite = "Composite"
+    Composite = "Composite",
+    Test = "Test"
   }
     // const bytes = new TextEncoder().encode(JSON.stringify(clustersGivenK));
     // const blob = new Blob([bytes], {
