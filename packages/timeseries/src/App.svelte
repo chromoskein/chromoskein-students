@@ -84,11 +84,15 @@
     const input = event.target as HTMLInputElement; 
     const json = input.files.item(0);
     let result: ClusterNode[][] = JSON.parse(await json.text());
-    treeColor(result);
+    const rootColor = result[1][0].color.rgb;
+    if (rootColor[0] == 1.0 && rootColor[1] == 1.0 && rootColor[2] == 1.0) {
+      treeColor(result);
+    }
     setNewClusters(result);
   }
 
   function setNewClusters(clusters: ClusterNode[][]) {
+    selectedChromosome.points = normalizePointClouds([selectedChromosome.points[0].slice(clusters[1][0].from, clusters[1][0].to)]);
     selectedChromosome.clusters = clusters;
     chromosomes[selectedChromosomeId].clusters = clusters;
     chromosomeOptions[selectedChromosomeId].blobsAmount = 1;
@@ -272,7 +276,7 @@
   </Splitpanes>
 </main>
 
-<Header company="Masaryk University" platformName="VisitLab" isSideNavOpen={true}>
+<Header company="Anonymous" platformName="---" isSideNavOpen={true}>
   <svelte:fragment slot="skip-to-content">
     <SkipToContent />
   </svelte:fragment>

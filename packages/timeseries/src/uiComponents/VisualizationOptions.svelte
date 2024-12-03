@@ -81,7 +81,7 @@
       </Select>
     {/if}
       
-    {#if visType == VisualisationType.Composite || visType == VisualisationType.Cones || visType == VisualisationType.AbstractSpheres}
+    {#if visType == VisualisationType.Composite || visType == VisualisationType.Cones || visType == VisualisationType.AbstractSpheres || visType == VisualisationType.Hedgehog}
       <Checkbox labelText="Show cluster connections" bind:checked={ops.showConnectors} on:check={(event) => {interactiveCluster?.setShowConnections(event.detail)}}/>
     {/if}
       <!-- {#if visType != VisualisationType.Composite && visType != VisualisationType.None && visType != VisualisationType.Volume && visType != VisualisationType.Matryoshka}
@@ -115,7 +115,7 @@
     {/if}
 
     {#if visType == VisualisationType.Hedgehog || visType == VisualisationType.AbstractSpheres || visType == VisualisationType.Cones || visType == VisualisationType.Composite || visType == VisualisationType.Test}
-      <Slider labelText="Size divider" fullWidth min={2} max={250} step={1} bind:value={ops.abstractionMultiplier} />
+      <Slider labelText="Size divider" fullWidth min={2} max={25} step={1} bind:value={ops.abstractionMultiplier} />
     {/if}
 
     {#if ops.visType == VisualisationType.Volume}
@@ -140,6 +140,7 @@
     {/if}
 
     <Checkbox labelText="Outlines" bind:checked={ops.outlines} />
+    <Checkbox labelText="Color Outlines" checked={false} />
 
     {#if dataClustersGivenK && dataClustersGivenK[1]}
       <Dendrogram

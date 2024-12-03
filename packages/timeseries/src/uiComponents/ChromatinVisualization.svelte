@@ -221,7 +221,7 @@
         {#each dataClustersGivenK[clustersAmount] as cluster, _}
             <PcaCone 
                 points={points[timestep].slice(cluster.from, cluster.to + 1)}
-                radiusMultiplier={abstractionMultiplier}
+                radiusMultiplier={abstractionMultiplier * 20}
                 color={[cluster.color.rgb[0], cluster.color.rgb[1], cluster.color.rgb[2]]}
             />
         {/each}

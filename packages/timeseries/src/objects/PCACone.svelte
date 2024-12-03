@@ -37,8 +37,8 @@
 
         let result = PCA.getEigenVectors(normalizedData.normalizedPoints);
         firstPCVec = result[0].vector;
-        firstPCVal =  result[0].eigenvalue / radiusMultiplier;
-        secondPCVal = result[1].eigenvalue / radiusMultiplier;
+        firstPCVal =  result[0].eigenvalue;
+        secondPCVal = result[1].eigenvalue;
     } 
 
 
@@ -57,22 +57,22 @@
 
       coneUp.properties.start = [center[0], center[1], center[2]];
       coneUp.properties.end = [
-        center[0] + firstPCVal * firstPCVec[0],
-        center[1] + firstPCVal * firstPCVec[1],
-        center[2] + firstPCVal * firstPCVec[2],
+        center[0] + firstPCVal / radiusMultiplier * firstPCVec[0],
+        center[1] + firstPCVal / radiusMultiplier * firstPCVec[1],
+        center[2] + firstPCVal / radiusMultiplier * firstPCVec[2],
       ];
-      coneUp.properties.startRadius = secondPCVal;
+      coneUp.properties.startRadius = secondPCVal / radiusMultiplier;
       coneUp.properties.endRadius = 0.0001;
       coneUp.properties.color = [color[0], color[1], color[2], 1.0];
       coneUp.setDirtyCPU();
 
       coneDown.properties.start = [center[0], center[1], center[2]];
       coneDown.properties.end = [
-        center[0] - firstPCVal * firstPCVec[0],
-        center[1] - firstPCVal * firstPCVec[1],
-        center[2] - firstPCVal * firstPCVec[2],
+        center[0] - firstPCVal / radiusMultiplier * firstPCVec[0],
+        center[1] - firstPCVal / radiusMultiplier * firstPCVec[1],
+        center[2] - firstPCVal / radiusMultiplier * firstPCVec[2],
       ];
-      coneDown.properties.startRadius = secondPCVal;
+      coneDown.properties.startRadius = secondPCVal / radiusMultiplier;
       coneDown.properties.endRadius = 0.0001;
       coneDown.properties.color = [color[0], color[1], color[2], 1.0];
       coneDown.setDirtyCPU();
