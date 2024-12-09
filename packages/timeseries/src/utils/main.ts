@@ -329,7 +329,7 @@ export function clusterPathlines(pathlines: vec3[][]): ClusterNode[][] {
         }
     }
     
-    return kClustersRanges;
+    return flattenClusters(kClustersRanges);
 }
 
 export function clusterTimestep(timestep: vec3[]): ClusterNode[][] {
@@ -346,7 +346,7 @@ export function clusterTimestep(timestep: vec3[]): ClusterNode[][] {
         for (let i = 0; i < kClusters.length; i++) {
             let min = Math.min(...kClusters[i]);
             let max = Math.max(...kClusters[i])
-            
+
             kClustersRanges[k][i] = {
                 k, i,
                 from: min,
@@ -371,6 +371,69 @@ export function clusterTimestep(timestep: vec3[]): ClusterNode[][] {
 
 export async function clusterTimestepAsync(timestep: vec3[]): Promise<ClusterNode[][]> {
     return clusterTimestep(timestep);
+}
+
+function flattenClusters(clusters: ClusterNode[][]) {
+    const minSize = (clusters[1][0].to - clusters[1][0].from) / 12.0;
+    let hierarchy = [[]];
+
+    flattenHierarchyRecursive(clusters, hierarchy, clusters[1][0], 1, 0, minSize);
+
+    for (let k = 1; k < hierarchy.length - 1; k++) {
+        hierarchy[k].forEach(cluster => {
+            if (cluster.children.length < 2) {
+                let i = hierarchy[k + 1].length;
+                hierarchy[k + 1].push({k: k + 1, i: i, from: cluster.from, to: cluster.to, color: [0, 0, 0], children: []})
+                cluster.children.push(i);
+            }
+        });
+    }
+
+    hierarchy.forEach(level => {
+        level.sort((a, b) => a.from - b.from);
+    });
+
+    console.log("New Hierarchy:", hierarchy)
+    return hierarchy;
+}
+
+function flattenHierarchyRecursive(clusters: ClusterNode[][], hierarchy: ClusterNode[][], currentCluster: ClusterNode, k: number, i: number, minSize: number) {
+    // Create a new level of hierarchy in case it is needed
+    if (hierarchy.length - 1 < k) {
+        hierarchy.push([]);
+    }
+
+    // Push yourself into the hierarchy
+    const newCluster: ClusterNode = {k: k, i: i, from: currentCluster.from, to: currentCluster.to, color: [0, 0, 0], children: []};
+    hierarchy[k].push(newCluster);
+
+    // Break loop if clusters get too small
+    if (newCluster.to - newCluster.from + 1 < minSize) return;
+
+    // Flattening is needed if there is only a single child
+    if (currentCluster.children.length == 1) {
+        let k_i = currentCluster.k;
+        let i_i = currentCluster.i;
+        while (clusters[k_i][i_i].children.length == 1) {
+            i_i = clusters[k_i][i_i].children[0];
+            k_i++;
+        }
+
+        // Calculate at which index to place the children in the next level of hierarchy
+        let child_idx = (hierarchy.length - 1 < k + 1) ? 0 : hierarchy[k + 1].length;
+        for (let child = 0; child < clusters[k_i][i_i].children.length; child++) {
+            flattenHierarchyRecursive(clusters, hierarchy, clusters[k_i + 1][clusters[k_i][i_i].children[child]], k + 1, child_idx, minSize);
+            newCluster.children.push(child_idx);
+            child_idx++;
+        }
+    } else if (currentCluster.children.length > 1) {
+        let child_idx = (hierarchy.length - 1 < k + 1) ? 0 : hierarchy[k + 1].length;
+        for (let child = 0; child < currentCluster.children.length; child++) {
+            flattenHierarchyRecursive(clusters, hierarchy, clusters[k + 1][currentCluster.children[child]], k + 1, child_idx, minSize);
+            newCluster.children.push(child_idx);
+            child_idx++;
+        }
+    }
 }
 
 export type ClusterBlob = {
