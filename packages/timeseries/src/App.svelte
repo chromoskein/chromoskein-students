@@ -5,14 +5,13 @@
   import { writable, type Writable } from "svelte/store";
   import * as Graphics from "@chromoskein/lib-graphics";
   import Viewport3D from "./viewports/Viewport3D.svelte";
-  import { vec3 } from "gl-matrix";
   import "./styles/splitpanes.css";
   import { Pane, Splitpanes } from "svelte-splitpanes";
 
-  import { loadTimesteps, normalizePointClouds, timestepsToPathlines, loadBitmap, clusterPathlines, type ClusterNode } from "./utils/main";
+  import { loadTimesteps, normalizePointClouds, loadBitmap, type ClusterNode } from "./utils/main";
 
   import "carbon-components-svelte/css/all.css";
-  import { Header, SkipToContent, Accordion, AccordionItem, Select, SelectItem, Button, Checkbox, HeaderUtilities, Theme, HeaderGlobalAction, Toggle } from "carbon-components-svelte";
+  import { Header, SkipToContent, Accordion, AccordionItem, Select, SelectItem, Button, Checkbox, HeaderUtilities, Theme, Toggle } from "carbon-components-svelte";
   import { Slider } from "carbon-components-svelte";
   import { treeColor } from "./utils/treecolors";
 
@@ -49,18 +48,17 @@
     }
   }
 
-  const clusteringWorker = new workerUrl();
-
-  clusteringWorker.onmessage = (event) => {
-    console.log("Worker sent a message", event);
+  const clusteringWorker: Worker = new workerUrl();
+  clusteringWorker.onmessage = (event: MessageEvent) => {
+    selectedChromosome.clusters = event.data;
+    chromosomes[selectedChromosomeId].clusters = event.data;
   };
 
-  clusteringWorker.onerror = (error) => {
-    console.error("Worker error:", error);
-  };
+  clusteringWorker.onerror = (event: Event) => {
+    console.log("Worker error:", event);
+  }
 
   let viewport: Graphics.Viewport3D | null = null;
-
   let loadedChromosomes: Chromosome[] = [];
 
   $: if (loadedChromosomes) {
@@ -100,7 +98,7 @@
 
   function foo() {
     console.log("Starting worker");
-    clusteringWorker.postMessage("start");
+    clusteringWorker.postMessage(selectedChromosome.points);
   }
 
   //#endregion Data
@@ -124,15 +122,12 @@
     const filenames: string[] = new Array(600).fill(null).map((v, i) => "./timeseries/timestep_" + (i + 1).toString() + ".XYZ");
     const timesteps = await loadTimesteps(filenames);
     const dataTimesteps = normalizePointClouds(timesteps);
-    const dataPathlines = timestepsToPathlines(dataTimesteps);
-    const staticDataClustersGivenK = await clusterPathlines(dataPathlines).slice(0, 16);
 
     let baseChromosome = initializeChromosome("Base", dataTimesteps);
     chromosomeOptions = [defaultVisOptions()]
-    baseChromosome.clusters = staticDataClustersGivenK;
-    treeColor(staticDataClustersGivenK);
     chromosomes = [baseChromosome]
     selectedChromosome = baseChromosome;
+    clusteringWorker.postMessage(selectedChromosome.points);
   });
   //#endregion Init
 
@@ -251,7 +246,7 @@
             >  
                 Upload Clusters
             </Button>
-            <!-- <Button on:click={() => { console.log("I am clicked!!!"); foo() }}> Click Me </Button> -->
+            <Button on:click={() => { console.log("I am clicked!!!"); foo() }}> Click Me </Button>
           </AccordionItem>
 
           <AccordionItem title="Data Loading">

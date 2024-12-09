@@ -1,7 +1,20 @@
-self.onmessage = (event) => {
-    let j = 0;
-    for (let i = 0; i < 10000000000; i++) {
-      j += i;
+import type { vec3 } from "gl-matrix";
+import { clusterPathlines, clusterTimestep, type ClusterNode } from "./main";
+import { treeColor } from "./treecolors";
+
+self.onmessage = (event: MessageEvent) => {
+    const pointTimesteps: vec3[][] = event.data;
+    console.log("Started", event.data);
+
+    let clusters: ClusterNode[][] = null;
+    // If there is more than a single timestep cluster it as pathlines
+    if (pointTimesteps.length > 1) {
+        clusters = clusterPathlines(pointTimesteps).slice(0, 16);
+    } else {
+        clusters = clusterTimestep(pointTimesteps[0]).slice(0, 16);
+        console.log(clusters);
     }
-    self.postMessage("Finished cycles");
+    treeColor(clusters);
+    console.log("Ended");
+    self.postMessage(clusters);
 };
