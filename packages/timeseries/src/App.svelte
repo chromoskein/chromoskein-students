@@ -96,11 +96,6 @@
     chromosomeOptions[selectedChromosomeId].blobsAmount = 1;
   }
 
-  function foo() {
-    console.log("Starting worker");
-    clusteringWorker.postMessage(selectedChromosome.points);
-  }
-
   //#endregion Data
 
   //#region Init
@@ -241,12 +236,12 @@
             <input type="file"  accept=".json" id="clustering-input" on:change={(event) => loadClustering(event)}/>
             <Button
                 kind="secondary"
-                size="field"
+                size="small"
                 on:click={() => { document.getElementById("clustering-input").click()}}
             >  
                 Upload Clusters
             </Button>
-            <Button on:click={() => { console.log("I am clicked!!!"); foo() }}> Click Me </Button>
+            <Button size="small" on:click={() => { clusteringWorker.postMessage(selectedChromosome.points) }}> Cluster </Button>
           </AccordionItem>
 
           <AccordionItem title="Data Loading">

@@ -71,7 +71,6 @@
             // Update the from and to indexes of data based on filtering done in selection
             let indexStart = 0;
             for (let i = 0; i < filteredData.length; i++) {
-                console.log("From: " + filteredData[i].from + " To: "+ filteredData[i].to + " Length: " + modelPoints[i].length);
                 filteredData[i].from = indexStart;
                 filteredData[i].to = indexStart + modelPoints[i].length - 1;
                 indexStart = indexStart + modelPoints[i].length;
@@ -79,14 +78,17 @@
 
             let chromosome = initializeChromosome("Chromosome", [concatPoints]);
             let clusters = [[], [getEmptyClustering(points.length - 1)]]
-            let modelClusterIndices = [];
-            let modelClusters = [];
-            filteredData.forEach((model, index) => {
-                modelClusters.push(getClustering(model.from, model.to, 2, index));
-                modelClusterIndices.push(index);
-            });
-            clusters[1][0].children = modelClusterIndices;
-            clusters.push(modelClusters);
+            // Dont create a second hierarchy level if only a single model is selected
+            if (filteredData.length > 1) {
+                let modelClusterIndices = [];
+                let modelClusters = [];
+                filteredData.forEach((model, index) => {
+                    modelClusters.push(getClustering(model.from, model.to, 2, index));
+                    modelClusterIndices.push(index);
+                });
+                clusters[1][0].children = modelClusterIndices;
+                clusters.push(modelClusters);
+            }
 
             chromosome.clusters = clusters;
             chromosomes = [chromosome];
