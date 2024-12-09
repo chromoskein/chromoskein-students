@@ -82,7 +82,7 @@
     const input = event.target as HTMLInputElement; 
     const json = input.files.item(0);
     let result: ClusterNode[][] = JSON.parse(await json.text());
-    const rootColor = result[1][0].color.rgb;
+    const rootColor = result[1][0].color;
     if (rootColor[0] == 1.0 && rootColor[1] == 1.0 && rootColor[2] == 1.0) {
       treeColor(result);
     }

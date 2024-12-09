@@ -40,7 +40,7 @@
         if (experimental) { 
             color = [255 * staticColors[i % staticColors.length][0], 255 * staticColors[i % staticColors.length][1], 255 * staticColors[i % staticColors.length][2]];
         } else {
-            color = [255 * cluster.color.rgb[0], 255 * cluster.color.rgb[1], 255 * cluster.color.rgb[2]]
+            color = [255 * cluster.color[0], 255 * cluster.color[1], 255 * cluster.color[2]]
         }
         return color[0] + " " + color[1] + " " + color[2];
     }
@@ -129,7 +129,7 @@
                     style={`
                         width: ${100.0 * ((cluster.to - cluster.from + 1) / modelSize)}%;
                         background-color: rgb(${fetchColor(cluster, i, experimental)});
-                        border: 2px solid ${cluster.visible ? "white" : "black"}
+                        border: 2px solid black
                     `}
                 />
                 {/each}

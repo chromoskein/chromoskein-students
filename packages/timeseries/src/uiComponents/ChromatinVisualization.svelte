@@ -119,7 +119,7 @@
             usecolormap={true}
             func={volumeFunction}
             abstract={abstractVolumes}
-            color={cluster.color.rgb}
+            color={cluster.color}
         />
     {/each}
     {/if}
@@ -129,7 +129,7 @@
             <ContinuousTube
                 points={points[timestep].slice(cluster.from, cluster.to + 1)}
                 radius={radius}
-                color={vec3.fromValues(cluster.color.rgb[0], cluster.color.rgb[1], cluster.color.rgb[2])}
+                color={vec3.fromValues(cluster.color[0], cluster.color[1], cluster.color[2])}
                 multicolored={false}
             />
         {/each}
@@ -140,7 +140,7 @@
             <Spline
                 points={points[timestep].slice(cluster.from, cluster.to + 1)}
                 radius={radius}
-                color={vec3.fromValues(cluster.color.rgb[0], cluster.color.rgb[1], cluster.color.rgb[2])}
+                color={vec3.fromValues(cluster.color[0], cluster.color[1], cluster.color[2])}
                 multicolored={false}
             />
         {/each}
@@ -152,7 +152,7 @@
                 <Sphere
                     radius={radius}
                     center={point}
-                    color={[cluster.color.rgb[0], cluster.color.rgb[1], cluster.color.rgb[2], 1.0]} 
+                    color={[cluster.color[0], cluster.color[1], cluster.color[2], 1.0]} 
                 />
             {/each}
         {/each}
@@ -195,7 +195,7 @@
             scale={blob.scale}
             radius={radius}
             visible={true}
-            color={vec3.fromValues(dataClustersGivenK[clustersAmount][i].color.rgb[0], dataClustersGivenK[clustersAmount][i].color.rgb[1], dataClustersGivenK[clustersAmount][i].color.rgb[2])}
+            color={vec3.fromValues(dataClustersGivenK[clustersAmount][i].color[0], dataClustersGivenK[clustersAmount][i].color[1], dataClustersGivenK[clustersAmount][i].color[2])}
             outline={false}
         />
     {/each}
@@ -205,7 +205,7 @@
             <Sphere
                 radius={clusterCenters[i].radius / abstractionMultiplier}
                 center={clusterCenters[i].center}
-                color={[dataClustersGivenK[clustersAmount][i].color.rgb[0], dataClustersGivenK[clustersAmount][i].color.rgb[1], dataClustersGivenK[clustersAmount][i].color.rgb[2], 1.0]}
+                color={[dataClustersGivenK[clustersAmount][i].color[0], dataClustersGivenK[clustersAmount][i].color[1], dataClustersGivenK[clustersAmount][i].color[2], 1.0]}
             />
         {/each}
         {#if showConnectors && clustersAmount > 1}
@@ -222,7 +222,7 @@
             <PcaCone 
                 points={points[timestep].slice(cluster.from, cluster.to + 1)}
                 radiusMultiplier={abstractionMultiplier * 20}
-                color={[cluster.color.rgb[0], cluster.color.rgb[1], cluster.color.rgb[2]]}
+                color={[cluster.color[0], cluster.color[1], cluster.color[2]]}
             />
         {/each}
         {#if showConnectors && clustersAmount > 1}
@@ -245,7 +245,7 @@
                 radiusMultiplier={abstractionMultiplier}
                 secondPoint = {ops.secondPoint}
                 threshold={ops.hedgehogThreshold}
-                color={[dataClustersGivenK[clustersAmount][i].color.rgb[0], dataClustersGivenK[clustersAmount][i].color.rgb[1], dataClustersGivenK[clustersAmount][i].color.rgb[2]]}
+                color={[dataClustersGivenK[clustersAmount][i].color[0], dataClustersGivenK[clustersAmount][i].color[1], dataClustersGivenK[clustersAmount][i].color[2]]}
             />
         {/each}
         {#if showConnectors && clustersAmount > 1}
@@ -265,7 +265,7 @@
             scale={blob.scale}
             radius={radius}
             visible={true}
-            color={vec3.fromValues(dataClustersGivenK[clustersAmount][i].color.rgb[0], dataClustersGivenK[clustersAmount][i].color.rgb[1], dataClustersGivenK[clustersAmount][i].color.rgb[2])}
+            color={vec3.fromValues(dataClustersGivenK[clustersAmount][i].color[0], dataClustersGivenK[clustersAmount][i].color[1], dataClustersGivenK[clustersAmount][i].color[2])}
             outline={true}
         />
         {/each} 
@@ -287,7 +287,7 @@
                 <Sphere
                     radius={clusterCenters[i].radius / abstractionMultiplier}
                     center={clusterCenters[i].center}
-                    color={[dataClustersGivenK[clustersAmount][i].color.rgb[0], dataClustersGivenK[clustersAmount][i].color.rgb[1], dataClustersGivenK[clustersAmount][i].color.rgb[2], 1.0]}
+                    color={[dataClustersGivenK[clustersAmount][i].color[0], dataClustersGivenK[clustersAmount][i].color[1], dataClustersGivenK[clustersAmount][i].color[2], 1.0]}
                 />
             {/each}
         {/if}
@@ -296,7 +296,7 @@
                 <PcaCone 
                     points={points[timestep].slice(cluster.from, cluster.to + 1)}
                     radiusMultiplier={abstractionMultiplier}
-                    color={[cluster.color.rgb[0], cluster.color.rgb[1], cluster.color.rgb[2]]}
+                    color={[cluster.color[0], cluster.color[1], cluster.color[2]]}
                 />
             {/each} 
         {/if}
@@ -311,7 +311,7 @@
                     radiusMultiplier={abstractionMultiplier}
                     secondPoint = {ops.secondPoint}
                     threshold={ops.hedgehogThreshold}
-                    color={[dataClustersGivenK[clustersAmount][i].color.rgb[0], dataClustersGivenK[clustersAmount][i].color.rgb[1], dataClustersGivenK[clustersAmount][i].color.rgb[2]]}
+                    color={[dataClustersGivenK[clustersAmount][i].color[0], dataClustersGivenK[clustersAmount][i].color[1], dataClustersGivenK[clustersAmount][i].color[2]]}
                 />
             {/each}
         {/if}

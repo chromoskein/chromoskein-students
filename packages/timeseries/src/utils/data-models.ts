@@ -94,16 +94,8 @@ export function getClustering(from: number, to: number, k: number, i: number) {
         i: i,
         from: from,
         to: to,
-        delimiters: [],
         children: [],
-        points: [],
-        visible: true,
-        color: {
-            h: 0,
-            c: 0,
-            l: 0,
-            rgb: [Math.random(), Math.random(), Math.random()]
-        }
+        color: [Math.random(), Math.random(), Math.random()]
     }
 }
 
@@ -113,16 +105,8 @@ export function getEmptyClustering(length: number): ClusterNode {
         i: 0,
         from: 0,
         to: length,
-        delimiters: [],
         children: [],
-        points: [],
-        visible: true,
-        color: {
-            h: 0,
-            c: 0,
-            l: 0,
-            rgb: [Math.random(), Math.random(), Math.random()]
-        }
+        color:[Math.random(), Math.random(), Math.random()]
     }
 }
 

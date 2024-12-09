@@ -30,12 +30,7 @@ function getChildren(root: ClusterNode[][], node: ClusterNode): ClusterNode[] {
 function setColor(node: ClusterNode, c: { h: number, c: number, l: number }) {
   const rgb = chroma.hcl(c.h, c.c, c.l);
 
-  node[color] = {
-    h: c.h,
-    c: c.c,
-    l: c.l,
-    rgb: rgb.gl().slice(0, 3)
-  };
+  node[color] = rgb.gl().slice(0, 3);
 }
 
 function doPermutation(r) {
