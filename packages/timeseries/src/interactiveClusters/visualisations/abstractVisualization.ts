@@ -16,7 +16,7 @@ export abstract class AbstractClusterVisualisation {
 
     constructor(manager: CompositeClusters, cluster: ClusterNode, viewport: Viewport3D) {
         this.manager = manager;
-        this.color = cluster.color.rgb;
+        this.color = cluster.color;
     }
     
     /**

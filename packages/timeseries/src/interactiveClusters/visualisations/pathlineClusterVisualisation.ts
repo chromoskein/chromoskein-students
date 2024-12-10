@@ -50,7 +50,7 @@ export class PathlineClusterVisualization extends AbstractClusterVisualisation {
                 clusterPoints.length
             );
             this.n_instances = clusterPoints.length;
-            this.setColor(this.cluster.color.rgb);
+            this.setColor(this.cluster.color);
         }
 
         for (let i = 0; i < clusterPoints.length - 1; i++) {

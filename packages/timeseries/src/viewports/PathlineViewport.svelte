@@ -61,7 +61,7 @@
 
     // console.log(BoundingBoxFromPoints(pathlines[0]));
 
-    colors = [parentCluster.color.rgb, ...childClusters.map((c) => c.color.rgb)];
+    colors = [parentCluster.color, ...childClusters.map((c) => c.color)];
   }
 
   let normalizedPathlines: vec3[][] | null = null;

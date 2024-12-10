@@ -32,7 +32,7 @@ export class HedgehogClusterVisualisation extends AbstractClusterVisualisation {
         this.radiusMultiplier = manager.getOptions().abstractionMultiplier;
 
         this.updateCluster(cluster);
-        this.setColor(cluster.color.rgb);
+        this.setColor(cluster.color);
     }
 
     public updateCluster(cluster: ClusterNode) {
@@ -99,7 +99,7 @@ export class HedgehogClusterVisualisation extends AbstractClusterVisualisation {
             this.sphere.setDirtyCPU();
           }
 
-        this.setColor(this.cluster.color.rgb);
+        this.setColor(this.cluster.color);
     }
 
     public eventUpdate(pointsAtTimestep: vec3[][], selectedTimestep: number): void {

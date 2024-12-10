@@ -24,7 +24,7 @@ export class SDGClusterVisualisation extends AbstractClusterVisualisation {
         this.sdgObject.setDirtyCPU();
 
         this.updateCluster(cluster);
-        this.setColor(cluster.color.rgb);
+        this.setColor(cluster.color);
     }
 
     

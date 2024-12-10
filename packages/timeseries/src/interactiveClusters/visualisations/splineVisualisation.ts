@@ -52,7 +52,7 @@ export class SplineClusterVisualisation extends AbstractClusterVisualisation {
                 spline.length
             );
             this.n_instances = spline.length;
-            this.setColor(this.cluster.color.rgb);
+            this.setColor(this.cluster.color);
         }
         
 

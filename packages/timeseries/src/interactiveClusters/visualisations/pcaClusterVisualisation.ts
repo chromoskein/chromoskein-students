@@ -29,7 +29,7 @@ export class PCAClusterVisualisation extends AbstractClusterVisualisation {
         this.coneDown.setDirtyCPU();
 
         this.updateCluster(cluster);
-        this.setColor(cluster.color.rgb);
+        this.setColor(cluster.color);
     }
 
     public updateParameters(options: VisOptions) {

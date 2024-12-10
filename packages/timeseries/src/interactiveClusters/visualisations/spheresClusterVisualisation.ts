@@ -52,7 +52,7 @@ export class SpheresClusterVisualization extends AbstractClusterVisualisation {
                 this.sphereIDs.push(sphereID);
             }
             this.n_instances = clusterPoints.length;
-            this.setColor(this.cluster.color.rgb);
+            this.setColor(this.cluster.color);
         }
 
         for (let i = 0; i < clusterPoints.length; i++) {

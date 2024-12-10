@@ -20,7 +20,7 @@ export class AbstractVolumeClusterVisualisation extends AbstractClusterVisualisa
         this.updateCluster(cluster);
         this.volumeUnit.transparency = 0.3;
         this.volumeUnit.func = 0;
-        this.setColor(this.cluster.color.rgb);
+        this.setColor(this.cluster.color);
     }
 
     public updateCluster(cluster: ClusterNode) {

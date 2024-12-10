@@ -67,7 +67,7 @@
                 changed = true;
 
                 clusterPoints.push(dataPathlines.slice(cluster.from, cluster.to + 1));
-                matryoshkaColors.push(cluster.color.rgb);
+                matryoshkaColors.push(cluster.color);
                 matryoshkaRadius.push(radiusOffset);
                 matryoshkaBlobDepth.push(depth);
                 matryoshkaOutline.push(lowest)

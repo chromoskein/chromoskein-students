@@ -20,7 +20,7 @@ export class SphereSimplificationClusterVisualisation extends AbstractClusterVis
         this.radiusMultiplier = manager.getOptions().abstractionMultiplier;
         [this.sphere, this.sphereID] = viewport.scene.addObject(Graphics.Sphere);
         this.updateCluster(cluster);
-        this.setColor(cluster.color.rgb);
+        this.setColor(cluster.color);
     }
 
     
