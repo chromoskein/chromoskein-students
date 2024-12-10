@@ -318,10 +318,13 @@ export function clusterPathlines(pathlines: vec3[][]): ClusterNode[][] {
                 children: [],
             };
         }
-        kClustersRanges[k].sort((a, b) => a.from - b.from);
-        kClustersRanges[k].forEach((c, i) => c.i = i);
+        // This is unnecessary because cluters remain sorted when clustering sequentially
+        //kClustersRanges[k].sort((a, b) => a.from - b.from);
+        //kClustersRanges[k].forEach((c, i) => c.i = i);
     }
     
+    // Retain only the top 50 levels of hierarchy
+    kClustersRanges.splice(50, kClustersRanges.length);
     for (const [k, kClusters] of kClustersRanges.entries()) {
         if (k >= kClustersRanges.length - 1) break;
         for (const [i, cluster] of kClusters.entries()) {
@@ -355,10 +358,13 @@ export function clusterTimestep(timestep: vec3[]): ClusterNode[][] {
                 children: [],
             };
         }
+        // This is unnecessary because cluters remain sorted when clustering sequentially
         kClustersRanges[k].sort((a, b) => a.from - b.from);
         kClustersRanges[k].forEach((c, i) => c.i = i);
     }
     
+    // Retain only the top 50 levels of hierarchy
+    kClustersRanges.splice(50, kClustersRanges.length);
     for (const [k, kClusters] of kClustersRanges.entries()) {
         if (k >= kClustersRanges.length - 1) break;
         for (const [i, cluster] of kClusters.entries()) {
@@ -366,7 +372,7 @@ export function clusterTimestep(timestep: vec3[]): ClusterNode[][] {
         }
     }
     
-    return kClustersRanges;
+    return flattenClusters(kClustersRanges);
 }
 
 export async function clusterTimestepAsync(timestep: vec3[]): Promise<ClusterNode[][]> {
@@ -393,7 +399,6 @@ function flattenClusters(clusters: ClusterNode[][]) {
         level.sort((a, b) => a.from - b.from);
     });
 
-    console.log("New Hierarchy:", hierarchy)
     return hierarchy;
 }
 
@@ -410,30 +415,33 @@ function flattenHierarchyRecursive(clusters: ClusterNode[][], hierarchy: Cluster
     // Break loop if clusters get too small
     if (newCluster.to - newCluster.from + 1 < minSize) return;
 
+    if (currentCluster.children.length == 0)  return;
+
     // Flattening is needed if there is only a single child
+    let k_i = currentCluster.k;
+    let i_i = currentCluster.i;
     if (currentCluster.children.length == 1) {
-        let k_i = currentCluster.k;
-        let i_i = currentCluster.i;
-        while (clusters[k_i][i_i].children.length == 1) {
+        while (clusters[k_i][i_i] && clusters[k_i][i_i].children.length == 1) {
+            if (clusters[k_i][i_i] == null || clusters[k_i][i_i].children.length == 0) {
+                return;
+            }
+
             i_i = clusters[k_i][i_i].children[0];
             k_i++;
         }
+    } 
 
-        // Calculate at which index to place the children in the next level of hierarchy
-        let child_idx = (hierarchy.length - 1 < k + 1) ? 0 : hierarchy[k + 1].length;
-        for (let child = 0; child < clusters[k_i][i_i].children.length; child++) {
-            flattenHierarchyRecursive(clusters, hierarchy, clusters[k_i + 1][clusters[k_i][i_i].children[child]], k + 1, child_idx, minSize);
-            newCluster.children.push(child_idx);
-            child_idx++;
-        }
-    } else if (currentCluster.children.length > 1) {
-        let child_idx = (hierarchy.length - 1 < k + 1) ? 0 : hierarchy[k + 1].length;
-        for (let child = 0; child < currentCluster.children.length; child++) {
-            flattenHierarchyRecursive(clusters, hierarchy, clusters[k + 1][currentCluster.children[child]], k + 1, child_idx, minSize);
-            newCluster.children.push(child_idx);
-            child_idx++;
-        }
+    // End recursion if there are no more levels in the hierarchy
+    if (k_i + 1 > clusters.length - 1) {
+        return;
     }
+    
+    let child_idx = (hierarchy.length - 1 < k + 1) ? 0 : hierarchy[k + 1].length;
+    for (let child = 0; child < clusters[k_i][i_i].children.length; child++) {
+        flattenHierarchyRecursive(clusters, hierarchy, clusters[k_i + 1][clusters[k_i][i_i].children[child]], k + 1, child_idx, minSize);
+        newCluster.children.push(child_idx);
+        child_idx++;
+    } 
 }
 
 export type ClusterBlob = {
