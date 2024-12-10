@@ -177,8 +177,7 @@ export const euclideanDistance = (a, b) => {
     
         // initialize smallest distance
         let nearestDistance = Infinity;
-        let nearestRow = 0;
-        let nearestCol = 0;
+        let nearest = 0;
 
         // upper triangular matrix of clusters
         for (let row = 0; row < clusters.length - 1; row++) {
@@ -189,44 +188,43 @@ export const euclideanDistance = (a, b) => {
           // update smallest distance
           if (distance < nearestDistance) {
             nearestDistance = distance;
-            nearestRow = row;
-            nearestCol = col;
+            nearest = row;
           }
         }
 
         // merge nearestRow and nearestCol clusters together
         const newCluster = {
           indexes: [
-            ...clusters[nearestRow].indexes,
-            ...clusters[nearestCol].indexes
+            ...clusters[nearest].indexes,
+            ...clusters[nearest + 1].indexes
           ],
           height: nearestDistance,
-          children: [clusters[nearestRow], clusters[nearestCol]]
+          children: [clusters[nearest], clusters[nearest + 1]]
         };
         
         if (clusters.length == 2) {
           // Base case when only two clusters remain --(AB)--
           clusterDistnaces = [0]
         }
-        else if (nearestRow == 0) {
+        else if (nearest == 0) {
           // Splicing the first cluster at start --A(BC)
-          const rightDistance = linkage(clusters[nearestCol + 1].indexes, newCluster.indexes, distances); // This is dist (BC)D
-          clusterDistnaces.splice(nearestRow, 2, rightDistance);
+          const rightDistance = linkage(clusters[nearest + 2].indexes, newCluster.indexes, distances); // This is dist (BC)D
+          clusterDistnaces.splice(nearest, 2, rightDistance);
         }
-        else if (nearestCol == clusters.length - 1) {
+        else if (nearest + 1 == clusters.length - 1) {
           // Splicing the last cluster at end A(BC)--
-          const leftDistance = linkage(clusters[nearestRow - 1].indexes, newCluster.indexes, distances); // This is dist A(BC)
-          clusterDistnaces.splice(nearestRow - 1, 2, leftDistance);
+          const leftDistance = linkage(clusters[nearest - 1].indexes, newCluster.indexes, distances); // This is dist A(BC)
+          clusterDistnaces.splice(nearest - 1, 2, leftDistance);
         }
-        else if (nearestRow != 0 && nearestRow != clusters.length - 2 && clusters.length != 2) {
+        else {
           // Inner splice in situation A(BC)D
-          const leftDistance = linkage(clusters[nearestRow - 1].indexes, newCluster.indexes, distances); // This is dist A(BC)
-          const rightDistance = linkage(clusters[nearestCol + 1].indexes, newCluster.indexes, distances); // This is dist (BC)D
-          clusterDistnaces.splice(nearestRow - 1, 3, leftDistance, rightDistance);
+          const leftDistance = linkage(clusters[nearest - 1].indexes, newCluster.indexes, distances); // This is dist A(BC)
+          const rightDistance = linkage(clusters[nearest + 2].indexes, newCluster.indexes, distances); // This is dist (BC)D
+          clusterDistnaces.splice(nearest - 1, 3, leftDistance, rightDistance);
         }
     
         // Remove the original clusters and insert the new cluster in their place
-        clusters.splice(Math.min(nearestRow, nearestCol), 2, newCluster);
+        clusters.splice(nearest, 2, newCluster);
       }
     
       // assemble full list of tree slices into array where index = k
