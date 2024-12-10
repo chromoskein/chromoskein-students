@@ -1,6 +1,4 @@
 import { vec3, vec4 } from "gl-matrix";
-import { marchingCubes } from 'marching-cubes-fast';
-import { deindexTriangles_meshView } from 'triangles-index';
 
 import { CsvDelimiter, parseXyz } from "lib-dataloader";
 import { clusterData, clusterDataSequential } from "./hclust";
@@ -74,6 +72,8 @@ function sampleGrid(
         tx * ty * tz * c111;
 }
 
+/* import { marchingCubes } from 'marching-cubes-fast';
+import { deindexTriangles_meshView } from 'triangles-index';
 export function signedDistanceGridToMesh(
     signedDistanceGrid: Float32Array,
     gridSize: number = 64,
@@ -116,7 +116,7 @@ export function signedDistanceGridToMesh(
     }
 
     return vertices;
-}
+} */
 
 export async function loadTimesteps(filenames: string[]): Promise<vec3[][]> {
     const result: vec3[][] = [];

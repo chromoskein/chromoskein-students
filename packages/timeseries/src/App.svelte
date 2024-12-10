@@ -15,8 +15,6 @@
   import { Slider } from "carbon-components-svelte";
   import { treeColor } from "./utils/treecolors";
 
-  import "@carbon/charts/styles.css";
-
   import { defaultVisOptions, initializeChromosome, type VisOptions, type Chromosome } from "./utils/data-models";
   import ChromosomeItem from "./uiComponents/ChromosomeItem.svelte";
   import ChromatinVisualization from "./uiComponents/ChromatinVisualization.svelte";
