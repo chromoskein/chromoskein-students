@@ -84,7 +84,7 @@ export class PathlineClusterVisualization extends AbstractClusterVisualisation {
         }
     }
 
-    public rayIntersection(ray: Graphics.Ray): Graphics.Intersection {
+    public rayIntersection(ray: Graphics.Ray): Graphics.Intersection | null {
         return this.pathline.rayIntersection(ray);
     }
     

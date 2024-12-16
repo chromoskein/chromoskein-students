@@ -23,13 +23,13 @@
     let coneDown: RoundedCone;
     let coneDownID: number | null = null;
 
-    function keepIfNull(objectID) {
-      if (objectID != null) {
-        $viewport.scene.removeObjectByID(objectID);
+    function keepIfNull(objectID: number | null) {
+      if ($viewport && $viewport.scene && objectID != null) {
+        $viewport.scene?.removeObjectByID(objectID);
       }
     }
   
-    $: if ($viewport) {
+    $: if ($viewport && $viewport.scene) {
       keepIfNull(tubeID);
       keepIfNull(coneUpID);
       keepIfNull(coneDownID);

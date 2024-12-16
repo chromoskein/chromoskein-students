@@ -22,7 +22,7 @@
     let objectID: number | null = null;
 
 
-    $: if (viewport) [object, objectID] = $viewport.scene.addObjectInstanced(SignedDistanceGrid, 1);
+    $: if ($viewport && $viewport.scene) [object, objectID] = $viewport.scene.addObjectInstanced(SignedDistanceGrid, 1);
     $: if (object) object.translate([translate[0], translate[1], translate[2]], 0);
     $: if (object) object.scale(scale, 0);
     $: if (object) { object.properties[0].color = vec4.fromValues(color[0], color[1], color[2], 1.0); object.setDirtyCPU(); };

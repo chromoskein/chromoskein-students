@@ -16,7 +16,7 @@
     let coneID: number | null = null;
 
 
-    $: if ($viewport) {
+    $: if ($viewport && $viewport.scene) {
       if (coneID != null) {
         $viewport.scene.removeObjectByID(coneID);
       }
@@ -37,7 +37,7 @@
   
     onMount(() => {
       return () => {
-        if (viewport && $viewport?.scene) {
+        if ($viewport && $viewport.scene && coneID) {
           $viewport.scene.removeObjectByID(coneID);
         }
       };

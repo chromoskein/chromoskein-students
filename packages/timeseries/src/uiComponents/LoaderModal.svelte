@@ -1,8 +1,9 @@
 <script lang="ts">
     import { Button, Checkbox, DataTable, Modal, Toggle } from "carbon-components-svelte";
-    import { type ChromatinModel, parsePdb } from "lib-dataloader";
+    import { parsePdb } from "../dataloader/pdb";
+    import { type ChromatinModel } from "../dataloader/models";
     import { vec3 } from "gl-matrix";
-    import { normalizePointClouds } from "../utils/main";
+    import { normalizePointClouds, type ClusterNode } from "../utils/main";
     import { getClustering, getEmptyClustering, initializeChromosome, type Chromosome } from "../utils/data-models";
 
     export let open = false;
@@ -26,9 +27,10 @@
     function loadFiles(event: Event) {
         const input = event.target as HTMLInputElement; 
         const loadedFiles = input.files;
+        if (!loadedFiles) return;
         for (let i = 0; i < loadedFiles.length; i++) {
             const file = loadedFiles.item(i);
-            file.text().then(pdbText => {
+            file?.text().then(pdbText => {
                 let chromatinModel: ChromatinModel = parsePdb(pdbText);
                 points = chromatinModel.bins.map((v) => vec3.fromValues(v.x, v.y, v.z))
 
@@ -45,7 +47,7 @@
                 });
             });
         }
-        input.value = null;
+        input.value = "";
     }
 
     function reset() {
@@ -65,7 +67,7 @@
             modelPoints = normalizePointClouds(modelPoints);
         }
 
-        let chromosomes = [];
+        let chromosomes: Chromosome[] = [];
         if (!separate) {
             let concatPoints: vec3[] = modelPoints.flat();
             // Update the from and to indexes of data based on filtering done in selection
@@ -80,8 +82,8 @@
             let clusters = [[], [getEmptyClustering(points.length - 1)]]
             // Dont create a second hierarchy level if only a single model is selected
             if (filteredData.length > 1) {
-                let modelClusterIndices = [];
-                let modelClusters = [];
+                let modelClusterIndices: number[] = [];
+                let modelClusters: ClusterNode[] = [];
                 filteredData.forEach((model, index) => {
                     modelClusters.push(getClustering(model.from, model.to, 2, index));
                     modelClusterIndices.push(index);
@@ -118,7 +120,7 @@
     <Button
         kind="secondary"
         size="field"
-        on:click={() => { document.getElementById("file-input").click()}}
+        on:click={() => { document.getElementById("file-input")?.click()}}
     >  
         Upload
     </Button>

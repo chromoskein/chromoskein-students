@@ -15,7 +15,7 @@
   let object: Graphics.RoundedConeInstanced;
   let objectID: number | null = null;
 
-  $: if ($viewport) {
+  $: if ($viewport && $viewport.scene) {
     if (objectID != null) {
       $viewport.scene.removeObjectByID(objectID);
     }

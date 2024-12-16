@@ -24,7 +24,7 @@
   import Viewport2D from "./viewports/Viewport2D.svelte";
   import LoaderModal from "./uiComponents/LoaderModal.svelte";
   import InteractiveCluster from "./visalizations/InteractiveCluster.svelte";
-  import type { CarbonTheme } from "carbon-components-svelte/types/Theme/Theme.svelte";
+  import type { CarbonTheme } from "carbon-components-svelte/src/Theme/Theme.svelte";
 
   const adapter: Writable<GPUAdapter | null> = writable(null);
   const device: Writable<GPUDevice | null> = writable(null);
@@ -48,8 +48,10 @@
 
   const clusteringWorker: Worker = new workerUrl();
   clusteringWorker.onmessage = (event: MessageEvent) => {
-    selectedChromosome.clusters = event.data;
-    chromosomes[selectedChromosomeId].clusters = event.data;
+    if (selectedChromosome) {
+      selectedChromosome.clusters = event.data;
+      chromosomes[selectedChromosomeId].clusters = event.data;
+    }
   };
 
   clusteringWorker.onerror = (event: Event) => {
@@ -59,17 +61,13 @@
   let viewport: Graphics.Viewport3D | null = null;
   let loadedChromosomes: Chromosome[] = [];
 
-  $: if (loadedChromosomes) {
-    addChromosomes(loadedChromosomes);
-    loadedChromosomes = [];
-  }
 
   let chromosomes: Chromosome[] = [];
   let chromosomeOptions: VisOptions[] = [];
   
   function addChromosomes(models: Chromosome[]) {
     chromosomes = chromosomes.concat(models);
-    let defaultOptions = [];
+    let defaultOptions: VisOptions[]= [];
     models.forEach(element => {
       defaultOptions.push(defaultVisOptions())
     });
@@ -78,7 +76,8 @@
 
   async function loadClustering(event: Event) {
     const input = event.target as HTMLInputElement; 
-    const json = input.files.item(0);
+    const json = input.files?.item(0);
+    if (!json) return;
     let result: ClusterNode[][] = JSON.parse(await json.text());
     const rootColor = result[1][0].color;
     if (rootColor[0] == 1.0 && rootColor[1] == 1.0 && rootColor[2] == 1.0) {
@@ -88,10 +87,12 @@
   }
 
   function setNewClusters(clusters: ClusterNode[][]) {
-    selectedChromosome.points = normalizePointClouds([selectedChromosome.points[0].slice(clusters[1][0].from, clusters[1][0].to)]);
-    selectedChromosome.clusters = clusters;
-    chromosomes[selectedChromosomeId].clusters = clusters;
-    chromosomeOptions[selectedChromosomeId].blobsAmount = 1;
+    if (selectedChromosome) {
+      selectedChromosome.points = normalizePointClouds([selectedChromosome.points[0].slice(clusters[1][0].from, clusters[1][0].to)]);
+      selectedChromosome.clusters = clusters;
+      chromosomes[selectedChromosomeId].clusters = clusters;
+      chromosomeOptions[selectedChromosomeId].blobsAmount = 1;
+    }
   }
 
   //#endregion Data
@@ -122,7 +123,6 @@
     selectedChromosome = baseChromosome;
     clusteringWorker.postMessage(selectedChromosome.points);
   });
-  //#endregion Init
 
   // Set default colormap on viewport change
   $: if (viewport && viewport.scene) {
@@ -145,7 +145,6 @@
 
   let selectedInteractiveCluster: InteractiveCluster | null = null;
 
-  $: console.log("Changed in app", selectedInteractiveCluster)
 
   // Loader
   let loaderOpen: boolean = false;
@@ -235,7 +234,7 @@
             <Button
                 kind="secondary"
                 size="small"
-                on:click={() => { document.getElementById("clustering-input").click()}}
+                on:click={() => { document.getElementById("clustering-input")?.click()}}
             >  
                 Upload Clusters
             </Button>

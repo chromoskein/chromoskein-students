@@ -9,7 +9,7 @@
     import InteractiveCluster from "../visalizations/InteractiveCluster.svelte";
   
     //export let selectedVis: ChromatinVisualization;
-    export let viewport: Graphics.Viewport3D;
+    export let viewport: Graphics.Viewport3D | null;
     export let ops: VisOptions;
     export let dataClustersGivenK: ClusterNode[][];
     export let size: number;
@@ -21,8 +21,8 @@
     $: visType = ops.visType;
 
 
-    async function changeColormap(volumeColormapChoice) {
-      let path;
+    async function changeColormap(volumeColormapChoice: string) {
+      let path: string;
       switch (volumeColormapChoice) {
         case "White to Black":
           path = "./colormaps/blackwhite.png";
@@ -38,6 +38,9 @@
           break;
         case "Samsel Linear Green":
           path = "./colormaps/samsel-linear-green.png";
+          break;
+        default:
+          path = "./colormaps/blackwhite.png";
           break;
       }
       let volumeColormap = await loadBitmap(path);

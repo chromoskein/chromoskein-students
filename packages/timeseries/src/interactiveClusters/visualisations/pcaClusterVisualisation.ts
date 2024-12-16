@@ -89,7 +89,7 @@ export class PCAClusterVisualisation extends AbstractClusterVisualisation {
         }
     }
 
-    public rayIntersection(ray: Graphics.Ray): Graphics.Intersection {
+    public rayIntersection(ray: Graphics.Ray): Graphics.Intersection | null {
         let upIntersection = this.coneDown.rayIntersection(ray);
         let downIntersection = this.coneUp.rayIntersection(ray);
 

@@ -18,7 +18,7 @@
   let length: number = 0;
   let splinePoints: vec3[] = []
 
-  $: if ($viewport && points) {
+  $: if ($viewport && $viewport.scene && points) {
     if (splineID != null) {
       $viewport.scene.removeObjectByID(splineID);
     }

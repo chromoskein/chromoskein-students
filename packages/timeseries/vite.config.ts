@@ -7,6 +7,5 @@ import { svelte } from '@sveltejs/vite-plugin-svelte'
 export default defineConfig({
   plugins: [tsconfigPaths({
     root: '../../'
-  }), dts(), svelte()],
-  optimizeDeps: { include: ['@carbon/charts'] },
+  }), dts(), svelte()]
 })

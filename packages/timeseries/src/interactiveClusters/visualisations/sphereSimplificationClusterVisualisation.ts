@@ -58,7 +58,7 @@ export class SphereSimplificationClusterVisualisation extends AbstractClusterVis
         this.sphere.setDirtyCPU();
     }
 
-    public rayIntersection(ray: Graphics.Ray): Graphics.Intersection {
+    public rayIntersection(ray: Graphics.Ray): Graphics.Intersection | null {
         return this.sphere.rayIntersection(ray);
     }
     

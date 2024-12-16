@@ -22,7 +22,7 @@
     let object: SignedDistanceGrid | null = null;
     let objectID: number | null = null;
 
-    $: if (viewport) {
+    $: if ($viewport && $viewport.scene) {
         if (objectID && $viewport?.scene) {
             $viewport.scene.removeObjectByID(objectID);
         }

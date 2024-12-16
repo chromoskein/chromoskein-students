@@ -70,13 +70,13 @@ export type Chromosome =
     visible: boolean,
     points: vec3[][],
     clusters: ClusterNode[][],
-    visualization: ChromatinVisualization,
+    visualization: ChromatinVisualization | null,
 }
 
 let id = 0;
-export function initializeChromosome(name: string, points: vec3[][]) { 
+export function initializeChromosome(name: string, points: vec3[][]): Chromosome { 
 
-    let chromosome = {
+    return {
         id: id++,
         name: name,
         visible: true,
@@ -84,11 +84,10 @@ export function initializeChromosome(name: string, points: vec3[][]) {
         clusters: [[], [getEmptyClustering(points[0].length - 1)]],
         visualization: null,
     }
-    return chromosome;
 }
 
 
-export function getClustering(from: number, to: number, k: number, i: number) {
+export function getClustering(from: number, to: number, k: number, i: number): ClusterNode {
     return {
         k: k,
         i: i,
@@ -132,7 +131,7 @@ export type VisOptions = {
     secondaryVis: VisualisationType,
 }
 
-export function defaultVisOptions() {
+export function defaultVisOptions(): VisOptions {
     return {
         visType: VisualisationType.Pathline,
         abstractVolumes: false,

@@ -64,7 +64,7 @@ export class VolumeClusterVisualisation extends AbstractClusterVisualisation {
         this.volumeUnit.setColor(vec4.fromValues(c[0], c[1], c[2], 1.0));
     }
 
-    public rayIntersection(ray: Graphics.Ray): Graphics.Intersection {
+    public rayIntersection(ray: Graphics.Ray): Graphics.Intersection | null {
         let intersection = this.volumeUnit.rayIntersection(ray);
         if (intersection == null) {
             return null;

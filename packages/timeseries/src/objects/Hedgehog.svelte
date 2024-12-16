@@ -27,11 +27,11 @@
     let center: vec3 = vec3.fromValues(0, 0, 0);
     let radius = 0.1;
   
-    $: if ($viewport) {
+    $: if ($viewport && $viewport.scene) {
       for (let i = 0; i < coneIDs.length; i++) {
         $viewport.scene.removeObjectByID(coneIDs[i]);
       }
-      $viewport.scene.removeObjectByID(sphereID);
+      if (sphereID) $viewport.scene.removeObjectByID(sphereID);
   
       for (let i = 0; i < quills.length; i++) {
         [cones[i], coneIDs[i]] = $viewport.scene.addObject(RoundedCone);
@@ -81,7 +81,7 @@
         cones[i].setDirtyCPU();
       }
 
-      if (quills.length == 0) {
+      if (sphere && quills.length == 0) {
         sphere.properties.radius = radius;
         sphere.properties.center = [center[0], center[1], center[2]];
         sphere.properties.color = [color[0], color[1], color[2], 1.0];
@@ -95,7 +95,7 @@
           for (let i = 0; i < coneIDs.length; i++) {
             $viewport.scene.removeObjectByID(coneIDs[i]);
           }
-          $viewport.scene.removeObjectByID(sphereID);
+          if (sphereID) $viewport.scene.removeObjectByID(sphereID);
         }
       };
     });

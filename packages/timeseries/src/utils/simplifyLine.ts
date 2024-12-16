@@ -4,7 +4,7 @@
  mourner.github.io/simplify-js
 */
 
-import type { vec3 } from "gl-matrix";
+import { vec3 } from "gl-matrix";
 
 // to suit your point format, run search/replace for '[0]', '[1]' and '[2]';
 // (configurability would draw significant performance overhead)
@@ -33,7 +33,7 @@ function getSquareSegmentDistance(p: vec3, p1: vec3, p2: vec3) {
     if (dx !== 0 || dy !== 0 || dz !== 0) {
 
         let t = ((p[0] - x) * dx + (p[1] - y) * dy + (p[2] - z) * dz) /
-                (dx * dx + dy * dy + dz * dz);
+            (dx * dx + dy * dy + dz * dz);
 
         if (t > 1) {
             x = p2[0];
@@ -58,9 +58,9 @@ function getSquareSegmentDistance(p: vec3, p1: vec3, p2: vec3) {
 // basic distance-based simplification
 function simplifyRadialDistance(points: vec3[], sqTolerance: number) {
 
-    let prevPoint = points[0],
-        newPoints = [prevPoint],
-        point;
+    let prevPoint: vec3 = points[0]
+    let newPoints: vec3[] = [prevPoint]
+    let point!: vec3;
 
     for (let i = 1, len = points.length; i < len; i++) {
         point = points[i];
@@ -81,22 +81,24 @@ function simplifyRadialDistance(points: vec3[], sqTolerance: number) {
 // simplification using optimized Douglas-Peucker algorithm with recursion elimination
 function simplifyDouglasPeucker(points: vec3[], sqTolerance: number): vec3[] {
 
-    let len = points.length,
-        MarkerArray = typeof Uint8Array !== 'undefined' ? Uint8Array : Array,
-        markers = new MarkerArray(len),
+    let len: number = points.length;
+    let MarkerArray = typeof Uint8Array !== 'undefined' ? Uint8Array : Array;
+    let markers = new MarkerArray(len);
 
-        first = 0,
-        last = len - 1,
+    let first: number | undefined = 0;
+    let last: number | undefined = len - 1;
 
-        stack = [],
-        newPoints = [],
+    let stack = [];
+    let newPoints = [];
 
-        i, maxSqDist, sqDist, index;
+    let i: number;
+    let maxSqDist: number;
+    let sqDist: number;
+    let index: number = 0;
 
     markers[first] = markers[last] = 1;
 
-    while (last) {
-
+    while (last && first) {
         maxSqDist = 0;
 
         for (i = first + 1; i < last; i++) {

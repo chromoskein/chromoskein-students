@@ -14,7 +14,7 @@
   let object: Graphics.Sphere | null = null;
   let objectID: number | null = null;
 
-  $: if ($viewport) {
+  $: if ($viewport && $viewport.scene) {
     if (objectID != null) {
       $viewport.scene.removeObjectByID(objectID);
     }
@@ -32,7 +32,7 @@
 
   onMount(() => {
     return () => {
-      if (viewport && $viewport?.scene) {
+      if (viewport && $viewport?.scene && objectID) {
         $viewport.scene.removeObjectByID(objectID);
       }
     };

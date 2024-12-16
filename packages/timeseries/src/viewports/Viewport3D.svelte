@@ -66,7 +66,7 @@
   function canvasOnMouseDown(event: MouseEvent) {
     if (!$viewportInner) return;
 
-    $viewportInner.camera.onMouseDown(event);
+    $viewportInner.camera?.onMouseDown(event);
 
     /*
     let rect = canvas.getBoundingClientRect(); // abs. size of element    
@@ -86,7 +86,7 @@
   function canvasOnMouseUp(event: MouseEvent) {
     if (!$viewportInner) return;
 
-    $viewportInner.camera.onMouseUp(event);
+    $viewportInner.camera?.onMouseUp(event);
 
     afterCameraUpdate($viewportInner.camera as Graphics.OrbitCamera);
   }
@@ -96,7 +96,7 @@
   function canvasOnMouseMove(event: MouseEvent) {
     if (!$viewportInner) return;
 
-    $viewportInner.camera.onMouseMove(event);
+    $viewportInner.camera?.onMouseMove(event);
 
     afterCameraUpdate($viewportInner.camera as Graphics.OrbitCamera);
   }
@@ -104,7 +104,7 @@
   function canvasOnScroll(event: WheelEvent) {
     if (!$viewportInner) return;
 
-    $viewportInner.camera.onWheelEvent(event);
+    $viewportInner.camera?.onWheelEvent(event);
 
     afterCameraUpdate($viewportInner.camera as Graphics.OrbitCamera);
   }
@@ -129,7 +129,7 @@
     resizeObserver.observe(wrapper, { box: "device-pixel-content-box" });
 
     context = canvas.getContext("webgpu");
-    context.configure({
+    context?.configure({
       device: $device,
       format: navigator.gpu.getPreferredCanvasFormat(),
     });
@@ -166,7 +166,7 @@
     on:mouseup={canvasOnMouseUp}
     on:mouseleave={canvasOnMouseOut}
     on:wheel={canvasOnScroll}
-  />
+  > </canvas>
   {#if $device && $viewportInner}
     <slot />
   {/if}

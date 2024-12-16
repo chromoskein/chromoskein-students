@@ -23,7 +23,7 @@
     let object: DynamicVolumeUnit | null = null;
     let objectID: number | null = null;
 
-    $: if ($viewport) {
+    $: if ($viewport && $viewport.scene) {
         if (objectID) {
             $viewport.scene.removeObjectByID(objectID);
         }

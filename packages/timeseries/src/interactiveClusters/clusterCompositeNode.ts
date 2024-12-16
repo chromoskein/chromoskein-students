@@ -17,15 +17,16 @@ export class ClusterCompositeNode {
     private isLeaf: boolean;
     private viewport: Viewport3D;
     private manager: CompositeClusters;
-    
-    public parent: ClusterCompositeNode = null;
+    private visible: boolean = true;
+
+    public parent: ClusterCompositeNode | null;
     public cluster: ClusterNode;
-    public inConnector: ClusterConnector = null;
-    public outConnector: ClusterConnector = null;
+    public inConnector: ClusterConnector | null = null;
+    public outConnector: ClusterConnector | null = null;
 
-    private visualisation: AbstractClusterVisualisation;
+    private visualisation: AbstractClusterVisualisation | null = null;
 
-    constructor(cluster: ClusterNode, viewport: Viewport3D,  parent: ClusterCompositeNode, manager: CompositeClusters) {
+    constructor(cluster: ClusterNode, viewport: Viewport3D,  parent: ClusterCompositeNode | null, manager: CompositeClusters) {
         this.parent = parent;
         this.cluster = cluster;
         this.children = [];
@@ -34,7 +35,6 @@ export class ClusterCompositeNode {
         this.manager = manager;
 
         this.setVisualisation(PathlineClusterVisualization);
-        this.setVisible(true);
     }
 
     /**
@@ -46,16 +46,16 @@ export class ClusterCompositeNode {
         this.visualisation = new visualisationType(this.manager, this.cluster, this.viewport);
     }
 
-    public setInConnector(connector: ClusterConnector) {
+    public setInConnector(connector: ClusterConnector | null) {
         this.inConnector = connector;
     }
 
-    public setOutConnector(connector: ClusterConnector) {
+    public setOutConnector(connector: ClusterConnector | null) {
         this.outConnector = connector;
     }
 
     public setVisible(visible: boolean) {
-        this.cluster.visible = visible;
+        this.visible = visible;
     }
 
     public getVisualisation() {
@@ -125,7 +125,7 @@ export class ClusterCompositeNode {
      * @param selectedTimestep Current selected timestep
      */
     public split(clustersGivenK: ClusterNode[][], pointsAtTimesteps: vec3[][], selectedTimestep: number) {
-        if (!this.isLeaf || this.cluster.k + 1 >= clustersGivenK.length) return;
+        if (!this.visualisation || !this.isLeaf || this.cluster.k + 1 >= clustersGivenK.length) return;
 
         let k = this.cluster.k;
         let i = this.cluster.i;
@@ -220,7 +220,7 @@ export class ClusterCompositeNode {
      * @returns intersection or null
      */
     public rayIntersection(ray: Graphics.Ray): Graphics.Intersection | null {
-        if (!this.isLeaf) {
+        if (!this.visualisation || !this.isLeaf) {
             return null;
         }
 

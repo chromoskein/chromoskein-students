@@ -58,7 +58,7 @@ export class CompositeClusters {
      * @param ray Ray to intersect the scene
      * @returns Closest intersected object or null
      */
-    public rayIntersection(ray: Graphics.Ray): ClusterCompositeNode {
+    public rayIntersection(ray: Graphics.Ray): ClusterCompositeNode | null {
         let inorder = this.root.getInorder();
 
         let bestDistance = Infinity;

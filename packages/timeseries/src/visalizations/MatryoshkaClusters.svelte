@@ -7,8 +7,8 @@
 
     export let selectedTimestep: number;
     export let dataClustersGivenK: ClusterNode[][] | null = null;
-    export let dataTimesteps: vec3[][] = null;
-    export let dataPathlines: vec3[][] = null;
+    export let dataTimesteps: vec3[][] = [];
+    export let dataPathlines: vec3[][] = [];
     export let blobAlpha: number;
     export let blobsRadius: number;
     export let experimentalColors: boolean;

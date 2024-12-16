@@ -1,5 +1,8 @@
+import { vec3 } from "gl-matrix";
+
+
 // get euclidean distance between two equal-dimension vectors
-export const euclideanDistance = (a, b) => {
+export const euclideanDistance = (a: number[], b: number[]) => {
     const size = Math.min(a.length, b.length);
     let sum = 0;
     for (let index = 0; index < size; index++)
@@ -8,7 +11,7 @@ export const euclideanDistance = (a, b) => {
   };
   
   // get average distance between sets of indexes, given distance matrix
-  export const averageDistance = (setA, setB, distances) => {
+  export const averageDistance = (setA: number[], setB: number[], distances: number[][]) => {
     let distance = 0;
     for (const a of setA) {
       for (const b of setB)
@@ -19,7 +22,7 @@ export const euclideanDistance = (a, b) => {
   };
   
   // update progress by calling user onProgress and postMessage for web workers
-  const updateProgress = (stepNumber, stepProgress, onProgress) => {
+  const updateProgress = (stepNumber: number, stepProgress: number, onProgress: (progress: number) => void) => {
     // currently only two distinct steps: computing distance matrix and clustering
     const progress = stepNumber / 2 + stepProgress / 2;
   
@@ -36,20 +39,17 @@ export const euclideanDistance = (a, b) => {
   };
   
   // default onProgress function. console logs progress
-  const logProgress = (progress) =>
+  const logProgress = (progress: number) =>
     console.log('Clustering: ', (progress * 100).toFixed(1) + '%');
   
   // the main clustering function
-  export const clusterData = ({
-    data = [],
-    key = '',
+  export function clusterData(
+    data: any[] = [],
     distance = euclideanDistance,
     linkage = averageDistance,
     onProgress = logProgress
-  }) => {
+  ) {
     // extract values from specified key
-    if (key)
-      data = data.map((datum) => datum[key]);
   
     // compute distance between each data point and every other data point
     // N x N matrix where N = data.length
@@ -134,16 +134,15 @@ export const euclideanDistance = (a, b) => {
     };
   };
 
+
     // So far just a modified copy of the original due to not being sure if its going to be further modified
-    export const clusterDataSequential = ({
-      data = [],
-      key = '',
-      distance = euclideanDistance,
-      linkage = averageDistance,
-    }) => {
+    export function clusterDataSequential(data: any[] = [],
+      distance: (a: any, b: any) => number = euclideanDistance,
+      linkage: (a: number[], b: number[], distances: number[][]) => number = averageDistance,
+    ) {
       // extract values from specified key
-      if (key)
-        data = data.map((datum) => datum[key]);
+      // if (key)
+      //   data = data.map((datum) => datum[key]);
     
       // compute distance between each data point and every other data point
       // N x N matrix where N = data.length

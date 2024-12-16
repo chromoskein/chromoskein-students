@@ -76,7 +76,7 @@ export class SpheresClusterVisualization extends AbstractClusterVisualisation {
         }
     }
 
-    public rayIntersection(ray: Graphics.Ray): Graphics.Intersection {
+    public rayIntersection(ray: Graphics.Ray): Graphics.Intersection | null {
         let bestT = Infinity
         let bestIntersection = null;
         for (let object of this.spheres) {

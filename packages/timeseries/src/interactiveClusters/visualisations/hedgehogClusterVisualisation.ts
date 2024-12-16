@@ -124,7 +124,7 @@ export class HedgehogClusterVisualisation extends AbstractClusterVisualisation {
         }
     }
 
-    public rayIntersection(ray: Graphics.Ray): Graphics.Intersection {
+    public rayIntersection(ray: Graphics.Ray): Graphics.Intersection | null {
         if (this.sphereID != null) {
             return this.sphere.rayIntersection(ray);
         }

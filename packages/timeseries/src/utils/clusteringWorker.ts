@@ -5,7 +5,7 @@ import { treeColor } from "./treecolors";
 self.onmessage = (event: MessageEvent) => {
     const pointTimesteps: vec3[][] = event.data;
 
-    let clusters: ClusterNode[][] = null;
+    let clusters: ClusterNode[][];
     // If there is more than a single timestep cluster it as pathlines
     if (pointTimesteps.length > 1) {
         const pathlines = timestepsToPathlines(pointTimesteps);

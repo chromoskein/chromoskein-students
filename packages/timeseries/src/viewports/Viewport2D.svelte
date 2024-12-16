@@ -26,7 +26,7 @@
     }
   
     $: {
-      viewport.setPositions(points)
+      viewport?.setPositions(points)
     };
 
     setContext("viewport", viewportInner);
@@ -124,7 +124,7 @@
       resizeObserver.observe(wrapper, { box: "device-pixel-content-box" });
   
       context = canvas.getContext("webgpu");
-      context.configure({
+      context?.configure({
         device: $device,
         format: navigator.gpu.getPreferredCanvasFormat(),
       });
@@ -161,7 +161,7 @@
       on:mouseup={canvasOnMouseUp}
       on:mouseleave={canvasOnMouseOut}
       on:wheel={canvasOnScroll}
-    />
+    > </canvas>
     {#if $device && $viewportInner}
       <slot />
     {/if}

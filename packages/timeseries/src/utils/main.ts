@@ -1,12 +1,9 @@
 import { vec3, vec4 } from "gl-matrix";
 
 import { CsvDelimiter, parseXyz } from "lib-dataloader";
-import { clusterData, clusterDataSequential } from "./hclust";
+import { clusterDataSequential } from "./hclust";
 import * as Graphics from "@chromoskein/lib-graphics";
 
-import type { Writable } from "svelte/store";
-import type { Viewport3D } from "@chromoskein/lib-graphics";
-import { intros } from "svelte/internal";
 
 export const clamp = (num: number, min: number, max: number) => Math.min(Math.max(num, min), max);
 export const mix = (start: number, end: number, amt: number) => (1 - amt) * start + amt * end;
@@ -190,7 +187,7 @@ export function normalizePointClouds(pointClouds: vec3[][]): vec3[][] {
 }
 
 export function timestepsToPathlines(timesteps: vec3[][]): vec3[][] {
-    const result = [];
+    const result: vec3[][] = [];
 
     for (let positionIndex = 0; positionIndex < timesteps[0].length; positionIndex += 1) {
         result[positionIndex] = [];
@@ -301,7 +298,7 @@ export function clusterPathlines(pathlines: vec3[][]): ClusterNode[][] {
         return distances.reduce((a, b) => a + b, 0);
     };
     
-    const { clusters, distances, order, clustersGivenK } = clusterDataSequential({ data: pathlines, distance: distFunc });
+    const { clusters, distances, order, clustersGivenK } = clusterDataSequential(pathlines, distFunc);
     
     const kClustersRanges: ClusterNode[][] = new Array(clustersGivenK.length);
     for (const [k, kClusters] of clustersGivenK.entries()) {
@@ -340,7 +337,7 @@ export function clusterTimestep(timestep: vec3[]): ClusterNode[][] {
         return vec3.distance(a, b);
     };
     
-    const { clusters, distances, order, clustersGivenK } = clusterDataSequential({ data: timestep, distance: distFunc });
+    const { clusters, distances, order, clustersGivenK } = clusterDataSequential(timestep, distFunc);
     
     const kClustersRanges: ClusterNode[][] = new Array(clustersGivenK.length);
     for (const [k, kClusters] of clustersGivenK.entries()) {
@@ -381,7 +378,7 @@ export async function clusterTimestepAsync(timestep: vec3[]): Promise<ClusterNod
 
 function flattenClusters(clusters: ClusterNode[][]) {
     const minSize = (clusters[1][0].to - clusters[1][0].from) / 12.0;
-    let hierarchy = [[]];
+    let hierarchy: ClusterNode[][] = [[]];
 
     flattenHierarchyRecursive(clusters, hierarchy, clusters[1][0], 1, 0, minSize);
 

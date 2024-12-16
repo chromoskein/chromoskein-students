@@ -10,7 +10,7 @@ export class ClusterConnector {
     private start: ClusterCompositeNode;
     private end: ClusterCompositeNode;
 
-    private cone: Graphics.RoundedCone;
+    private cone: Graphics.RoundedCone | null = null;
     private coneID: number | null = null;
 
     constructor(start: ClusterCompositeNode, end: ClusterCompositeNode, viewport: Viewport3D) {
@@ -20,25 +20,31 @@ export class ClusterConnector {
         start.setOutConnector(this);
         end.setInConnector(this);
 
-        [this.cone, this.coneID] = viewport.scene.addObject(Graphics.RoundedCone);
-        this.cone.properties.startRadius = 0.02;
-        this.cone.properties.endRadius = 0.02;
-        this.setColor(vec3.fromValues(0.9, 0.9, 0.9));
-        this.update();
+        if (viewport.scene) {
+            [this.cone, this.coneID] = viewport.scene.addObject(Graphics.RoundedCone);
+            this.cone.properties.startRadius = 0.02;
+            this.cone.properties.endRadius = 0.02;
+            this.setColor(vec3.fromValues(0.9, 0.9, 0.9));
+            this.update();
+        }
     }
 
     public update() {
-        let start = this.start.getVisualisation().getOutConnectionPoint();
-        let end = this.end.getVisualisation().getInConnectionPoint();
+        let start = this.start.getVisualisation()?.getOutConnectionPoint();
+        let end = this.end.getVisualisation()?.getInConnectionPoint();
 
-        this.cone.properties.start = [start[0], start[1], start[2]];
-        this.cone.properties.end = [end[0], end[1], end[2]];
-        this.cone.setDirtyCPU();
+        if (this.cone && start && end) {
+            this.cone.properties.start = [start[0], start[1], start[2]];
+            this.cone.properties.end = [end[0], end[1], end[2]];
+            this.cone.setDirtyCPU();
+        }
     }
 
     public setColor(color: vec3) {
-        this.cone.properties.color = [color[0], color[1], color[2], 1];
-        this.cone.setDirtyCPU();
+        if (this.cone) {
+            this.cone.properties.color = [color[0], color[1], color[2], 1];
+            this.cone.setDirtyCPU();
+        }
     }
 
     public setStart(start: ClusterCompositeNode) {
@@ -54,10 +60,12 @@ export class ClusterConnector {
     }
 
     public destroy(viewport: Viewport3D) {
-        viewport.scene.removeObjectByID(this.coneID);
-        this.coneID = null;
-        this.cone = null;
-        this.start.setOutConnector(null);
-        this.end.setInConnector(null);
+        if (viewport.scene && this.coneID) {
+            viewport.scene.removeObjectByID(this.coneID);
+            this.coneID = null;
+            this.cone = null;
+            this.start.setOutConnector(null);
+            this.end.setInConnector(null);
+        }
     }
 }

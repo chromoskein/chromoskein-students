@@ -16,27 +16,26 @@
     let device: Writable<GPUDevice> = getContext("device");
     let clusterHighlighter: ClusterHighlighter = new ClusterHighlighter();
 
-    export let dataClustersGivenK: ClusterNode[][] | null = null;
+    export let dataClustersGivenK: ClusterNode[][] = [];
     export let pointsAtTimesteps: vec3[][] = [];
     export let selectedTimestep = 0;
-    export let clustersUpdated;
-    export let updateClustersUpdated;
+    export let clustersUpdated: boolean;
+    export let updateClustersUpdated: (updated: boolean) => void;
     export let options: VisOptions;
 
     let showConnections: Boolean = false;
-    let clusterVisualization: string = "Pathline";
+    let clusterVisualization: VisualisationType = VisualisationType.Pathline;
     let action: string = "Split";
 
-    let clusterObjects: CompositeClusters = null;
+    let clusterObjects: CompositeClusters | null = null;
     let canvas: HTMLElement | null = null;
 
-    const representations = {
+    const representations: Partial<Record<VisualisationType, any>> = {
       "AbstractSpheres": SphereSimplificationClusterVisualisation,
       "Hedgehog": HedgehogClusterVisualisation,
       "Cones": PCAClusterVisualisation,
       "Implicit": SDGClusterVisualisation,
       "Pathline": PathlineClusterVisualization,
-      "AbstractVolume": AbstractVolumeClusterVisualisation,
       "Volume": VolumeClusterVisualisation,
       "Spline": SplineClusterVisualisation,
       "Spheres": SpheresClusterVisualization,
@@ -46,41 +45,45 @@
       showConnections = show;
     }
 
-    export function setAction(newAction) {
+    export function setAction(newAction: string) {
       action = newAction;
     }
 
-    export function setRepresentation(newRepresentation) {
+    export function setRepresentation(newRepresentation: VisualisationType) {
       clusterVisualization = newRepresentation;
     }
 
-    export function getClusterComposite(cluster) {
-      let root = clusterObjects.getRoot();
-      let allClusters = root.getInorder();
-      for (let i = 0; i < allClusters.length; i++) {
-        if (allClusters[i].cluster.k == cluster.k && allClusters[i].cluster.i == cluster.i) {
-          return allClusters[i];
+    export function getClusterComposite(cluster: ClusterNode) {
+      if (clusterObjects) {
+        let root = clusterObjects.getRoot();
+        let allClusters = root.getInorder();
+        for (let i = 0; i < allClusters.length; i++) {
+          if (allClusters[i].cluster.k == cluster.k && allClusters[i].cluster.i == cluster.i) {
+            return allClusters[i];
+          }
         }
       }
     }
 
-    export function splitClusters(hitCluster) {
+    export function splitClusters(hitCluster: ClusterCompositeNode) {
       hitCluster.split(dataClustersGivenK, pointsAtTimesteps, selectedTimestep);
       updateClustersUpdated(!clustersUpdated);
     }
 
-    export function mergeClusters(hitCluster) {
+    export function mergeClusters(hitCluster: ClusterCompositeNode) {
       hitCluster.merge(dataClustersGivenK, pointsAtTimesteps, selectedTimestep);
       updateClustersUpdated(!clustersUpdated);
     }
 
     // TODO: fix number of octopi tentacles when any cluster is split
-    function onElementLeftButtonClick(event) {
+    function onElementLeftButtonClick(event: MouseEvent) {
+      if (!$viewport?.camera || !canvas || !clusterObjects) return;
+
       if (event.button != 0) return;
 		  let rect = canvas.getBoundingClientRect(); 
       let ray = Graphics.screenSpaceToRay(vec2.fromValues((event.clientX - rect.left) / rect.width, (event.clientY - rect.top) / rect.height), $viewport.camera);
 
-      let hitCluster: ClusterCompositeNode = clusterObjects.rayIntersection(ray);
+      let hitCluster: ClusterCompositeNode | null = clusterObjects.rayIntersection(ray);
       if (hitCluster != null) {
         switch(action) {
           case "Change representation":
@@ -98,12 +101,15 @@
       }
 	  }
 
-    function onMouseMoveEvent(event) {
-      let rect = canvas.getBoundingClientRect(); // abs. size of element    
-      let ray = Graphics.screenSpaceToRay(vec2.fromValues((event.clientX - rect.left) / rect.width, (event.clientY - rect.top) / rect.height), $viewport.camera);
-      let hitCluster: ClusterCompositeNode = clusterObjects.rayIntersection(ray);
-      if (action == "Merge") clusterHighlighter.updateHighlightedClusters(hitCluster, "Merge");
-      else clusterHighlighter.updateHighlightedClusters(hitCluster, "Normal");
+    function onMouseMoveEvent(event: MouseEvent) {
+      if (canvas && clusterObjects && $viewport?.camera) {
+        let rect = canvas.getBoundingClientRect(); // abs. size of element    
+        let ray = Graphics.screenSpaceToRay(vec2.fromValues((event.clientX - rect.left) / rect.width, (event.clientY - rect.top) / rect.height), $viewport.camera);
+        let hitCluster: ClusterCompositeNode | null = clusterObjects.rayIntersection(ray);
+        if (!hitCluster) return;
+        if (action == "Merge") clusterHighlighter.updateHighlightedClusters(hitCluster, "Merge");
+        else clusterHighlighter.updateHighlightedClusters(hitCluster, "Normal");
+      }
     }
 
     $: if ($viewport) {
@@ -120,11 +126,11 @@
     }
 
     $: if ($viewport && pointsAtTimesteps && selectedTimestep) {
-      clusterObjects.updatePoints(pointsAtTimesteps, selectedTimestep);
+      clusterObjects?.updatePoints(pointsAtTimesteps, selectedTimestep);
     }
 
     $: if (options) {
-      clusterObjects.updateOptions(options);
+      clusterObjects?.updateOptions(options);
     }
 
     /*

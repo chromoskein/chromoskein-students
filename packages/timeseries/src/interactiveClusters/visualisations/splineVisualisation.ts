@@ -79,7 +79,7 @@ export class SplineClusterVisualisation extends AbstractClusterVisualisation {
         }
     }
 
-    public rayIntersection(ray: Graphics.Ray): Graphics.Intersection {
+    public rayIntersection(ray: Graphics.Ray): Graphics.Intersection | null {
         return this.spline.rayIntersection(ray);
     }
     

@@ -6,18 +6,17 @@ export const staticColors: vec3[] = [vec3.fromValues(0.0159, 0.9294, 0), vec3.fr
 
 const ep: number = 1e-15;
 
-let children = 'children',
-  color = 'color',
-  range = [0, 360],
-  fraction = 0.75,
-  permutate = true,
-  reverse = false,
-  luminanceStart = 40,
-  luminanceDelta = 10,
-  chromaStart = 75,
-  chromaDelta = -5,
-  rootColor = { h: 0, c: 0, l: 70, rgb: vec3 }
-  ;
+let children = 'children';
+let color = 'color';
+let range: [number, number] = [0, 360];
+let fraction = 0.75;
+let permutate = true;
+let reverse = false;
+let luminanceStart = 40;
+let luminanceDelta = 10;
+let chromaStart = 75;
+let chromaDelta = -5;
+let rootColor = { h: 0, c: 0, l: 70, rgb: vec3 };
 
 function getChildren(root: ClusterNode[][], node: ClusterNode): ClusterNode[] {
   if (node.k + 1 >= root.length) return [];
@@ -28,24 +27,26 @@ function getChildren(root: ClusterNode[][], node: ClusterNode): ClusterNode[] {
 }
 
 function setColor(node: ClusterNode, c: { h: number, c: number, l: number }) {
-  const rgb = chroma.hcl(c.h, c.c, c.l);
+  const rgb: chroma.Color = chroma.hcl(c.h, c.c, c.l);
 
-  node[color] = rgb.gl().slice(0, 3);
+  const rgbArray: number[] = rgb.gl().slice(0, 3);
+
+  node.color = vec3.fromValues(rgbArray[0], rgbArray[1], rgbArray[2]);
 }
 
-function doPermutation(r) {
+function doPermutation(r: number[]) {
   var n = r.length,
     sequence = getPermutationSequence(n),
     permutated = new Array(n);
 
-  r.forEach(function (value, index) {
+  r.forEach(function (value: number, index: number) {
     permutated[sequence[index]] = value;
   });
 
   return permutated;
 }
 
-export function assignHue(root: ClusterNode[][], node: ClusterNode, range, level: number = 0, colorLevel: number) {
+export function assignHue(root: ClusterNode[][], node: ClusterNode, range: [number, number], level: number = 0, colorLevel: number) {
   // select the middle hue value in range as the hue value of node
   if (level >= 15) {
     return;
@@ -71,7 +72,7 @@ export function assignHue(root: ClusterNode[][], node: ClusterNode, range, level
 
   //1. divide range in N equal parts ri with i = 1, ... ,N;
   //   For convenience, we will use i = 0, ... , n - 1 instead of i = 1, ..., n
-  var r = Array.apply(null, { length: n }).map(Number.call, Number);
+  var r: number[] = Array.apply(null, Array(n)).map((val, idx) => idx);
 
   //2. if perm then permute the ri’s;
   if (permutate) {
@@ -80,12 +81,10 @@ export function assignHue(root: ClusterNode[][], node: ClusterNode, range, level
 
   //3. convert each ri to a hue range (e.g. [30, 50])
 
-  r = r.map(function (i) {
-    return [
+  let ranges: [number, number][] = r.map(i => [
       range[0] + i * delta,
       range[0] + (i + 1) * delta
-    ];
-  });
+  ]);
 
 
   //4. reduce each ri by keeping its middle fraction ;
@@ -102,17 +101,12 @@ export function assignHue(root: ClusterNode[][], node: ClusterNode, range, level
 
   //5. if rev then reverse the even-numbered ri’s;
   if (reverse) {
-    r = r.map(function (range, i) {
-      if (i % 2 === 0) {
-        return [range[1], range[0]];
-      }
-      return range;
-    });
+    ranges = ranges.map((range: [number, number], i: number) => (i % 2 === 0) ? [range[1], range[0]] : range);
   }
 
   //6. for each child node vi call assignHue recursively.
   getChildren(root, node).forEach(function (child: ClusterNode, i: number) {
-    assignHue(root, child, r[i], level + 1, colorLevel + 1);
+    assignHue(root, child, ranges[i], level + 1, colorLevel + 1);
   });
 }
 

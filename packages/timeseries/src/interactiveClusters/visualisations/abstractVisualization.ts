@@ -23,34 +23,34 @@ export abstract class AbstractClusterVisualisation {
      * Allows application to intersect the object
      * @param ray Ray which intersects objects
      */
-    abstract rayIntersection(ray: Graphics.Ray) : Graphics.Intersection;
+    abstract rayIntersection(ray: Graphics.Ray) : Graphics.Intersection | null;
     /**
      * Updates the points when timestep is changed
      * @param pointsAtTimestep All points over all timesteps
      * @param selectedTimestep Current selected timestep
      */
-    abstract updatePoints(pointsAtTimestep: vec3[][], selectedTimestep: number);
+    abstract updatePoints(pointsAtTimestep: vec3[][], selectedTimestep: number): void;
     /**
      * Updates the cluster that defines the points of this object
      * @param cluster Information about the cluster
      */
-    abstract updateCluster(cluster: ClusterNode);
+    abstract updateCluster(cluster: ClusterNode): void;
     /**
      * Deletes the object in the scene
      * @param viewport Viewport that this object resides in
      */
-    abstract delete(viewport: Viewport3D);
+    abstract delete(viewport: Viewport3D): void;
     /**
      * Changes the color of the cluster visualization
      * @param color Color
      */
-    abstract setColor(color: vec3);
+    abstract setColor(color: vec3): void;
     /**
      * Returns the constructor of this class
      */
-    abstract getConstructor();  
+    abstract getConstructor(): any;  
 
-    abstract updateParameters(options: VisOptions);
+    abstract updateParameters(options: VisOptions): void;
 
     /**
      * Used by the clusterHighlighter to highlight this clusters
@@ -68,11 +68,11 @@ export abstract class AbstractClusterVisualisation {
     /**
      * Returns the "start" point of this cluster (e.g., first point in sequence) for cluster connectors
      */
-    abstract getInConnectionPoint();
+    abstract getInConnectionPoint(): vec3;
     /**
      * Returns the "end" point  (e.g., first point in sequence) of this cluster
      */
-    abstract getOutConnectionPoint();
+    abstract getOutConnectionPoint(): vec3;
     /**
      * This function is called when a different cluster is updated
      * Used by clusters whose form depends on positions/sizes etc. of other clusters
