@@ -7,7 +7,7 @@ import { AbstractClusterVisualisation } from "./abstractVisualization";
 import type { VisOptions } from "../../utils/data-models";
 
 export class VolumeClusterVisualisation extends AbstractClusterVisualisation {
-    private cluster: ClusterNode;
+    private cluster!: ClusterNode;
     private volumeUnit: Graphics.DynamicVolumeUnit;
     private volumeUnitID: number;
     private volumeCenter: vec3 = vec3.fromValues(0, 0, 0);
@@ -16,7 +16,7 @@ export class VolumeClusterVisualisation extends AbstractClusterVisualisation {
     constructor(manager: CompositeClusters, cluster: ClusterNode, viewport: Viewport3D) {
         super(manager, cluster, viewport);
 
-        [this.volumeUnit, this.volumeUnitID] = viewport.scene.addDynamicVolume(Graphics.DynamicVolumeUnit);
+        [this.volumeUnit, this.volumeUnitID] = viewport.scene!.addDynamicVolume(Graphics.DynamicVolumeUnit);
         this.updateCluster(cluster);
         this.volumeUnit.transparency = 0.3;
         this.volumeUnit.func = 1;
@@ -74,9 +74,7 @@ export class VolumeClusterVisualisation extends AbstractClusterVisualisation {
     
     public delete(viewport: Graphics.Viewport3D) {
         if (this.volumeUnitID) {
-            viewport.scene.removeDynamicVolumeByID(this.volumeUnitID);
-            this.volumeUnit = null;
-            this.volumeUnitID = null;
+            viewport.scene!.removeDynamicVolumeByID(this.volumeUnitID);
         }
     }
 

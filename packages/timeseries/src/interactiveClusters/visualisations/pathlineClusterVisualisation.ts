@@ -7,9 +7,9 @@ import { AbstractClusterVisualisation } from "./abstractVisualization";
 import type { VisOptions } from "../../utils/data-models";
 
 export class PathlineClusterVisualization extends AbstractClusterVisualisation {
-    private cluster: ClusterNode;
+    private cluster!: ClusterNode;
     private viewport: Viewport3D;
-    private pathline: Graphics.RoundedConeInstanced;
+    private pathline: Graphics.RoundedConeInstanced | null = null;
     private pathlineID: number | null = null;
     private n_instances: number = 0;
     private startPoint: vec3 = vec3.fromValues(0, 0, 0);
@@ -31,11 +31,11 @@ export class PathlineClusterVisualization extends AbstractClusterVisualisation {
 
     public updateParameters(options: VisOptions) {
         this.radius = options.radius;
-        for (let i = 0; i < this.pathline.properties.length - 1; i++) {
-            this.pathline.properties[i].startRadius = this.radius;
-            this.pathline.properties[i].endRadius = this.radius;
+        for (let i = 0; i < this.pathline!.properties.length - 1; i++) {
+            this.pathline!.properties[i].startRadius = this.radius;
+            this.pathline!.properties[i].endRadius = this.radius;
           }
-          this.pathline.setDirtyCPU();
+        this.pathline!.setDirtyCPU();
     }
 
     public updatePoints(pointsAtTimestep: vec3[][], selectedTimestep: number) {
@@ -45,7 +45,7 @@ export class PathlineClusterVisualization extends AbstractClusterVisualisation {
 
         if (this.pathlineID == null || this.n_instances != clusterPoints.length) {
             this.delete(this.viewport);
-            [this.pathline, this.pathlineID] = this.viewport.scene.addObjectInstanced(
+            [this.pathline, this.pathlineID] = this.viewport.scene!.addObjectInstanced(
                 Graphics.RoundedConeInstanced,
                 clusterPoints.length
             );
@@ -54,18 +54,18 @@ export class PathlineClusterVisualization extends AbstractClusterVisualisation {
         }
 
         for (let i = 0; i < clusterPoints.length - 1; i++) {
-            this.pathline.properties[i].start = [clusterPoints[i][0], clusterPoints[i][1], clusterPoints[i][2]];
-            this.pathline.properties[i].end = [
+            this.pathline!.properties[i].start = [clusterPoints[i][0], clusterPoints[i][1], clusterPoints[i][2]];
+            this.pathline!.properties[i].end = [
                 clusterPoints[i + 1][0],
                 clusterPoints[i + 1][1],
                 clusterPoints[i + 1][2],
             ];
       
-            this.pathline.properties[i].startRadius = this.radius;
-            this.pathline.properties[i].endRadius = this.radius;
+            this.pathline!.properties[i].startRadius = this.radius;
+            this.pathline!.properties[i].endRadius = this.radius;
       
           }
-          this.pathline.setDirtyCPU();
+          this.pathline!.setDirtyCPU();
     }
 
     public setColor(color: vec3) {
@@ -77,23 +77,22 @@ export class PathlineClusterVisualization extends AbstractClusterVisualisation {
 
         if (this.pathlineID) {
             for (let i = 0; i < this.n_instances - 1; i++) {
-                this.pathline.properties[i].startColor = [c[0], c[1], c[2], 1.0];
-                this.pathline.properties[i].endColor = [c[0], c[1], c[2], 1.0];
+                this.pathline!.properties[i].startColor = [c[0], c[1], c[2], 1.0];
+                this.pathline!.properties[i].endColor = [c[0], c[1], c[2], 1.0];
             }
-            this.pathline.setDirtyCPU();
+            this.pathline!.setDirtyCPU();
         }
     }
 
     public rayIntersection(ray: Graphics.Ray): Graphics.Intersection | null {
-        return this.pathline.rayIntersection(ray);
+        return this.pathline!.rayIntersection(ray);
     }
     
     public delete(viewport: Graphics.Viewport3D) {
         if (this.pathlineID) {
-            viewport.scene.removeObjectByID(this.pathlineID);
+            viewport.scene!.removeObjectByID(this.pathlineID);
             
             this.pathlineID = null;
-            this.pathline = null;
         }
     }
 

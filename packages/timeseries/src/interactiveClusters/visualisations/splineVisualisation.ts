@@ -8,9 +8,9 @@ import { lineToSpline } from "../../utils/lineToSpline";
 import type { VisOptions } from "../../utils/data-models";
 
 export class SplineClusterVisualisation extends AbstractClusterVisualisation {
-    private cluster: ClusterNode;
+    private cluster!: ClusterNode;
     private viewport: Viewport3D;
-    private spline: Graphics.Spline;
+    private spline!: Graphics.Spline;
     private splineID: number | null = null;
     private radius: number = 0.1;
     private n_instances: number = 0;
@@ -47,7 +47,7 @@ export class SplineClusterVisualisation extends AbstractClusterVisualisation {
         let spline = lineToSpline(clusterPoints);
         if (this.splineID == null || this.n_instances != spline.length) {
             this.delete(this.viewport);
-            [this.spline, this.splineID] = this.viewport.scene.addObjectInstanced(
+            [this.spline, this.splineID] = this.viewport.scene!.addObjectInstanced(
                 Graphics.Spline,
                 spline.length
             );
@@ -85,10 +85,9 @@ export class SplineClusterVisualisation extends AbstractClusterVisualisation {
     
     public delete(viewport: Graphics.Viewport3D) {
         if (this.splineID) {
-            viewport.scene.removeObjectByID(this.splineID);
+            viewport.scene!.removeObjectByID(this.splineID);
             
             this.splineID = null;
-            this.spline = null;
         }
     }
 

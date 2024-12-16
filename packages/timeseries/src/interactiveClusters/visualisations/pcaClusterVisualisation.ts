@@ -10,7 +10,7 @@ import type { VisOptions } from "../../utils/data-models";
 import { calculateSphereParameters } from "../../utils/abstractClustersUtils";
 
 export class PCAClusterVisualisation extends AbstractClusterVisualisation {
-    private cluster: ClusterNode;
+    private cluster!: ClusterNode;
     private coneUp: Graphics.RoundedCone;
     private coneUpID: number | null = null;
     private coneDown: Graphics.RoundedCone;
@@ -22,10 +22,10 @@ export class PCAClusterVisualisation extends AbstractClusterVisualisation {
         super(manager, cluster, viewport);
         this.radiusMultiplier = manager.getOptions().abstractionMultiplier;
 
-        [this.coneUp, this.coneUpID] = viewport.scene.addObject(Graphics.RoundedCone);
+        [this.coneUp, this.coneUpID] = viewport.scene!.addObject(Graphics.RoundedCone);
         this.coneUp.setDirtyCPU();
   
-        [this.coneDown, this.coneDownID] = viewport.scene.addObject(Graphics.RoundedCone);
+        [this.coneDown, this.coneDownID] = viewport.scene!.addObject(Graphics.RoundedCone);
         this.coneDown.setDirtyCPU();
 
         this.updateCluster(cluster);
@@ -102,13 +102,11 @@ export class PCAClusterVisualisation extends AbstractClusterVisualisation {
     
     public delete(viewport: Graphics.Viewport3D) {
         if (this.coneDownID && this.coneUpID) {
-            viewport.scene.removeObjectByID(this.coneUpID);
-            viewport.scene.removeObjectByID(this.coneDownID);
+            viewport.scene!.removeObjectByID(this.coneUpID);
+            viewport.scene!.removeObjectByID(this.coneDownID);
             
             this.coneDownID = null;
-            this.coneDown = null;
             this.coneUpID = null;
-            this.coneUp = null;
         }
     }
 

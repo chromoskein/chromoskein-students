@@ -7,7 +7,7 @@ import { AbstractClusterVisualisation } from "./abstractVisualization";
 import type { VisOptions } from "../../utils/data-models";
 
 export class SpheresClusterVisualization extends AbstractClusterVisualisation {
-    private cluster: ClusterNode;
+    private cluster!: ClusterNode;
     private viewport: Viewport3D;
     private spheres: Graphics.Sphere[] = [];
     private sphereIDs: number[] = [];
@@ -47,7 +47,7 @@ export class SpheresClusterVisualization extends AbstractClusterVisualisation {
             for (let _ of clusterPoints) {
                 let sphere;
                 let sphereID;
-                [sphere, sphereID] = this.viewport.scene.addObject(Graphics.Sphere);
+                [sphere, sphereID] = this.viewport.scene!.addObject(Graphics.Sphere);
                 this.spheres.push(sphere);
                 this.sphereIDs.push(sphereID);
             }
@@ -92,7 +92,7 @@ export class SpheresClusterVisualization extends AbstractClusterVisualisation {
     
     public delete(viewport: Graphics.Viewport3D) {
         for (let sphereID of this.sphereIDs) {
-            viewport.scene.removeObjectByID(sphereID);
+            viewport.scene!.removeObjectByID(sphereID);
         }
         this.spheres = [];
         this.sphereIDs = [];

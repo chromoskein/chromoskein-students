@@ -8,10 +8,10 @@ import { blobFromPoints } from "../../utils/main";
 import type { VisOptions } from "../../utils/data-models";
 
 export class SDGClusterVisualisation extends AbstractClusterVisualisation {
-    private cluster: ClusterNode;
+    private cluster!: ClusterNode;
     private sdgObject: Graphics.SignedDistanceGrid;
     private sdgObjectID: number | null = null;
-    private blob: ClusterBlob;
+    private blob!: ClusterBlob;
     private radius: number = 0.1;
     private startPoint: vec3 = vec3.fromValues(0, 0, 0);
     private endPoint: vec3 = vec3.fromValues(0, 0, 0);
@@ -20,7 +20,7 @@ export class SDGClusterVisualisation extends AbstractClusterVisualisation {
         super(manager, cluster, viewport);
         this.radius = manager.getOptions().radius;
         
-        [this.sdgObject, this.sdgObjectID] = viewport.scene.addObject(Graphics.SignedDistanceGrid);
+        [this.sdgObject, this.sdgObjectID] = viewport.scene!.addObject(Graphics.SignedDistanceGrid);
         this.sdgObject.setDirtyCPU();
 
         this.updateCluster(cluster);
@@ -68,10 +68,9 @@ export class SDGClusterVisualisation extends AbstractClusterVisualisation {
     
     public delete(viewport: Graphics.Viewport3D) {
         if (this.sdgObjectID) {
-            viewport.scene.removeObjectByID(this.sdgObjectID);
+            viewport.scene!.removeObjectByID(this.sdgObjectID);
             
             this.sdgObjectID = null;
-            this.sdgObject = null;
         }
     }
 

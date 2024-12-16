@@ -8,12 +8,12 @@ import type { VisOptions } from "../../utils/data-models";
 import { calculateSphereParameters, findClosestPoints } from "../../utils/abstractClustersUtils";
 
 export class HedgehogClusterVisualisation extends AbstractClusterVisualisation {
-    private cluster: ClusterNode;
+    private cluster!: ClusterNode;
     private viewport: Viewport3D;
     private cones: Graphics.RoundedCone[] = [];
     private conesIDs: number[] = [];
-    private sphere: Graphics.Sphere = null;
-    private sphereID: number = null;
+    private sphere: Graphics.Sphere | null = null;
+    private sphereID: number | null = null;
     private center: vec3 = vec3.fromValues(0, 0, 0);
     private radius: number = 0.1;
     private threshold: number = 0.5;
@@ -77,7 +77,7 @@ export class HedgehogClusterVisualisation extends AbstractClusterVisualisation {
         this.delete(this.viewport);
 
         for (let i = 0; i < quills.length; i++) {  
-            [this.cones[i], this.conesIDs[i]] = this.viewport.scene.addObject(Graphics.RoundedCone);           
+            [this.cones[i], this.conesIDs[i]] = this.viewport.scene!.addObject(Graphics.RoundedCone);           
             this.cones[i].properties.start = [this.center[0], this.center[1], this.center[2]];
             this.cones[i].properties.end = [
                 quills[i][0],
@@ -92,7 +92,7 @@ export class HedgehogClusterVisualisation extends AbstractClusterVisualisation {
           }
     
           if (quills.length == 0) {
-            [this.sphere, this.sphereID] = this.viewport.scene.addObject(Graphics.Sphere);
+            [this.sphere, this.sphereID] = this.viewport.scene!.addObject(Graphics.Sphere);
             this.sphere.properties.radius = this.radius;
             this.sphere.properties.center = [this.center[0], this.center[1], this.center[2]];
             this.sphere.properties.color = [this.color[0], this.color[1], this.color[2], 1.0];
@@ -119,14 +119,14 @@ export class HedgehogClusterVisualisation extends AbstractClusterVisualisation {
         }
 
         if (this.sphereID) {
-            this.sphere.properties.color = [c[0], c[1], c[2], 1.0];
-            this.sphere.setDirtyCPU();
+            this.sphere!.properties.color = [c[0], c[1], c[2], 1.0];
+            this.sphere!.setDirtyCPU();
         }
     }
 
     public rayIntersection(ray: Graphics.Ray): Graphics.Intersection | null {
         if (this.sphereID != null) {
-            return this.sphere.rayIntersection(ray);
+            return this.sphere!.rayIntersection(ray);
         }
         
         let bestT = Infinity
@@ -144,13 +144,13 @@ export class HedgehogClusterVisualisation extends AbstractClusterVisualisation {
     
     public delete(viewport: Graphics.Viewport3D) {
         for (let i = 0; i < this.conesIDs.length; i++) {
-            viewport.scene.removeObjectByID(this.conesIDs[i]);
+            viewport.scene!.removeObjectByID(this.conesIDs[i]);
         } 
         this.conesIDs = [];
         this.cones = [];
 
         if (this.sphereID) {
-            viewport.scene.removeObjectByID(this.sphereID);
+            viewport.scene!.removeObjectByID(this.sphereID);
             this.sphereID = null;
             this.sphere = null;
         }

@@ -10,7 +10,7 @@ import { calculateSphereParameters } from "../../utils/abstractClustersUtils";
 export class SphereSimplificationClusterVisualisation extends AbstractClusterVisualisation {
     private sphere: Graphics.Sphere;
     private sphereID: number;
-    private cluster: ClusterNode;
+    private cluster!: ClusterNode;
     private center: vec3 = vec3.fromValues(0, 0, 0);
     private radiusMultiplier: number = 4.0;
 
@@ -18,7 +18,7 @@ export class SphereSimplificationClusterVisualisation extends AbstractClusterVis
         super(manager, cluster, viewport);
 
         this.radiusMultiplier = manager.getOptions().abstractionMultiplier;
-        [this.sphere, this.sphereID] = viewport.scene.addObject(Graphics.Sphere);
+        [this.sphere, this.sphereID] = viewport.scene!.addObject(Graphics.Sphere);
         this.updateCluster(cluster);
         this.setColor(cluster.color);
     }
@@ -63,9 +63,7 @@ export class SphereSimplificationClusterVisualisation extends AbstractClusterVis
     }
     
     public delete(viewport: Graphics.Viewport3D) {
-        viewport.scene.removeObjectByID(this.sphereID);
-        this.sphereID = null;
-        this.sphere = null;
+        viewport.scene!.removeObjectByID(this.sphereID);
     }
 
     public getInConnectionPoint() {
