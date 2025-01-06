@@ -1,6 +1,4 @@
-
 <script lang="ts">
-
     import {  Select, SelectItem, Checkbox, Slider} from "carbon-components-svelte";
     import { type ClusterNode, loadBitmap, VisualisationType } from "../utils/main";
     import type { VisOptions } from "../utils/data-models";
@@ -8,18 +6,41 @@
     import * as Graphics from "@chromoskein/lib-graphics";
     import InteractiveCluster from "../visalizations/InteractiveCluster.svelte";
   
-    //export let selectedVis: ChromatinVisualization;
-    export let viewport: Graphics.Viewport3D | null;
-    export let ops: VisOptions;
-    export let dataClustersGivenK: ClusterNode[][];
-    export let size: number;
+    interface VisualizationOptionsProps {
+      viewport: Graphics.Viewport3D | null,
+      ops: VisOptions,
+      dataClustersGivenK: ClusterNode[][],
+      size: number,
+      interactiveCluster: InteractiveCluster | null
+    }
 
-    export let interactiveCluster: InteractiveCluster | null = null;
+    let {
+      viewport,
+      ops = $bindable(),
+      dataClustersGivenK,
+      size,
+      interactiveCluster
+    }: VisualizationOptionsProps = $props();
 
-    let visType: VisualisationType;
+    let selectedColormap = $state(ops.volumeColormapChoice);
+    let volumeFunction = $state(ops.volumeFunction);
+    let visType: VisualisationType = $state(ops.visType);
+    let radius = $state(ops.radius);
+    let alpha = $state(ops.alpha);
+    let blobsAmount = $state(ops.blobsAmount);
+    let outlines = $state(ops.outlines);
+    let matryoshkaBlobsVisible = $state(ops.matryoshkaBlobsVisible);
+    let abstractVolumes = $state(ops.abstractVolumes);
+    let hedgehogDistance = $state(ops.hedgehogDistance);
+    let hedgehogThreshold = $state(ops.hedgehogThreshold);
+    let abstractionMultiplier = $state(ops.abstractionMultiplier);
+    let secondaryVis = $state(ops.secondaryVis);
 
-    $: visType = ops.visType;
 
+    function onColormapChange(event: Event) {
+      ops.volumeColormapChoice = selectedColormap;
+      changeColormap(selectedColormap);
+    }
 
     async function changeColormap(volumeColormapChoice: string) {
       let path: string;
@@ -49,18 +70,17 @@
         viewport.scene.setColorMapFromBitmap(volumeColormap);
       }
   }
-
 </script>
 
 
 <div>
-    <Select size="sm" inline labelText="Visualization:" bind:selected={ops.visType}>
+    <Select size="sm" inline labelText="Visualization:" bind:selected={visType} on:change={() =>ops.visType = visType}>
       {#each Object.keys(VisualisationType) as key, index}
         <SelectItem value={key}/>  
       {/each}
     </Select>
     {#if visType == VisualisationType.Test}
-      <Select size="sm" inline labelText="Secondary Vis:" bind:selected={ops.secondaryVis}>
+      <Select size="sm" inline labelText="Secondary Vis:" bind:selected={secondaryVis} on:change={() => ops.secondaryVis = secondaryVis}>
         <SelectItem value={VisualisationType.AbstractSpheres}/>  
         <SelectItem value={VisualisationType.Cones}/>  
         <SelectItem value={VisualisationType.Hedgehog}/>  
@@ -100,35 +120,35 @@
     {/if} -->
 
     {#if ops.visType != VisualisationType.Matryoshka && ops.visType != VisualisationType.Composite && ops.visType != VisualisationType.None}
-      <Slider labelText="Cluster amount" fullWidth min={1} max={dataClustersGivenK.length - 1} bind:value={ops.blobsAmount} />
+      <Slider labelText="Cluster amount" fullWidth min={1} max={dataClustersGivenK.length - 1} bind:value={blobsAmount} on:input={() => ops.blobsAmount = blobsAmount}/>
     {/if}
     {#if ops.visType == VisualisationType.Test || ops.visType == VisualisationType.Implicit || ops.visType == VisualisationType.Matryoshka || ops.visType == VisualisationType.Pathline || ops.visType == VisualisationType.Spheres || ops.visType == VisualisationType.Spline || ops.visType == VisualisationType.Composite}
-      <Slider labelText="Radius" fullWidth min={0.01} max={0.3} step={0.01} bind:value={ops.radius} />
+      <Slider labelText="Radius" fullWidth min={0.01} max={0.3} step={0.01} bind:value={radius} on:input={() => ops.radius = radius} />
     {/if}
     {#if ops.visType == VisualisationType.Matryoshka || ops.visType == VisualisationType.Volume}
-      <Slider labelText="Alpha" fullWidth min={0.05} max={1.0} step={0.05} bind:value={ops.alpha} />
+      <Slider labelText="Alpha" fullWidth min={0.05} max={1.0} step={0.05} bind:value={alpha} on:input={() => ops.alpha = alpha} />
     {/if}
     {#if ops.visType == VisualisationType.Hedgehog || visType == VisualisationType.Composite || (visType == VisualisationType.Test && ops.secondaryVis == VisualisationType.Hedgehog)}
-      <Slider labelText="Max distance" fullWidth min={0.0} max={0.5} step={0.01} bind:value={ops.hedgehogDistance} />
+      <Slider labelText="Max distance" fullWidth min={0.0} max={0.5} step={0.01} bind:value={hedgehogDistance} on:input={() => ops.hedgehogDistance = hedgehogDistance} />
       <Checkbox labelText="Precise quills" bind:checked={ops.preciseQuills} />
       {#if ops.preciseQuills}
         <Checkbox labelText="Point to enemy" bind:checked={ops.secondPoint} />
-        <Slider labelText="Threshold" fullWidth min={0.0} max={1.0} step={0.01} bind:value={ops.hedgehogThreshold} />
+        <Slider labelText="Threshold" fullWidth min={0.0} max={1.0} step={0.01} bind:value={hedgehogThreshold} on:input={() => ops.hedgehogThreshold = hedgehogThreshold}/>
       {/if}  
     {/if}
 
     {#if visType == VisualisationType.Hedgehog || visType == VisualisationType.AbstractSpheres || visType == VisualisationType.Cones || visType == VisualisationType.Composite || visType == VisualisationType.Test}
-      <Slider labelText="Size divider" fullWidth min={2} max={25} step={1} bind:value={ops.abstractionMultiplier} />
+      <Slider labelText="Size divider" fullWidth min={2} max={25} step={1} bind:value={abstractionMultiplier} on:input={() => ops.abstractionMultiplier = abstractionMultiplier} />
     {/if}
 
     {#if ops.visType == VisualisationType.Volume}
-      <Checkbox labelText="Abstractize volumes" bind:checked={ops.abstractVolumes} />
+      <Checkbox labelText="Abstractize volumes" bind:checked={abstractVolumes} on:change={() => ops.abstractVolumes = abstractVolumes} />
 
-      <Slider labelText="Radius" fullWidth min={0.01} max={0.1} step={0.01} bind:value={ops.radius} />
+      <Slider labelText="Radius" fullWidth min={0.01} max={0.1} step={0.01} bind:value={radius} on:input={() => ops.radius = radius} />
 
       <!-- <Checkbox labelText="Use colormap" bind:checked={true} /> -->
 
-      <Select labelText="Colormap" bind:selected={ops.volumeColormapChoice} on:change={(event) => changeColormap(event.detail)}>
+      <Select labelText="Colormap" bind:selected={selectedColormap} on:change={onColormapChange}>
         <SelectItem value="White to Black" />
         <SelectItem value="Rainbow" />
         <SelectItem value="Cool Warm" />
@@ -136,24 +156,24 @@
         <SelectItem value="Samsel Linear Green" />
       </Select>
 
-      <Select labelText="Math Function" bind:selected={ops.volumeFunction}>
+      <Select labelText="Math Function" bind:selected={volumeFunction} on:change={() => ops.volumeFunction = volumeFunction}>
         <SelectItem text="Last Timestep" value={0} />
         <SelectItem text="Number of Timesteps" value={1} />
       </Select>
     {/if}
 
-    <Checkbox labelText="Outlines" bind:checked={ops.outlines} />
+    <Checkbox labelText="Outlines" bind:checked={outlines} on:change={() => ops.outlines = outlines} />
     <Checkbox labelText="Color Outlines" checked={false} />
 
     {#if dataClustersGivenK && dataClustersGivenK[1]}
       <Dendrogram
         dataClustersGivenK={dataClustersGivenK}
-        visualizationSelected={ops.visType}
-        bind:blobsAmount={ops.blobsAmount}
+        visualizationSelected={visType}
+        bind:blobsAmount={blobsAmount}
         modelSize={size}
         experimental={false}
         action={"Merge"}
-        bind:matryoshkaVisibility={ops.matryoshkaBlobsVisible}
+        bind:matryoshkaVisibility={matryoshkaBlobsVisible}
         interactiveCluster={interactiveCluster} 
         update={false}
       />
