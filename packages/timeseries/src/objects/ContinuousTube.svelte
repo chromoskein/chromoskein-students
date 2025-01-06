@@ -7,27 +7,31 @@
 
   let viewport: Writable<Viewport3D | null> = getContext("viewport");
 
-  export let radius = 0.3;
-  export let points: vec3[] = [];
-  export let color: vec3 = vec3.fromValues(1.0, 1.0, 1.0);
-  export let multicolored: boolean = false;
-
-  let object: Graphics.RoundedConeInstanced;
-  let objectID: number | null = null;
-
-  $: if ($viewport && $viewport.scene) {
-    if (objectID != null) {
-      $viewport.scene.removeObjectByID(objectID);
-    }
-
-    [object, objectID] = $viewport.scene.addObjectInstanced(
-      Graphics.RoundedConeInstanced,
-      points.length
-    );
-    object.setDirtyCPU();
+  interface ContinuousTubeProps {
+    radius: number,
+    points: vec3[],
+    color: vec3,
+    multicolored: boolean,
   }
 
-  $: if (object && points) {
+  let {  
+      radius = 0.3,
+      points = [],
+      color = vec3.fromValues(1.0, 1.0, 1.0),
+      multicolored = false,
+  }: ContinuousTubeProps = $props();
+
+  let [object, objectID]: [Graphics.RoundedConeInstanced | null, number | null] = [null, null];
+  $effect(() => {
+    if ($viewport && $viewport.scene) {
+        if (objectID != null) {
+            $viewport.scene.removeObjectByID(objectID);
+        }
+        [object, objectID] = $viewport.scene.addObjectInstanced(Graphics.RoundedConeInstanced, points.length);
+    }
+  })
+
+  $effect(() => { if (object && points) {
     for (let i = 0; i < points.length - 1; i++) {
       object.properties[i].start = [points[i][0], points[i][1], points[i][2]];
       object.properties[i].end = [
@@ -47,11 +51,11 @@
       object.properties[i].endColor = [color[0], color[1], color[2], 1.0];
     }
     object.setDirtyCPU();
-  }
+  }});
 
   onMount(() => {
     return () => {
-      if (viewport && $viewport?.scene && objectID != null) {
+      if (viewport && $viewport?.scene && objectID) {
         $viewport.scene.removeObjectByID(objectID);
       }
     };

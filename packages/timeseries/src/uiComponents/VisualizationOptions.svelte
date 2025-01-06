@@ -5,6 +5,7 @@
     import Dendrogram from "./Dendrogram.svelte";
     import * as Graphics from "@chromoskein/lib-graphics";
     import InteractiveCluster from "../visalizations/InteractiveCluster.svelte";
+    import { untrack } from "svelte";
   
     interface VisualizationOptionsProps {
       viewport: Graphics.Viewport3D | null,
@@ -33,9 +34,15 @@
     let abstractVolumes = $state(ops.abstractVolumes);
     let hedgehogDistance = $state(ops.hedgehogDistance);
     let hedgehogThreshold = $state(ops.hedgehogThreshold);
+    let preciseQuills = $state(ops.preciseQuills);
     let abstractionMultiplier = $state(ops.abstractionMultiplier);
     let secondaryVis = $state(ops.secondaryVis);
+    let showConnectors = $state(ops.showConnectors);
 
+
+    $effect(() => {
+      untrack(() => ops).matryoshkaBlobsVisible = matryoshkaBlobsVisible;
+    });
 
     function onColormapChange(event: Event) {
       ops.volumeColormapChoice = selectedColormap;
@@ -105,7 +112,7 @@
     {/if}
       
     {#if visType == VisualisationType.Composite || visType == VisualisationType.Cones || visType == VisualisationType.AbstractSpheres || visType == VisualisationType.Hedgehog}
-      <Checkbox labelText="Show cluster connections" bind:checked={ops.showConnectors} on:check={(event) => {interactiveCluster?.setShowConnections(event.detail)}}/>
+      <Checkbox labelText="Show cluster connections" bind:checked={showConnectors} on:check={(event) => {interactiveCluster?.setShowConnections(event.detail); ops.showConnectors = showConnectors}}/>
     {/if}
       <!-- {#if visType != VisualisationType.Composite && visType != VisualisationType.None && visType != VisualisationType.Volume && visType != VisualisationType.Matryoshka}
     <Checkbox labelText="Colored" bind:checked={blobsColored} />
@@ -130,7 +137,7 @@
     {/if}
     {#if ops.visType == VisualisationType.Hedgehog || visType == VisualisationType.Composite || (visType == VisualisationType.Test && ops.secondaryVis == VisualisationType.Hedgehog)}
       <Slider labelText="Max distance" fullWidth min={0.0} max={0.5} step={0.01} bind:value={hedgehogDistance} on:input={() => ops.hedgehogDistance = hedgehogDistance} />
-      <Checkbox labelText="Precise quills" bind:checked={ops.preciseQuills} />
+      <Checkbox labelText="Precise quills" bind:checked={preciseQuills} on:change={() => ops.preciseQuills = preciseQuills} />
       {#if ops.preciseQuills}
         <Checkbox labelText="Point to enemy" bind:checked={ops.secondPoint} />
         <Slider labelText="Threshold" fullWidth min={0.0} max={1.0} step={0.01} bind:value={hedgehogThreshold} on:input={() => ops.hedgehogThreshold = hedgehogThreshold}/>
