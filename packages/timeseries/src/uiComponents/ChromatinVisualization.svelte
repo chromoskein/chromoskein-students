@@ -194,7 +194,6 @@
             translate={blob.center}
             scale={blob.scale}
             radius={radius}
-            visible={true}
             color={vec3.fromValues(dataClustersGivenK[clustersAmount][i].color[0], dataClustersGivenK[clustersAmount][i].color[1], dataClustersGivenK[clustersAmount][i].color[2])}
             outline={false}
         />
@@ -264,7 +263,6 @@
             translate={blob.center}
             scale={blob.scale}
             radius={radius}
-            visible={true}
             color={vec3.fromValues(dataClustersGivenK[clustersAmount][i].color[0], dataClustersGivenK[clustersAmount][i].color[1], dataClustersGivenK[clustersAmount][i].color[2])}
             outline={true}
         />
