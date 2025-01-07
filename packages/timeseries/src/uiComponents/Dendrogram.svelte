@@ -1,20 +1,37 @@
-
 <script lang="ts">
+    import type { ClusterCompositeNode } from "../interactiveClusters/clusterCompositeNode";
     import {VisualisationType} from "../utils/main";
     import type { ClusterNode } from "../utils/main";
     import { staticColors } from "../utils/treecolors";
     import InteractiveCluster from "../visalizations/InteractiveCluster.svelte";
 
+    interface DendrogramProps {
+        visualizationSelected: VisualisationType,
+        dataClustersGivenK: ClusterNode[][],
+        modelSize: number,
+        blobsAmount: number, 
+        action: string,
+        experimental: boolean, 
+        matryoshkaVisibility: boolean[], 
+        interactiveCluster: InteractiveCluster | null,
+        update:boolean,
+        onmatryoshkaclick: () => void,
+        onclick: (amount: number) => void
+    }
 
-    export let visualizationSelected: VisualisationType = VisualisationType.Pathline;
-    export let dataClustersGivenK: ClusterNode[][] = [];
-    export let modelSize: number = 0;
-    export let blobsAmount: number = 1;
-    export let action: string;
-    export let experimental: boolean = false;
-    export let matryoshkaVisibility: boolean[] = [];
-    export let interactiveCluster: InteractiveCluster | null;
-    export let update:boolean;
+    let {
+        visualizationSelected = VisualisationType.Pathline,
+        dataClustersGivenK = [],
+        modelSize = 0,
+        blobsAmount = $bindable(1),
+        action,
+        experimental = false,
+        matryoshkaVisibility = $bindable([]),
+        interactiveCluster,
+        update,
+        onmatryoshkaclick = () => {},
+        onclick = (amount) => {}
+    }: DendrogramProps = $props();
 
     function onDendrogramClick(depth: number, cluster: ClusterNode | null) {
         if (visualizationSelected == VisualisationType.Matryoshka || visualizationSelected == VisualisationType.Test) {
@@ -29,10 +46,12 @@
 
     function dendrogramClick(depth: number) {
         blobsAmount = depth + 1;
+        onclick(blobsAmount);
     }
 
     function dendrogramClickMatryoshka(depth: number) {
         matryoshkaVisibility[depth] = !matryoshkaVisibility[depth];
+        onmatryoshkaclick()
     }
 
     function fetchColor(cluster: ClusterNode, i: number, experimental: boolean) {
@@ -46,13 +65,14 @@
     }
 
     function callSplitClusters(cluster: ClusterNode) {
-        let clusterComposite = interactiveCluster?.getClusterComposite(cluster);
+        let clusterComposite: ClusterCompositeNode | null | undefined = interactiveCluster?.getClusterComposite(cluster);
+        if (!interactiveCluster || !clusterComposite) return;
         switch (action) {
             case "Split":
-            interactiveCluster?.splitClusters(clusterComposite);
+            interactiveCluster.splitClusters(clusterComposite);
             break;
             case "Merge":
-            interactiveCluster?.mergeClusters(clusterComposite);
+            interactiveCluster.mergeClusters(clusterComposite);
         }
     }
 
@@ -75,10 +95,11 @@
         return list;
     }
 
-    let sparseDataClustersGivenK: ClusterNode[][] = [];
-
-    $: if (visualizationSelected == VisualisationType.Composite && dataClustersGivenK) {
-        sparseDataClustersGivenK = [];
+    let sparseDataClustersGivenK: ClusterNode[][] = $derived.by(() => {
+        if (visualizationSelected != VisualisationType.Composite || !dataClustersGivenK) {
+            return [];
+        }
+        let sparseDataClustersGivenK = [];
         sparseDataClustersGivenK.push([]);
         sparseDataClustersGivenK.push(dataClustersGivenK[1]);
         
@@ -96,7 +117,8 @@
             }
             i++;
         }
-    }
+        return sparseDataClustersGivenK;
+    });
 
 </script>
 
@@ -104,7 +126,7 @@
     {#if dataClustersGivenK && (visualizationSelected != VisualisationType.Composite && visualizationSelected != VisualisationType.None)}
       <div class="cluster-dendogram">
         {#each dataClustersGivenK.slice(1, 16) as clustersAtLevel, clusterLevel}
-          <div role="gridcell" tabindex="{clusterLevel}" class="cluster-dendogram-row" on:click={() => onDendrogramClick(clusterLevel, null)} on:keydown={() => { }}>
+          <div role="gridcell" tabindex="{clusterLevel}" class="cluster-dendogram-row" onclick={() => onDendrogramClick(clusterLevel, null)} onkeydown={() => { }}>
             {#each clustersAtLevel as cluster, i}
               <div
                 style={`
@@ -124,7 +146,7 @@
             {#each sparseDataClustersGivenK.slice(1, 16) as clustersAtLevel, clusterLevel}
             <div class="cluster-dendogram-row">
                 {#each clustersAtLevel as cluster, i}
-                <div role="gridcell" tabindex="{clusterLevel}" on:click={() => onDendrogramClick(clusterLevel, cluster)} on:keydown={() => { }}
+                <div role="gridcell" tabindex="{clusterLevel}" onclick={() => onDendrogramClick(clusterLevel, cluster)} onkeydown={() => { }}
                     style={`
                         width: ${100.0 * ((cluster.to - cluster.from + 1) / modelSize)}%;
                         background-color: rgb(${fetchColor(cluster, i, experimental)});

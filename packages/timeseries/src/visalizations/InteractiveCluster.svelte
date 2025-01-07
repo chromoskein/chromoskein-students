@@ -1,7 +1,7 @@
 <script lang="ts">
     import { VisualisationType, type ClusterNode } from "../utils/main";
     import { CompositeClusters } from "../interactiveClusters/compositeClusters";
-    import type { ClusterCompositeNode } from "../interactiveClusters/clusterCompositeNode";
+    import { ClusterCompositeNode } from "../interactiveClusters/clusterCompositeNode";
     import { HedgehogClusterVisualisation, SphereSimplificationClusterVisualisation, PCAClusterVisualisation, SDGClusterVisualisation, PathlineClusterVisualization, SplineClusterVisualisation, SpheresClusterVisualization, AbstractVolumeClusterVisualisation, VolumeClusterVisualisation } from "../interactiveClusters/visualisations/index";
     import { getContext, onMount } from "svelte";
     import type { Writable } from "svelte/store";
@@ -53,7 +53,7 @@
       clusterVisualization = newRepresentation;
     }
 
-    export function getClusterComposite(cluster: ClusterNode) {
+    export function getClusterComposite(cluster: ClusterNode): ClusterCompositeNode | null {
       if (clusterObjects) {
         let root = clusterObjects.getRoot();
         let allClusters = root.getInorder();
@@ -63,6 +63,7 @@
           }
         }
       }
+      return null
     }
 
     export function splitClusters(hitCluster: ClusterCompositeNode) {
