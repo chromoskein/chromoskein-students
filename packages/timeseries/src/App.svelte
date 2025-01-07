@@ -61,6 +61,10 @@
   let viewport: Graphics.Viewport3D | null = null;
   let loadedChromosomes: Chromosome[] = [];
 
+  $: if (loadedChromosomes) {
+    addChromosomes(loadedChromosomes);
+    loadedChromosomes = [];
+  }
 
   let chromosomes: Chromosome[] = [];
   let chromosomeOptions: VisOptions[] = [];

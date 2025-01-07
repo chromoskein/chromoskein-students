@@ -111,7 +111,6 @@
             translate={blob.center}
             scale={blob.scale}
             radius={blobsRadius + matryoshkaRadius[i]}
-            visible={true}
             color={matryoshkaColors[i]}
             outline={true}
         />
@@ -123,7 +122,6 @@
                 translate={blob.center}
                 scale={blob.scale}
                 radius={blobsRadius + matryoshkaRadius[i]}
-                visible={true}
                 color={matryoshkaColors[i]}
                 outline={!matryoshkaOutline[i]}
             />
