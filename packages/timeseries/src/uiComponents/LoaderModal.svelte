@@ -6,11 +6,21 @@
     import { normalizePointClouds, type ClusterNode } from "../utils/main";
     import { getClustering, getEmptyClustering, initializeChromosome, type Chromosome } from "../utils/data-models";
 
-    export let open = false;
-    export let outputChromosomes: Chromosome[] = [];
 
-    let normalize: boolean = false;
-    let separate: boolean = false;
+    interface LoaderModalProps {
+        open: boolean,
+        onload: (loadedChromosomes: Chromosome[]) => void
+    };
+
+    let {
+        open = $bindable(false),
+        onload = (() => {}),
+    }: LoaderModalProps = $props();
+
+    //export let outputChromosomes: Chromosome[] = [];
+
+    let normalize: boolean = $state(false);
+    let separate: boolean = $state(false);
     
     type TableItem = {
         id: number,
@@ -20,7 +30,7 @@
         include: boolean,
     }
 
-    let loadedData: TableItem[] = [];
+    let loadedData: TableItem[] = $state([]);
     let points: vec3[] = [];
 
     let id = 0;
@@ -100,7 +110,7 @@
             });
         }
 
-        outputChromosomes = chromosomes;
+        onload(chromosomes);
     }
 </script>
   
@@ -113,10 +123,10 @@
     on:click:button--secondary={() => open = false}
     on:open={() => reset()}
     on:close
-    on:submit={() => {finalizeData(); open = false}}
+    on:submit={() => { open = false; finalizeData() }}
   >
 
-    <input type="file"  accept=".pdb,.PDB" id="file-input" on:change={(event) => loadFiles(event)}/>
+    <input type="file"  accept=".pdb,.PDB" id="file-input" onchange={(event) => loadFiles(event)}/>
     <Button
         kind="secondary"
         size="field"
