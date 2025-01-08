@@ -61,12 +61,6 @@
   let viewport: Graphics.Viewport3D | null = $state(null);
   let loadedChromosomes: Chromosome[] = $state([]);
 
-  // $effect(() => { if (loadedChromosomes) {
-  //   console.log("Foo");
-  //   addChromosomes(loadedChromosomes);
-  //   loadedChromosomes = [];
-  // }});
-
   let chromosomes: Chromosome[] = $state([]);
   let chromosomeOptions: VisOptions[] = $state([defaultVisOptions()]);
   
@@ -126,7 +120,7 @@
     chromosomeOptions = [defaultVisOptions()]
     chromosomes = [baseChromosome]
     selectedChromosome = baseChromosome;
-    clusteringWorker.postMessage(selectedChromosome.points);
+    clusteringWorker.postMessage(selectedChromosome.points.map((point) => [...point]));
   });
 
   // Set default colormap on viewport change
@@ -147,16 +141,13 @@
     }
   }
 
-
   let selectedInteractiveCluster: InteractiveCluster | null = $state(null);
-
 
   // Loader
   let loaderOpen: boolean = $state(false);
 
   // Distance map
   let showDistanceMap = $state(false);
-
 
   //#endregion Configuration
 </script>
@@ -244,7 +235,7 @@
             >  
                 Upload Clusters
             </Button>
-            <Button size="small" on:click={() => { clusteringWorker.postMessage(selectedChromosome.points) }}> Cluster </Button>
+            <Button size="small" on:click={() => { clusteringWorker.postMessage(selectedChromosome.points.map((point) => [...point])) }}> Cluster </Button>
           </AccordionItem>
 
           <AccordionItem title="Data Loading">
