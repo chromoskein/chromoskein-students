@@ -31,8 +31,8 @@
   const graphicsLibrary: Writable<Graphics.GraphicsLibrary | null> = writable(null);
 
 
-  let theme: CarbonTheme = "white";
-  let clearColor = {r: 1.0, g: 1.0,  b: 1.0,  a: 1.0};
+  let theme: CarbonTheme = $state("white");
+  let clearColor = $state({r: 1.0, g: 1.0,  b: 1.0,  a: 1.0});
 
   function changeTheme(event: CustomEvent) {
     const toggled = event.detail.toggled;
@@ -58,16 +58,17 @@
     console.log("Worker error:", event);
   }
 
-  let viewport: Graphics.Viewport3D | null = null;
-  let loadedChromosomes: Chromosome[] = [];
+  let viewport: Graphics.Viewport3D | null = $state(null);
+  let loadedChromosomes: Chromosome[] = $state([]);
 
-  $: if (loadedChromosomes) {
-    addChromosomes(loadedChromosomes);
-    loadedChromosomes = [];
-  }
+  // $effect(() => { if (loadedChromosomes) {
+  //   console.log("Foo");
+  //   addChromosomes(loadedChromosomes);
+  //   loadedChromosomes = [];
+  // }});
 
-  let chromosomes: Chromosome[] = [];
-  let chromosomeOptions: VisOptions[] = [];
+  let chromosomes: Chromosome[] = $state([]);
+  let chromosomeOptions: VisOptions[] = $state([defaultVisOptions()]);
   
   function addChromosomes(models: Chromosome[]) {
     chromosomes = chromosomes.concat(models);
@@ -129,13 +130,13 @@
   });
 
   // Set default colormap on viewport change
-  $: if (viewport && viewport.scene) {
+  $effect(() => { if (viewport && viewport.scene) {
     loadBitmap("./colormaps/cool-warm-paraview.png").then((colormap) =>  viewport?.scene?.setColorMapFromBitmap(colormap));
-  }
+  }});
 
-  let selectedId: number = 0;
-  let selectedChromosome: Chromosome;
-  let selectedChromosomeId = 0;
+  let selectedId: number = $state(0);
+  let selectedChromosome: Chromosome = $state(initializeChromosome("", [[]]));
+  let selectedChromosomeId = $state(0);
   function onSelectedChromosomeChanged() {
     for (let i = 0; i < chromosomes.length; i++) {
       if (chromosomes[i].id == selectedId) {
@@ -147,14 +148,14 @@
   }
 
 
-  let selectedInteractiveCluster: InteractiveCluster | null = null;
+  let selectedInteractiveCluster: InteractiveCluster | null = $state(null);
 
 
   // Loader
-  let loaderOpen: boolean = false;
+  let loaderOpen: boolean = $state(false);
 
   // Distance map
-  let showDistanceMap = false;
+  let showDistanceMap = $state(false);
 
 
   //#endregion Configuration
@@ -188,7 +189,7 @@
               points={selectedChromosome.points}
               visible={selectedChromosome.visible}
               dataClustersGivenK={selectedChromosome.clusters}
-              ops={chromosomeOptions[selectedChromosomeId]}
+              bind:ops={chromosomeOptions[selectedChromosomeId]}
               bind:this={selectedChromosome.visualization}
               bind:interactiveCluster={selectedInteractiveCluster}
             />
@@ -200,8 +201,9 @@
                 points={chromosome.points}
                 visible={chromosome.visible}
                 dataClustersGivenK={chromosome.clusters}
-                ops={chromosomeOptions[i]}
+                bind:ops={chromosomeOptions[i]}
                 bind:this={chromosome.visualization}
+                interactiveCluster={null}
               />
             {/if}
           {/each}
@@ -222,7 +224,7 @@
             <Checkbox labelText="Show Distance Map" bind:checked={showDistanceMap} />
 
             {#key selectedChromosomeId}
-              {#if chromosomeOptions && chromosomeOptions[selectedChromosomeId]}
+              {#if chromosomeOptions[selectedChromosomeId] && chromosomes[selectedChromosomeId]}
                 <VisualizationOptions
                   viewport={viewport}
                   interactiveCluster={selectedInteractiveCluster}
@@ -234,7 +236,7 @@
             {/key}  
 
 
-            <input type="file"  accept=".json" id="clustering-input" on:change={(event) => loadClustering(event)}/>
+            <input type="file"  accept=".json" id="clustering-input" onchange={(event) => loadClustering(event)}/>
             <Button
                 kind="secondary"
                 size="small"

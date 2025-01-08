@@ -16,93 +16,92 @@
     import { calculateSphereParameters } from "../utils/abstractClustersUtils";
     import InteractiveCluster from "../visalizations/InteractiveCluster.svelte";
 
-    export let visible: boolean = true;
-    export let points: vec3[][];
-    export let dataClustersGivenK: ClusterNode[][] = [];
-    export let ops: VisOptions;
-    export let interactiveCluster: InteractiveCluster | null = null;
-
-    let visType: VisualisationType;
-    let clustersAmount: number = 1;
-    let alpha: number = 1.0;
-    let radius: number = 0.2;
-    let abstractVolumes: boolean;
-    let volumeColormap;
-    let volumeFunction: number;
-    let timestep: number = 0;
-    let options: VisOptions;
-    let outlines: boolean = false;
-    let showConnectors: boolean = false;
-    let abstractionMultiplier: number = 2.0;
-    let secondaryVis: VisualisationType;
-
-    $: options = ops;
-    $: visType = ops.visType;
-    $: clustersAmount = ops.blobsAmount;
-    $: alpha = ops.alpha;
-    $: radius = ops.radius;
-    $: abstractVolumes = ops.abstractVolumes;
-    $: volumeColormap = ops.volumeColormap;
-    $: volumeFunction = ops.volumeFunction;
-    $: timestep = ops.timestep;
-    $: outlines = ops.outlines;
-    $: showConnectors = ops.showConnectors;
-    $: abstractionMultiplier = ops.abstractionMultiplier;
-    $: secondaryVis = ops.secondaryVis;
-
-    $: if (dataClustersGivenK) {
-        ops.matryoshkaBlobsVisible = new Array(dataClustersGivenK.length - 1).fill(false);
-        ops.matryoshkaBlobsVisible[0] = true;
+    interface ChromatinVisualizationProps {     
+        visible: boolean,
+        points: vec3[][],
+        dataClustersGivenK: ClusterNode[][],
+        ops: VisOptions,
+        interactiveCluster: InteractiveCluster | null,
     }
 
+    let {
+        visible= true,
+        points = [],
+        dataClustersGivenK = [],
+        ops = $bindable(),
+        interactiveCluster = $bindable(null),
+    }: ChromatinVisualizationProps = $props();
+
+    let visType: VisualisationType = $derived(ops.visType);
+    let clustersAmount: number = $derived(ops.blobsAmount);
+    let alpha: number= $derived(ops.alpha);
+    let radius: number = $derived(ops.radius);
+    let abstractVolumes: boolean = $derived(ops.abstractVolumes);
+    let volumeColormap = $derived(ops.volumeColormap);
+    let volumeFunction: number = $derived(ops.volumeFunction);
+    let timestep: number = $derived(ops.timestep);
+    let options: VisOptions = $derived(ops);;
+    let outlines: boolean = $derived(ops.outlines);
+    let showConnectors: boolean = $derived(ops.showConnectors);
+    let abstractionMultiplier: number = $derived(ops.abstractionMultiplier);
+    let secondaryVis: VisualisationType = $derived(ops.secondaryVis);
+
+    // $effect(() => { if (dataClustersGivenK) {
+    //     console.log("AAAAAAAAAAAAA")
+    //     ops.matryoshkaBlobsVisible = new Array(dataClustersGivenK.length - 1).fill(false);
+    //     ops.matryoshkaBlobsVisible[0] = true;
+    // }});
 
     // Stores the average point in each cluster and radius that encapsulates all points
     let clusterCenters: {
         center: vec3,
         radius: number,
-    }[] = [];
-    $: {
-        clusterCenters = [];
+    }[] = $derived.by(() => {
+        let clusterCenters: {center: vec3, radius: number}[] = [];
         dataClustersGivenK[clustersAmount].forEach(cluster => {
             clusterCenters.push(calculateSphereParameters(points[timestep].slice(cluster.from, cluster.to + 1)));
         });
-    }
+        return clusterCenters;
+    });
 
     // Splits data pathlines based on clusters
     // Format [cluster][point][timestep]
-    let dataClusteredPathlines: vec3[][][] | null = null;
-    $: if (dataClustersGivenK && dataClustersGivenK[clustersAmount] && points) {
-        const clusters = dataClustersGivenK[clustersAmount];
+    let dataClusteredPathlines: vec3[][][] = $derived.by(() => {
+        let dataClusteredPathlines: vec3[][][] = [];
+        if (dataClustersGivenK && dataClustersGivenK[clustersAmount] && points) {
+            const clusters = dataClustersGivenK[clustersAmount];
 
-        let dataPathlines = timestepsToPathlines(points);
-        dataClusteredPathlines = [];
-        for (const [clusterIndex, cluster] of clusters.entries()) {
-            dataClusteredPathlines[clusterIndex] = dataPathlines.slice(cluster.from, cluster.to + 1);
+            let dataPathlines = timestepsToPathlines(points);
+            for (const [clusterIndex, cluster] of clusters.entries()) {
+                dataClusteredPathlines[clusterIndex] = dataPathlines.slice(cluster.from, cluster.to + 1);
+            }
         }
-    }
+        return dataClusteredPathlines;
+    });
 
     // [timestep][blob]
-    let blobs: ClusterBlob[][] = [];
     // Process the clustered pathlines [cluster][point][timestep]
-    // into normalized blobs in format [timestep][blob]
-    $: if (dataClusteredPathlines) {
-        // Allocate new ones
-        blobs = [];
-        for (let timestep = 0; timestep < points.length; timestep++) {
-            let blobsPointsAtTimestep: {
-                normalizedPoints: vec3[];
-                center: vec3;
-                scale: number;
-            }[] = [];
-        for (const [index, clusteredPathline] of dataClusteredPathlines.entries()) {
-            const points = clusteredPathline.map((pathline) => pathline[timestep]);
+    // into normalized blobs in format [timestep][blob]  
+    let blobs: ClusterBlob[][] = $derived.by(() => {
+        let blobs: ClusterBlob[][] = [];
+        if (dataClusteredPathlines) {
+            for (let timestep = 0; timestep < points.length; timestep++) {
+                let blobsPointsAtTimestep: {
+                    normalizedPoints: vec3[];
+                    center: vec3;
+                    scale: number;
+                }[] = [];
+                for (const [index, clusteredPathline] of dataClusteredPathlines.entries()) {
+                    const points = clusteredPathline.map((pathline) => pathline[timestep]);
 
-            blobsPointsAtTimestep.push(blobFromPoints(points));
-        }
+                    blobsPointsAtTimestep.push(blobFromPoints(points));
+                }
 
-        blobs.push(blobsPointsAtTimestep);
+                blobs.push(blobsPointsAtTimestep);
+            }
         }
-    }       
+        return blobs;
+    });  
 </script>
 
 <div>

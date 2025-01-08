@@ -23,7 +23,13 @@
     }: VisualizationOptionsProps = $props();
 
     let matryoshkaBlobsVisible = $state(ops.matryoshkaBlobsVisible);
-    
+
+    $effect(() => { if (dataClustersGivenK) {
+        let visible = new Array(dataClustersGivenK.length - 1).fill(false);
+        visible[0] = true;
+        ops.matryoshkaBlobsVisible = visible;
+    }});
+
     async function changeColormap(event: CustomEvent) {
       let path: string;
       switch (event.detail) {
