@@ -2,6 +2,7 @@ import { vec3 } from "gl-matrix"
 import { VisualisationType } from "./main"
 import type { ClusterNode } from "./main"
 import ChromatinVisualization from "../uiComponents/ChromatinVisualization.svelte";
+import type InteractiveCluster from "../visalizations/InteractiveCluster.svelte";
 
 export interface HiCMapModel
 {
@@ -129,6 +130,7 @@ export type VisOptions = {
     outlines: boolean,
     abstractionMultiplier: number,
     secondaryVis: VisualisationType,
+    interactiveCluster: InteractiveCluster | null
 }
 
 export function defaultVisOptions(): VisOptions {
@@ -151,5 +153,6 @@ export function defaultVisOptions(): VisOptions {
         outlines: false,
         abstractionMultiplier: 4.0,
         secondaryVis: VisualisationType.AbstractSpheres,
+        interactiveCluster: null,
     }
 }

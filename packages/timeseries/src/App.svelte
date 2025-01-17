@@ -173,7 +173,6 @@
                 visible={chromosome.visible}
                 dataClustersGivenK={chromosome.clusters}
                 bind:ops={chromosomeOptions[i]}
-                interactiveCluster={null}
               />
           {/each}
 
@@ -195,7 +194,7 @@
             {#if chromosomes[selectedChromosomeId]}
               <VisualizationOptions
                 viewport={viewport}
-                interactiveCluster={selectedInteractiveCluster}
+                interactiveCluster={chromosomeOptions[selectedChromosomeId].interactiveCluster}
                 bind:ops={chromosomeOptions[selectedChromosomeId]}
                 dataClustersGivenK={chromosomes[selectedChromosomeId].clusters}
                 size={chromosomes[selectedChromosomeId].points[0].length}

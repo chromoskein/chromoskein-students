@@ -10,7 +10,7 @@ export class ClusterHighlighter {
         this.highlightedClusters = [];
     }
 
-    public updateHighlightedClusters(hitCluster: ClusterCompositeNode, type: String) {
+    public updateHighlightedClusters(hitCluster: ClusterCompositeNode | null, type: String) {
         if (hitCluster == null) {
             this.removeHighlights();
             return;

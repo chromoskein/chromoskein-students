@@ -20,16 +20,14 @@
         visible: boolean,
         points: vec3[][],
         dataClustersGivenK: ClusterNode[][],
-        ops: VisOptions,
-        interactiveCluster: InteractiveCluster | null,
+        ops: VisOptions
     }
 
     let {
         visible= true,
         points = [],
         dataClustersGivenK = [],
-        ops = $bindable(),
-        interactiveCluster = $bindable(null),
+        ops = $bindable()
     }: ChromatinVisualizationProps = $props();
 
     let visType: VisualisationType = $derived(ops.visType);
@@ -182,7 +180,7 @@
             selectedTimestep={timestep}
             clustersUpdated={false}
             updateClustersUpdated={() => {}}
-            bind:this={interactiveCluster}
+            bind:this={ops.interactiveCluster}
         />
     {/if}
 
@@ -219,7 +217,7 @@
         {#each dataClustersGivenK[clustersAmount] as cluster, _}
             <PcaCone 
                 points={points[timestep].slice(cluster.from, cluster.to + 1)}
-                radiusMultiplier={abstractionMultiplier * 20}
+                radiusMultiplier={abstractionMultiplier}
                 color={[cluster.color[0], cluster.color[1], cluster.color[2]]}
             />
         {/each}
