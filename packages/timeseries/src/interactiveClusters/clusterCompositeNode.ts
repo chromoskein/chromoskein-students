@@ -6,8 +6,8 @@ import type { AbstractClusterVisualisation } from "./visualisations/abstractVisu
 import type { CompositeClusters } from "./compositeClusters";
 import { ClusterConnector } from "./clusterConnector";
 import { SphereSimplificationClusterVisualisation } from "./visualisations/sphereSimplificationClusterVisualisation";
-import type { VisOptions } from "../utils/data-models";
 import { PathlineClusterVisualization } from "./visualisations";
+import type { AllOptions } from "../types";
 
 /**
  * Represents a single node in the clusternode tree maintaned for the composite visualization
@@ -88,7 +88,7 @@ export class ClusterCompositeNode {
             this.visualisation.updateCluster(this.cluster);        
     }
 
-    public updateParameters(options: VisOptions) {
+    public updateParameters(options: AllOptions) {
         if (this.isLeaf && this.visualisation) 
             this.visualisation.updateParameters(options);  
     }

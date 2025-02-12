@@ -5,7 +5,7 @@ import type { ClusterBlob, ClusterNode } from "../../utils/main";
 import type { CompositeClusters } from "../compositeClusters";
 import { AbstractClusterVisualisation } from "./abstractVisualization";
 import { blobFromPoints } from "../../utils/main";
-import type { VisOptions } from "../../utils/data-models";
+import type { AllOptions } from "../../types";
 
 export class SDGClusterVisualisation extends AbstractClusterVisualisation {
     private cluster!: ClusterNode;
@@ -28,7 +28,7 @@ export class SDGClusterVisualisation extends AbstractClusterVisualisation {
     }
 
     
-    public updateParameters(options: VisOptions) {
+    public updateParameters(options: AllOptions) {
         this.radius = options.radius;
         this.sdgObject.fromPoints(this.manager.getDevice(), [this.blob.normalizedPoints], [this.radius]);
     }

@@ -1,10 +1,7 @@
 <script lang="ts">
   // @hmr:keep-all
 
-  import { onMount, setContext } from "svelte";
-  import { writable, type Writable } from "svelte/store";
-  import * as Graphics from "@chromoskein/lib-graphics";
-  import Viewport3D from "./viewports/Viewport3D.svelte";
+  import { onMount } from "svelte";
   import "./styles/splitpanes.css";
   import { Pane, Splitpanes } from "svelte-splitpanes";
 
@@ -15,10 +12,9 @@
   import { Slider } from "carbon-components-svelte";
   import { treeColor } from "./utils/treecolors";
 
-  import { defaultVisOptions, initializeChromosome, type VisOptions, type Chromosome } from "./utils/data-models";
   import ChromosomeItem from "./uiComponents/ChromosomeItem.svelte";
   import ChromatinVisualization from "./uiComponents/ChromatinVisualization.svelte";
-  import VisualizationOptions from "./uiComponents/VisualizationOptions.svelte";
+  import VisualizationOptionsMenu from "./uiComponents/VisualizationOptions.svelte";
 
   import workerUrl from './utils/clusteringWorker.ts?worker';
   import Viewport2D from "./viewports/Viewport2D.svelte";
@@ -26,10 +22,10 @@
   import InteractiveCluster from "./visalizations/InteractiveCluster.svelte";
   import type { CarbonTheme } from "carbon-components-svelte/src/Theme/Theme.svelte";
 
-  const adapter: Writable<GPUAdapter | null> = writable(null);
-  const device: Writable<GPUDevice | null> = writable(null);
-  const graphicsLibrary: Writable<Graphics.GraphicsLibrary | null> = writable(null);
-
+  import { GraphicsContext, Viewport } from "@chromoskein/components/base";
+  import type { Chromosome } from "@chromoskein/components/types";
+  import { defaultVisualisationOptions, VisualisationType, type AllOptions } from "./types";
+  import { initializeChromosome } from "@chromoskein/components/utils";
 
   let theme: CarbonTheme = $state("white");
   let clearColor = $state({r: 1.0, g: 1.0,  b: 1.0,  a: 1.0});
@@ -49,7 +45,7 @@
   const clusteringWorker: Worker = new workerUrl();
   clusteringWorker.onmessage = (event: MessageEvent) => {
     if (chromosomes[selectedChromosomeId]) {
-      chromosomes[selectedChromosomeId].clusters = event.data;
+      chromosomes[selectedChromosomeId].clusterTree = event.data;
     }
   };
 
@@ -57,16 +53,14 @@
     console.log("Worker error:", event);
   }
 
-  let viewport: Graphics.Viewport3D | null = $state(null);
-
   let chromosomes: Chromosome[] = $state([]);
-  let chromosomeOptions: VisOptions[] = $state([defaultVisOptions()]);
+  let chromosomeOptions: AllOptions[] = $state([defaultVisualisationOptions(VisualisationType.Pathline)]);
   
   function addChromosomes(models: Chromosome[]) {
     chromosomes = chromosomes.concat(models);
-    let defaultOptions: VisOptions[]= [];
+    let defaultOptions: AllOptions[] = [];
     models.forEach(element => {
-      defaultOptions.push(defaultVisOptions())
+      defaultOptions.push(defaultVisualisationOptions(VisualisationType.Pathline))
     });
     chromosomeOptions = chromosomeOptions.concat(defaultOptions)
   }
@@ -84,43 +78,29 @@
   }
 
   function setNewClusters(clusters: ClusterNode[][]) {
-    chromosomes[selectedChromosomeId].points = normalizePointClouds([chromosomes[selectedChromosomeId].points[0].slice(clusters[1][0].from, clusters[1][0].to)]);
-    chromosomes[selectedChromosomeId].clusters = clusters;
+    chromosomes[selectedChromosomeId].timesteps = normalizePointClouds([chromosomes[selectedChromosomeId].timesteps[0].slice(clusters[1][0].from, clusters[1][0].to)]);
+    chromosomes[selectedChromosomeId].clusterTree = clusters;
     chromosomeOptions[selectedChromosomeId].blobsAmount = 1;
   }
 
   //#endregion Data
 
   //#region Init
-  setContext("adapter", adapter);
-  setContext("device", device);
-  setContext("graphicsLibrary", graphicsLibrary);
 
-  async function getGPU() {
-    $adapter = await navigator.gpu.requestAdapter();
-
-    if ($adapter) {
-      $device = await $adapter.requestDevice();
-      $graphicsLibrary = new Graphics.GraphicsLibrary($adapter, $device);
-    }
-  }
+  let defaultColormap = $state<ImageBitmap>();
 
   onMount(async () => {
-    await getGPU();
     const filenames: string[] = new Array(600).fill(null).map((v, i) => "./timeseries/timestep_" + (i + 1).toString() + ".XYZ");
     const timesteps = await loadTimesteps(filenames);
     const dataTimesteps = normalizePointClouds(timesteps);
 
     let baseChromosome = initializeChromosome("Base", dataTimesteps);
-    chromosomeOptions = [defaultVisOptions()]
+    chromosomeOptions = [defaultVisualisationOptions(VisualisationType.Pathline)]
     chromosomes = [baseChromosome]
-    clusteringWorker.postMessage(chromosomes[selectedChromosomeId].points.map((point) => [...point]));
-  });
+    clusteringWorker.postMessage(chromosomes[selectedChromosomeId].timesteps.map((point) => [...point]));
 
-  // Set default colormap on viewport change
-  $effect(() => { if (viewport && viewport.scene) {
-    loadBitmap("./colormaps/cool-warm-paraview.png").then((colormap) =>  viewport?.scene?.setColorMapFromBitmap(colormap));
-  }});
+    loadBitmap("./colormaps/cool-warm-paraview.png").then((colormap) =>  defaultColormap = colormap);
+  });
 
   let selectedId: number = $state(0);
   let selectedChromosomeId = $state(0);
@@ -149,36 +129,31 @@
   <Theme bind:theme />
   
   <div class="ui">
-    {#if chromosomes[selectedChromosomeId] && chromosomes[selectedChromosomeId].points.length > 1}
-      <Slider fullWidth min={0} max={chromosomes[selectedChromosomeId].points.length - 1} bind:value={chromosomeOptions[selectedChromosomeId].timestep} />
+    {#if chromosomes[selectedChromosomeId] && chromosomes[selectedChromosomeId].timesteps.length > 1}
+      <Slider fullWidth min={0} max={chromosomes[selectedChromosomeId].timesteps.length - 1} bind:value={chromosomeOptions[selectedChromosomeId].timestep} />
     {/if}
   </div>
 
   <Splitpanes theme="chromoskein" horizontal={false} style="padding-bottom:5%">
+    <GraphicsContext>
     {#if showDistanceMap}
-      <Pane size={10}>
-        {#if $adapter && $device && $graphicsLibrary && chromosomes[selectedChromosomeId]}
-          <Viewport2D clearColor={clearColor}
-            points={chromosomes[selectedChromosomeId].points[chromosomeOptions[selectedChromosomeId].timestep]}
+      <Pane size={10}>        
+        {#if chromosomes[selectedChromosomeId]}
+        <!-- TODO: move 2d viewports to the library -->
+        <Viewport2D clearColor={clearColor}
+            points={chromosomes[selectedChromosomeId].timesteps[chromosomeOptions[selectedChromosomeId].timestep]}
           /> 
         {/if}
       </Pane>
     {/if}
     <Pane size={75}>
-      {#if $adapter && $device && $graphicsLibrary}
-        <Viewport3D bind:viewport clearColor={clearColor}>
+        <Viewport {clearColor} colormap={defaultColormap}>
           {#each chromosomes as chromosome, i}
-              <ChromatinVisualization
-                points={chromosome.points}
-                visible={chromosome.visible}
-                dataClustersGivenK={chromosome.clusters}
-                bind:ops={chromosomeOptions[i]}
-              />
+             <ChromatinVisualization {chromosome} bind:options={chromosomeOptions[i]} />
           {/each}
-
-        </Viewport3D>
-      {/if}
-    </Pane>
+        </Viewport>
+      </Pane>
+    </GraphicsContext>
     <Pane size={25}>
       <div style="padding: 8px; overflow: auto; height: calc(90vh);">
         <Accordion>
@@ -192,12 +167,10 @@
             <Checkbox labelText="Show Distance Map" bind:checked={showDistanceMap} />
 
             {#if chromosomes[selectedChromosomeId]}
-              <VisualizationOptions
-                viewport={viewport}
-                interactiveCluster={chromosomeOptions[selectedChromosomeId].interactiveCluster}
-                bind:ops={chromosomeOptions[selectedChromosomeId]}
-                dataClustersGivenK={chromosomes[selectedChromosomeId].clusters}
-                size={chromosomes[selectedChromosomeId].points[0].length}
+              <VisualizationOptionsMenu
+                bind:options={chromosomeOptions[selectedChromosomeId]}
+                clusterTree={chromosomes[selectedChromosomeId].clusterTree}
+                size={chromosomes[selectedChromosomeId].timesteps[0].length}
               />            
             {/if}
 
@@ -209,7 +182,7 @@
             >  
                 Upload Clusters
             </Button>
-            <Button size="small" on:click={() => { clusteringWorker.postMessage(chromosomes[selectedChromosomeId].points.map((point) => [...point])) }}> Cluster </Button>
+            <Button size="small" on:click={() => { clusteringWorker.postMessage(chromosomes[selectedChromosomeId].timesteps.map((point) => [...point])) }}> Cluster </Button>
           </AccordionItem>
 
           <AccordionItem title="Data Loading">

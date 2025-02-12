@@ -4,7 +4,7 @@ import type { Viewport3D } from "@chromoskein/lib-graphics";
 import { blobFromPoints, type ClusterNode } from "../../utils/main";
 import type { CompositeClusters } from "../compositeClusters";
 import { AbstractClusterVisualisation } from "./abstractVisualization";
-import type { VisOptions } from "../../utils/data-models";
+import type { AllOptions } from "../../types";
 
 export class VolumeClusterVisualisation extends AbstractClusterVisualisation {
     private cluster!: ClusterNode;
@@ -24,7 +24,7 @@ export class VolumeClusterVisualisation extends AbstractClusterVisualisation {
     }
 
 
-    public updateParameters(options: VisOptions) {
+    public updateParameters(options: AllOptions) {
         // Do nothing 
     }
 

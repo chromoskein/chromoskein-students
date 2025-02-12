@@ -3,9 +3,8 @@
     import { parsePdb } from "../dataloader/pdb";
     import { type ChromatinModel } from "../dataloader/models";
     import { vec3 } from "gl-matrix";
-    import { normalizePointClouds, type ClusterNode } from "../utils/main";
-    import { getClustering, getEmptyClustering, initializeChromosome, type Chromosome } from "../utils/data-models";
-
+    import { getClustering, getEmptyClustering, initializeChromosome, normalizePointClouds } from "@chromoskein/components/utils";
+    import type { Chromosome, ClusterNode } from "@chromoskein/components/types";
 
     interface LoaderModalProps {
         open: boolean,
@@ -102,7 +101,7 @@
                 clusters.push(modelClusters);
             }
 
-            chromosome.clusters = clusters;
+            chromosome.clusterTree = clusters;
             chromosomes = [chromosome];
         } else {
             filteredData.forEach((model, index) => {

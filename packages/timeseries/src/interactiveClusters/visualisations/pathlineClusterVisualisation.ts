@@ -4,7 +4,7 @@ import type { Viewport3D } from "@chromoskein/lib-graphics";
 import type { ClusterNode } from "../../utils/main";
 import type { CompositeClusters } from "../compositeClusters";
 import { AbstractClusterVisualisation } from "./abstractVisualization";
-import type { VisOptions } from "../../utils/data-models";
+import type { AllOptions } from "../../types";
 
 export class PathlineClusterVisualization extends AbstractClusterVisualisation {
     private cluster!: ClusterNode;
@@ -29,7 +29,7 @@ export class PathlineClusterVisualization extends AbstractClusterVisualisation {
         this.cluster = cluster;
     }
 
-    public updateParameters(options: VisOptions) {
+    public updateParameters(options: AllOptions) {
         this.radius = options.radius;
         for (let i = 0; i < this.pathline!.properties.length - 1; i++) {
             this.pathline!.properties[i].startRadius = this.radius;

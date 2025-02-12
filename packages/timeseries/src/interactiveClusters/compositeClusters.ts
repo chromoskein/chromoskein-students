@@ -4,7 +4,7 @@ import type { Viewport3D } from "@chromoskein/lib-graphics";
 import type { ClusterNode } from "../utils/main";
 import { ClusterCompositeNode } from "./clusterCompositeNode";
 import { ClusterConnector } from "./clusterConnector";
-import type { VisOptions } from "../utils/data-models";
+import type { AllOptions } from "../types";
 
 export class CompositeClusters {
     private root: ClusterCompositeNode;
@@ -12,11 +12,11 @@ export class CompositeClusters {
     private viewport: Viewport3D;
     private showConnectors: Boolean = false;
     private highlightedClusters: ClusterCompositeNode[] = [];
-    private options: VisOptions;
+    private options: AllOptions;
     private points: vec3[][] = [];
     private timestep: number = 0;
 
-    constructor(clustersGivenK: ClusterNode[][], pointsAtTimeStep: vec3[][], selectedTimestep: number, viewport: Viewport3D, device: GPUDevice, options: VisOptions) {
+    constructor(clustersGivenK: ClusterNode[][], pointsAtTimeStep: vec3[][], selectedTimestep: number, viewport: Viewport3D, device: GPUDevice, options: AllOptions) {
         this.points = pointsAtTimeStep;
         this.timestep = selectedTimestep;
         this.options = options;
@@ -45,7 +45,7 @@ export class CompositeClusters {
         return this.points;
     }
 
-    public updateOptions(options: VisOptions) {
+    public updateOptions(options: AllOptions) {
         this.options = options;
         let inorder = this.root.getInorder();
         for (let cluster of inorder) {

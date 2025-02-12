@@ -4,8 +4,8 @@ import type { Viewport3D } from "@chromoskein/lib-graphics";
 import type { ClusterNode } from "../../utils/main";
 import type { CompositeClusters } from "../compositeClusters";
 import { AbstractClusterVisualisation } from "./abstractVisualization";
-import type { VisOptions } from "../../utils/data-models";
 import { calculateSphereParameters, findClosestPoints } from "../../utils/abstractClustersUtils";
+import type { AllOptions } from "../../types";
 
 export class HedgehogClusterVisualisation extends AbstractClusterVisualisation {
     private cluster!: ClusterNode;
@@ -40,7 +40,7 @@ export class HedgehogClusterVisualisation extends AbstractClusterVisualisation {
     }
 
     
-    public updateParameters(options: VisOptions) {
+    public updateParameters(options: AllOptions) {
         this.minDistance = options.hedgehogDistance;
         this.precise = options.preciseQuills;
         this.secondPoint = options.secondPoint;        

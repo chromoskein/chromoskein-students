@@ -5,7 +5,7 @@ import type { ClusterNode } from "../../utils/main";
 import type { CompositeClusters } from "../compositeClusters";
 import { AbstractClusterVisualisation } from "./abstractVisualization";
 import { lineToSpline } from "../../utils/lineToSpline";
-import type { VisOptions } from "../../utils/data-models";
+import type { AllOptions } from "../../types";
 
 export class SplineClusterVisualisation extends AbstractClusterVisualisation {
     private cluster!: ClusterNode;
@@ -25,7 +25,7 @@ export class SplineClusterVisualisation extends AbstractClusterVisualisation {
     }
 
 
-    public updateParameters(options: VisOptions) {
+    public updateParameters(options: AllOptions) {
         this.radius = options.radius;
         for (let i = 0; i < this.spline.properties.length; i++) {
             this.spline.properties[i].p0[3] = this.radius;

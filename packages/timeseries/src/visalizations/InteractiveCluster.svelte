@@ -10,7 +10,7 @@
     import * as Graphics from "@chromoskein/lib-graphics";
     import { vec2 } from "gl-matrix";
     import { ClusterHighlighter } from "../interactiveClusters/clusterHighlighter";
-    import type { VisOptions } from "../utils/data-models";
+    import type { AllOptions } from "../types";
 
     let viewport: Writable<Viewport3D | null> = getContext("viewport");
     let device: Writable<GPUDevice> = getContext("device");
@@ -18,10 +18,9 @@
 
     export let dataClustersGivenK: ClusterNode[][] = [];
     export let pointsAtTimesteps: vec3[][] = [];
-    export let selectedTimestep = 0;
     export let clustersUpdated: boolean;
     export let updateClustersUpdated: (updated: boolean) => void;
-    export let options: VisOptions;
+    export let options: AllOptions;
 
     let showConnections: Boolean = false;
     let clusterVisualization: VisualisationType = VisualisationType.Pathline;
@@ -67,12 +66,12 @@
     }
 
     export function splitClusters(hitCluster: ClusterCompositeNode) {
-      hitCluster.split(dataClustersGivenK, pointsAtTimesteps, selectedTimestep);
+      hitCluster.split(dataClustersGivenK, pointsAtTimesteps, options.timestep);
       updateClustersUpdated(!clustersUpdated);
     }
 
     export function mergeClusters(hitCluster: ClusterCompositeNode) {
-      hitCluster.merge(dataClustersGivenK, pointsAtTimesteps, selectedTimestep);
+      hitCluster.merge(dataClustersGivenK, pointsAtTimesteps, options.timestep);
       updateClustersUpdated(!clustersUpdated);
     }
 
@@ -90,7 +89,7 @@
           case "Change representation":
             let chosenRepresentation = representations[clusterVisualization];
             hitCluster.setVisualisation(chosenRepresentation);
-            hitCluster.updatePoints(pointsAtTimesteps, selectedTimestep);
+            hitCluster.updatePoints(pointsAtTimesteps, options.timestep);
             break;
           case "Split":
             splitClusters(hitCluster);
@@ -115,7 +114,7 @@
 
     $: if ($viewport) {
       if (clusterObjects == null) {
-        clusterObjects = new CompositeClusters(dataClustersGivenK, pointsAtTimesteps, selectedTimestep, $viewport, $device, options);
+        clusterObjects = new CompositeClusters(dataClustersGivenK, pointsAtTimesteps, options.timestep, $viewport, $device, options);
         canvas = document.getElementById("canvas");
         canvas?.addEventListener("mousedown", onElementLeftButtonClick);
         canvas?.addEventListener("mousemove", onMouseMoveEvent);
@@ -126,8 +125,8 @@
       clusterObjects.setShowConnectors(showConnections);
     }
 
-    $: if ($viewport && pointsAtTimesteps && selectedTimestep) {
-      clusterObjects?.updatePoints(pointsAtTimesteps, selectedTimestep);
+    $: if ($viewport && pointsAtTimesteps && options.timestep) {
+      clusterObjects?.updatePoints(pointsAtTimesteps, options.timestep);
     }
 
     $: if (options) {
@@ -140,9 +139,9 @@
       fire in case clustersGivenK is updated
     */
     function updateClusters(dataClustersByK: ClusterNode[][]) {
-      if (clusterObjects && pointsAtTimesteps && selectedTimestep) {
+      if (clusterObjects && pointsAtTimesteps && options.timestep) {
         clusterObjects.updateClusters(dataClustersByK);
-        clusterObjects.updatePoints(pointsAtTimesteps, selectedTimestep);
+        clusterObjects.updatePoints(pointsAtTimesteps, options.timestep);
       }
     }
 

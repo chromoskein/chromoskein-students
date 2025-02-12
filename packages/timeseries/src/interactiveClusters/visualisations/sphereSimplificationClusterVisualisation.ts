@@ -4,8 +4,8 @@ import type { Viewport3D } from "@chromoskein/lib-graphics";
 import type { ClusterNode } from "../../utils/main";
 import type { CompositeClusters } from "../compositeClusters";
 import { AbstractClusterVisualisation } from "./abstractVisualization";
-import type { VisOptions } from "../../utils/data-models";
 import { calculateSphereParameters } from "../../utils/abstractClustersUtils";
+import type { AllOptions } from "../../types";
 
 export class SphereSimplificationClusterVisualisation extends AbstractClusterVisualisation {
     private sphere: Graphics.Sphere;
@@ -24,7 +24,7 @@ export class SphereSimplificationClusterVisualisation extends AbstractClusterVis
     }
 
     
-    public updateParameters(options: VisOptions) {
+    public updateParameters(options: AllOptions) {
         if (this.radiusMultiplier != options.abstractionMultiplier) {
             this.radiusMultiplier = options.abstractionMultiplier;
             this.updatePoints(this.manager.getPoints(), this.manager.getTimestep());

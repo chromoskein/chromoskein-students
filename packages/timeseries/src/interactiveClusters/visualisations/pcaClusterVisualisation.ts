@@ -6,8 +6,8 @@ import type { CompositeClusters } from "../compositeClusters";
 import { AbstractClusterVisualisation } from "./abstractVisualization";
 import { blobFromPoints } from "../../utils/main";
 import PCA from 'pca-js';
-import type { VisOptions } from "../../utils/data-models";
 import { calculateSphereParameters } from "../../utils/abstractClustersUtils";
+import type { AllOptions } from "../../types";
 
 export class PCAClusterVisualisation extends AbstractClusterVisualisation {
     private cluster!: ClusterNode;
@@ -32,7 +32,7 @@ export class PCAClusterVisualisation extends AbstractClusterVisualisation {
         this.setColor(cluster.color);
     }
 
-    public updateParameters(options: VisOptions) {
+    public updateParameters(options: AllOptions) {
         if (this.radiusMultiplier != options.abstractionMultiplier) {
             this.radiusMultiplier = options.abstractionMultiplier;
             this.updatePoints(this.manager.getPoints(), this.manager.getTimestep());
