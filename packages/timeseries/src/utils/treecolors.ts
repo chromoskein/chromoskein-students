@@ -45,72 +45,54 @@ function doPermutation(r: number[]) {
   return permutated;
 }
 
-export function assignHue(root: ClusterNode[][], node: ClusterNode, range: [number, number], level: number = 0, colorLevel: number) {
-  // select the middle hue value in range as the hue value of node
-  if (level >= 15) {
-    return;
-  }
-
+export function assignHue(root: ClusterNode[][], node: ClusterNode, hueRange: [number, number], luminanance: number, chroma: number, level: number = 0) {
   if (level === 0) { // node is the root
     setColor(node, rootColor);
   } else {
-    
-    setColor(node, { h: (range[0] + range[1]) / 2, c: chromaStart + chromaDelta * colorLevel, l: luminanceStart + luminanceDelta * colorLevel });
+    setColor(node, { h: (hueRange[0] + hueRange[1]) / 2, c: chroma, l: luminanance });
   }
 
   // Let N be the number of child nodes of v. If N > 0 :
-  const n: number = getChildren(root, node) ? getChildren(root, node).length : 0;
+  const children = getChildren(root, node);
+  const n: number = children.length;
 
+  // Base case for recursion
   if (n === 0) return;
+  // If there is only one child, keep everything the same
   if (n === 1) { 
-    assignHue(root, getChildren(root, node)[0], range, level + 1, colorLevel); 
+    assignHue(root, children[0], hueRange, luminanance, chroma, level); 
     return;
   }
 
-  const delta = (range[1] - range[0]) / n;
-
-  //1. divide range in N equal parts ri with i = 1, ... ,N;
-  //   For convenience, we will use i = 0, ... , n - 1 instead of i = 1, ..., n
+  const delta = (hueRange[1] - hueRange[0]) / n;
+  // Divide the hue range into N equal parts
   var r: number[] = Array.apply(null, Array(n)).map((val, idx) => idx);
 
-  //2. if perm then permute the ri’s;
+  // Permutate the hues if permutate is on
   if (permutate) {
     r = doPermutation(r);
   }
 
-  //3. convert each ri to a hue range (e.g. [30, 50])
-
+  // Convert each hue into a hue range around the value
   let ranges: [number, number][] = r.map(i => [
-      range[0] + i * delta,
-      range[0] + (i + 1) * delta
+      hueRange[0] + i * delta,
+      hueRange[0] + (i + 1) * delta
   ]);
 
 
-  //4. reduce each ri by keeping its middle fraction ;
-  //   In the algorithm described in the paper, we reverse each ri first.
-  //   However, now, we reverse them later.
-  /*
-  r = r.map(function (range) {
-    return [
-      range[0] + (range[1] - range[0]) * ((1 - fraction) / 2.0),
-      range[1] - (range[1] - range[0]) * ((1 - fraction) / 2.0)
-    ];
-  });
-  */
-
-  //5. if rev then reverse the even-numbered ri’s;
+  // Reverse the ranges if on
   if (reverse) {
     ranges = ranges.map((range: [number, number], i: number) => (i % 2 === 0) ? [range[1], range[0]] : range);
   }
 
-  //6. for each child node vi call assignHue recursively.
-  getChildren(root, node).forEach(function (child: ClusterNode, i: number) {
-    assignHue(root, child, ranges[i], level + 1, colorLevel + 1);
+  // Recursively call the same function on each child node
+  children.forEach(function (child: ClusterNode, i: number) {
+    assignHue(root, child, ranges[i], luminanance + luminanceDelta, chroma + chromaDelta, level + 1);
   });
 }
 
 export function treeColor(root: ClusterNode[][]) {
-  assignHue(root, root[1][0], range, 0, 0);
+  assignHue(root, root[1][0], range, luminanceStart, chromaStart, 0);
 }
 
 
