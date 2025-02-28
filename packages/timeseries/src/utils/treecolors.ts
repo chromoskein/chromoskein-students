@@ -4,6 +4,7 @@ import type { ClusterNode } from "./main";
 export const staticColors: vec3[] = [vec3.fromValues(0.0159, 0.9294, 0), vec3.fromValues(0.9294, 0, 0.0157), vec3.fromValues(0, 0.0157, 0.9294), vec3.fromValues(0.9294, 0.9137, 0), vec3.fromValues(0, 0.9294, 0.9137), vec3.fromValues(0.9137, 0, 0.9294)];
 
 const ep: number = 1e-15;
+const similarityThreshold = 15;
 
 let children = 'children';
 let color = 'color';
@@ -16,6 +17,13 @@ let luminanceDelta = 8;
 let chromaStart = 85;
 let chromaDelta = -5;
 let rootColor = { h: 0, c: 0, l: 70, rgb: vec3 };
+let perturb = true;
+
+type Color = {
+  h: number,
+  c: number,
+  l: number
+}
 
 function getChildren(root: ClusterNode[][], node: ClusterNode): ClusterNode[] {
   if (node.k + 1 >= root.length) return [];
@@ -25,10 +33,19 @@ function getChildren(root: ClusterNode[][], node: ClusterNode): ClusterNode[] {
   return children;
 }
 
-function setColor(node: ClusterNode, c: { h: number, c: number, l: number }) {
-  const rgb: chroma.Color = chroma.hcl(c.h, c.c, c.l);
+function getParent(tree: ClusterNode[][], node: ClusterNode): ClusterNode | null {
+  if (node.k < 2) return null;
+  return tree[node.k - 1].filter((c: ClusterNode) => (c.from >= node.from && c.to <= node.to))[0];
+}
 
-  const rgbArray: number[] = rgb.gl().slice(0, 3);
+function sameAsParent(tree: ClusterNode[][], node: ClusterNode): boolean {
+  if (node.k < 2) return false;
+  return getParent(tree, node)?.children.length == 1;
+}
+
+function setColor(node: ClusterNode, c: Color) {
+  const color: chroma.Color = chroma.hcl(c.h, c.c, c.l);
+  const rgbArray: number[] = color.gl();
 
   node.color = vec3.fromValues(rgbArray[0], rgbArray[1], rgbArray[2]);
 }
@@ -45,13 +62,7 @@ function doPermutation(r: number[]) {
   return permutated;
 }
 
-export function assignHue(root: ClusterNode[][], node: ClusterNode, hueRange: [number, number], luminanance: number, chroma: number, level: number = 0) {
-  if (level === 0) { // node is the root
-    setColor(node, rootColor);
-  } else {
-    setColor(node, { h: (hueRange[0] + hueRange[1]) / 2, c: chroma, l: luminanance });
-  }
-
+export function assignHue(root: ClusterNode[][], node: ClusterNode, hueRange: [number, number], luminanance: number, chrom: number, level: number = 0) {
   // Let N be the number of child nodes of v. If N > 0 :
   const children = getChildren(root, node);
   const n: number = children.length;
@@ -60,7 +71,8 @@ export function assignHue(root: ClusterNode[][], node: ClusterNode, hueRange: [n
   if (n === 0) return;
   // If there is only one child, keep everything the same
   if (n === 1) { 
-    assignHue(root, children[0], hueRange, luminanance, chroma, level); 
+    children[0].color = node.color;
+    assignHue(root, children[0], hueRange, luminanance, chrom, level); 
     return;
   }
 
@@ -79,20 +91,66 @@ export function assignHue(root: ClusterNode[][], node: ClusterNode, hueRange: [n
       hueRange[0] + (i + 1) * delta
   ]);
 
-
   // Reverse the ranges if on
   if (reverse) {
     ranges = ranges.map((range: [number, number], i: number) => (i % 2 === 0) ? [range[1], range[0]] : range);
   }
 
+
+  children.forEach(function (child: ClusterNode, i: number) {
+    const hclColor: Color = { h: (ranges[i][0] + ranges[i][1]) / 2, c: chrom + chromaDelta, l: luminanance + luminanceDelta }
+    setColor(child, hclColor);
+  });
+
   // Recursively call the same function on each child node
   children.forEach(function (child: ClusterNode, i: number) {
-    assignHue(root, child, ranges[i], luminanance + luminanceDelta, chroma + chromaDelta, level + 1);
+    assignHue(root, child, ranges[i], luminanance + luminanceDelta, chrom + chromaDelta, level + 1);
   });
 }
 
+
+function perturbColors(tree: ClusterNode[][]) {
+  for (let level = 2; level < tree.length; level++) {
+    let colors = tree[level].map(node => chroma.gl(node.color[0], node.color[1], node.color[2]));
+    let changed = tree[level].map(_ => false);
+
+    for (let i = 1; i < colors.length - 1; i++) {
+      let sameLeft = sameAsParent(tree, tree[level][i]);
+      let sameRight = sameAsParent(tree, tree[level][i + 1]);
+      if (sameLeft && sameRight) continue;
+      let similarity = ciede2000(colors[i].lab(), colors[i + 1].lab());
+
+      let disturbIdx = (!sameRight) ? i + 1 : i;      
+      while (similarity < similarityThreshold) {
+
+        colors[disturbIdx] = disturbColor(colors[disturbIdx], [5, 10, 5]);
+        similarity = ciede2000(colors[i].lab(), colors[i + 1].lab());
+        changed[disturbIdx] = true;
+      }
+
+    }
+
+    // Update the disturged colors and propagate these changes to the rest of the tree
+    tree[level].forEach((node, index) => {
+      if (changed[index]) {
+        let gl = colors[index].gl();
+        node.color = [gl[0], gl[1], gl[2]];
+
+        let hcl = colors[index].hcl();
+        let delta = 360.0 / tree[level].length;
+        assignHue(tree, node, [hcl[0] - (delta / 2.0), hcl[0] + (delta / 2.0)], hcl[2], hcl[1], 2);
+      }
+    });
+  }
+}
+
 export function treeColor(root: ClusterNode[][]) {
+  setColor(root[1][0], rootColor);
   assignHue(root, root[1][0], range, luminanceStart, chromaStart, 0);
+
+  if (perturb) {
+    perturbColors(root);
+  }
 }
 
 
