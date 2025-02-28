@@ -1,7 +1,6 @@
 import chroma from "chroma-js";
 import { vec3 } from "gl-matrix";
 import type { ClusterNode } from "./main";
-
 export const staticColors: vec3[] = [vec3.fromValues(0.0159, 0.9294, 0), vec3.fromValues(0.9294, 0, 0.0157), vec3.fromValues(0, 0.0157, 0.9294), vec3.fromValues(0.9294, 0.9137, 0), vec3.fromValues(0, 0.9294, 0.9137), vec3.fromValues(0.9137, 0, 0.9294)];
 
 const ep: number = 1e-15;
@@ -12,9 +11,9 @@ let range: [number, number] = [0, 360];
 let fraction = 0.75;
 let permutate = true;
 let reverse = false;
-let luminanceStart = 40;
-let luminanceDelta = 10;
-let chromaStart = 75;
+let luminanceStart = 45;
+let luminanceDelta = 8;
+let chromaStart = 85;
 let chromaDelta = -5;
 let rootColor = { h: 0, c: 0, l: 70, rgb: vec3 };
 
@@ -114,19 +113,6 @@ export function treeColor(root: ClusterNode[][]) {
   assignHue(root, root[1][0], range, 0, 0);
 }
 
-// switch (preset) {
-//   case 'add':
-//   case 'additive':
-//     // nothing to do. additive is the default
-//     break;
-//   case 'sub':
-//   case 'subtractive':
-//     luminanceStart = 40;
-//     luminanceDelta = 10;
-//     chromaStart = 75;
-//     chromaDelta = -5;
-//     break;
-// }
 
 export function getPermutationSequence(n: number) {
   if (n === 0) return [];
@@ -160,3 +146,99 @@ export function getPermutationSequence(n: number) {
 
   return sequence;
 };
+
+var seed = 1;
+function random() {
+    var x = Math.sin(seed++) * 10000;
+    return x - Math.floor(x);
+}
+
+function randomDouble(min: number, max: number) {
+  return random() * (max - min) + min;
+}
+
+function disturbColor(color: chroma.Color, hcl_disturb_offset: [number, number, number]) {
+  let lumi_scope = [45, 85];
+  let chroma_scope = [45, 85];
+  let hue_scope = [0, 180]
+
+  let hcl = color.hcl();
+  let chrom = randomDouble(
+    Math.max(Math.round(hcl[1] - hcl_disturb_offset[1]), chroma_scope[0]),
+    Math.min(Math.round(hcl[1] + hcl_disturb_offset[1]), chroma_scope[1])
+  );
+  let lumi = randomDouble(
+    Math.max(Math.round(hcl[2] - hcl_disturb_offset[2]), lumi_scope[0]),
+    Math.min(Math.round(hcl[2] + hcl_disturb_offset[2]), lumi_scope[1])
+  );
+
+  let hue = randomDouble(
+    Math.max(Math.round(hcl[0] - hcl_disturb_offset[0]), hue_scope[0]),
+    Math.min(Math.round(hcl[0] + hcl_disturb_offset[0]), hue_scope[1])
+  );
+  
+  /*
+  if (hue > 84 && hue < 115) {
+      if (hue < 99.5) hue = 84;
+      else hue = 115;
+  }
+  */
+  
+  return chroma.hcl(hue, chrom, lumi);
+}
+
+function deg2rad(degrees: number): number {
+  return (degrees * Math.PI) / 180;
+}
+
+function rad2deg(radians: number): number {
+  return (radians * 180) / Math.PI;
+}
+
+function ciede2000(lab1: [number, number, number], lab2: [number, number, number]): number {
+  const [L1, a1, b1] = lab1;
+  const [L2, a2, b2] = lab2;
+  
+  const avgLp = (L1 + L2) / 2;
+  const C1 = Math.sqrt(a1 * a1 + b1 * b1);
+  const C2 = Math.sqrt(a2 * a2 + b2 * b2);
+  const avgCp = (C1 + C2) / 2;
+  
+  const G = 0.5 * (1 - Math.sqrt(Math.pow(avgCp, 7) / (Math.pow(avgCp, 7) + Math.pow(25, 7))));
+  const a1p = (1 + G) * a1;
+  const a2p = (1 + G) * a2;
+  const C1p = Math.sqrt(a1p * a1p + b1 * b1);
+  const C2p = Math.sqrt(a2p * a2p + b2 * b2);
+  const avgCpp = (C1p + C2p) / 2;
+  
+  let h1p = rad2deg(Math.atan2(b1, a1p));
+  if (h1p < 0) h1p += 360;
+  let h2p = rad2deg(Math.atan2(b2, a2p));
+  if (h2p < 0) h2p += 360;
+  
+  let dHp = h2p - h1p;
+  if (dHp > 180) dHp -= 360;
+  if (dHp < -180) dHp += 360;
+  
+  const dLp = L2 - L1;
+  const dCp = C2p - C1p;
+  dHp = 2 * Math.sqrt(C1p * C2p) * Math.sin(deg2rad(dHp) / 2);
+  
+  const avgHp = (Math.abs(h1p - h2p) > 180) ? (h1p + h2p + 360) / 2 : (h1p + h2p) / 2;
+  
+  const T = 1 - 0.17 * Math.cos(deg2rad(avgHp - 30)) + 
+                0.24 * Math.cos(deg2rad(2 * avgHp)) + 
+                0.32 * Math.cos(deg2rad(3 * avgHp + 6)) - 
+                0.20 * Math.cos(deg2rad(4 * avgHp - 63));
+  
+  const dTheta = 30 * Math.exp((-1 * ((avgHp - 275) / 25)) ** 2);
+  const Rc = 2 * Math.sqrt(Math.pow(avgCpp, 7) / (Math.pow(avgCpp, 7) + Math.pow(25, 7)));
+  const Sl = 1 + ((0.015 * (avgLp - 50) ** 2) / Math.sqrt(20 + (avgLp - 50) ** 2));
+  const Sc = 1 + 0.045 * avgCpp;
+  const Sh = 1 + 0.015 * avgCpp * T;
+  const Rt = -Math.sin(deg2rad(2 * dTheta)) * Rc;
+  
+  return Math.sqrt(
+      (dLp / Sl) ** 2 + (dCp / Sc) ** 2 + (dHp / Sh) ** 2 + Rt * (dCp / Sc) * (dHp / Sh)
+  );
+}
