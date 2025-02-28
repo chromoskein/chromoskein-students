@@ -1,10 +1,16 @@
 import chroma from "chroma-js";
 import { vec3 } from "gl-matrix";
 import type { ClusterNode } from "./main";
+import * as iwanthue from "iwanthue"
+
 export const staticColors: vec3[] = [vec3.fromValues(0.0159, 0.9294, 0), vec3.fromValues(0.9294, 0, 0.0157), vec3.fromValues(0, 0.0157, 0.9294), vec3.fromValues(0.9294, 0.9137, 0), vec3.fromValues(0, 0.9294, 0.9137), vec3.fromValues(0.9137, 0, 0.9294)];
 
 const ep: number = 1e-15;
 const similarityThreshold = 15;
+const hueDisturb = 5;
+const chromaDisturb = 5;
+const lumiDisturb = 5;
+const disturbOffsets: [number, number, number] = [hueDisturb, chromaDisturb, lumiDisturb];
 
 let children = 'children';
 let color = 'color';
@@ -114,7 +120,7 @@ function perturbColors(tree: ClusterNode[][]) {
     let colors = tree[level].map(node => chroma.gl(node.color[0], node.color[1], node.color[2]));
     let changed = tree[level].map(_ => false);
 
-    for (let i = 1; i < colors.length - 1; i++) {
+    for (let i = 0; i < colors.length - 1; i++) {
       let sameLeft = sameAsParent(tree, tree[level][i]);
       let sameRight = sameAsParent(tree, tree[level][i + 1]);
       if (sameLeft && sameRight) continue;
@@ -123,7 +129,7 @@ function perturbColors(tree: ClusterNode[][]) {
       let disturbIdx = (!sameRight) ? i + 1 : i;      
       while (similarity < similarityThreshold) {
 
-        colors[disturbIdx] = disturbColor(colors[disturbIdx], [5, 10, 5]);
+        colors[disturbIdx] = disturbColor(colors[disturbIdx], disturbOffsets);
         similarity = ciede2000(colors[i].lab(), colors[i + 1].lab());
         changed[disturbIdx] = true;
       }
@@ -144,6 +150,10 @@ function perturbColors(tree: ClusterNode[][]) {
   }
 }
 
+export function colorHierarchy(root: ClusterNode[][], colorFunction: (root: ClusterNode[][]) => void) {
+  colorFunction(root);
+}
+
 export function treeColor(root: ClusterNode[][]) {
   setColor(root[1][0], rootColor);
   assignHue(root, root[1][0], range, luminanceStart, chromaStart, 0);
@@ -153,6 +163,54 @@ export function treeColor(root: ClusterNode[][]) {
   }
 }
 
+export function colorBrewerColors(root: ClusterNode[][]) {
+  setColor(root[1][0], rootColor);
+
+  let paired: string[] = ["#a6cee3", "#1f78b4", "#b2df8a", "#33a02c", "#fb9a99", "#e31a1c", "#fdbf6f", "#ff7f00", "#cab2d6", "#6a3d9a", "#ffff99", "#b15928"];
+  for (let levelIdx = 2; levelIdx < root.length; levelIdx++) {
+    let level = root[levelIdx]
+    for (let i = 0; i < level.length; i++) {
+      const colorHex: string = paired[i % 12];
+      let rgb: number[] = chroma(colorHex).gl();
+      level[i].color = [rgb[0], rgb[1], rgb[2]];
+    }
+  }
+}
+
+export function iWantHueColors(root: ClusterNode[][]) {
+  setColor(root[1][0], rootColor);
+
+  for (let levelIdx = 2; levelIdx < root.length; levelIdx++) {
+    let scheme = iwanthue.default(root[levelIdx].length, {seed: levelIdx + 54});
+    let level = root[levelIdx]
+    for (let i = 0; i < level.length; i++) {
+      if (sameAsParent(root, level[i])) {
+        level[i].color = getParent(root, level[i])!.color;
+        continue;
+      }
+      const colorHex: string = scheme[i];
+      let rgb: number[] = chroma(colorHex).gl();
+      level[i].color = [rgb[0], rgb[1], rgb[2]];
+    }
+  }
+}
+
+export function randomColors(root: ClusterNode[][]) {
+  setColor(root[1][0], rootColor);
+
+  for (let levelIdx = 2; levelIdx < root.length; levelIdx++) {
+    let level = root[levelIdx]
+    for (let i = 0; i < level.length; i++) {
+      if (sameAsParent(root, level[i])) {
+        level[i].color = getParent(root, level[i])!.color;
+        continue;
+      }
+      let randomColor: chroma.Color = chroma.hcl(Math.random() * 360, Math.random() * 45 + 40, Math.random() * 45 + 40);
+      let rgb: number[] = randomColor.gl();
+      level[i].color = [rgb[0], rgb[1], rgb[2]];
+    }
+  }
+}
 
 export function getPermutationSequence(n: number) {
   if (n === 0) return [];

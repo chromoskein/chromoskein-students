@@ -1,6 +1,6 @@
 import type { vec3 } from "gl-matrix";
 import { clusterPathlines, clusterTimestep, timestepsToPathlines, type ClusterNode } from "./main";
-import { treeColor } from "./treecolors";
+import { treeColor, colorHierarchy, colorBrewerColors, iWantHueColors, randomColors } from "./treecolors";
 
 self.onmessage = (event: MessageEvent) => {
     const pointTimesteps: vec3[][] = event.data;
@@ -14,6 +14,6 @@ self.onmessage = (event: MessageEvent) => {
         clusters = clusterTimestep(pointTimesteps[0]).slice(0, 16);
         console.log(clusters);
     }
-    treeColor(clusters);
+    colorHierarchy(clusters, treeColor);
     self.postMessage(clusters);
 };
