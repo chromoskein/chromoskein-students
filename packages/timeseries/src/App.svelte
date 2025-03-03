@@ -13,7 +13,7 @@
   import "carbon-components-svelte/css/all.css";
   import { Header, SkipToContent, Accordion, AccordionItem, Select, SelectItem, Button, Checkbox, HeaderUtilities, Theme, Toggle } from "carbon-components-svelte";
   import { Slider } from "carbon-components-svelte";
-  import { treeColor } from "./utils/treecolors";
+  import { colorBrewerColors, colorHierarchy, iWantHueColors, treeColor } from "./utils/treecolors";
 
   import { defaultVisOptions, initializeChromosome, type VisOptions, type Chromosome } from "./utils/data-models";
   import ChromosomeItem from "./uiComponents/ChromosomeItem.svelte";
@@ -210,6 +210,25 @@
                 Upload Clusters
             </Button>
             <Button size="small" on:click={() => { clusteringWorker.postMessage(chromosomes[selectedChromosomeId].points.map((point) => [...point])) }}> Cluster </Button>
+
+            <Select size="sm" labelText="Color scheme:" on:update={(e) => {
+                switch(e.detail as number) {
+                  case 0:
+                    colorHierarchy(chromosomes[selectedChromosomeId].clusters, treeColor);
+                    break;
+                  case 1:
+                    colorHierarchy(chromosomes[selectedChromosomeId].clusters, colorBrewerColors);
+                    break;
+                  default:
+                    colorHierarchy(chromosomes[selectedChromosomeId].clusters, iWantHueColors);
+                    break;
+                }
+              }}>
+              <SelectItem text="Hierarchical" value={0} />
+              <SelectItem text="Color Brewer" value={1} />
+              <SelectItem text="iWantHue" value={2} />
+            </Select>
+
           </AccordionItem>
 
           <AccordionItem title="Data Loading">

@@ -149,9 +149,9 @@
         <SelectItem text="Number of Timesteps" value={1} />
       </Select>
     {/if}
-
+ 
     <Checkbox labelText="Outlines" checked={ops.outlines} on:check={(e) => ops.outlines = e.detail} />
-    <Checkbox labelText="Color Outlines" checked={false} />
+    <!-- <Checkbox labelText="Color Outlines" checked={false} /> -->
 
     {#if dataClustersGivenK && dataClustersGivenK[1]}
       <Dendrogram
