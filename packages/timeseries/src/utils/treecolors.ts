@@ -7,9 +7,9 @@ export const staticColors: vec3[] = [vec3.fromValues(0.0159, 0.9294, 0), vec3.fr
 
 const ep: number = 1e-15;
 const similarityThreshold = 15;
-const hueDisturb = 5;
-const chromaDisturb = 5;
-const lumiDisturb = 5;
+const hueDisturb = 10;
+const chromaDisturb = 10;
+const lumiDisturb = 10;
 const disturbOffsets: [number, number, number] = [hueDisturb, chromaDisturb, lumiDisturb];
 
 let children = 'children';
@@ -258,7 +258,7 @@ function randomDouble(min: number, max: number) {
 function disturbColor(color: chroma.Color, hcl_disturb_offset: [number, number, number]) {
   let lumi_scope = [45, 85];
   let chroma_scope = [45, 85];
-  let hue_scope = [0, 180]
+  let hue_scope = [0, 360]
 
   let hcl = color.hcl();
   let chrom = randomDouble(

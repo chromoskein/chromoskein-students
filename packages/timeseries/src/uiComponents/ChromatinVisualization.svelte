@@ -65,7 +65,7 @@
     // Splits data pathlines based on clusters
     // Format [cluster][point][timestep]
     let dataClusteredPathlines: vec3[][][] = $derived.by(() => {
-        if (visType != VisualisationType.Implicit) return [];
+        if (visType != VisualisationType.Implicit && !outlines) return [];
         let dataClusteredPathlines: vec3[][][] = [];
         if (dataClustersGivenK && dataClustersGivenK[clustersAmount] && points) {
             const clusters = dataClustersGivenK[clustersAmount];

@@ -36,7 +36,7 @@
     $effect(() => untrack(() => object)?.scale(scale, 0));
     $effect(() => {if (object) { object.properties[0].color = vec4.fromValues(color[0], color[1], color[2], 1.0); object.setDirtyCPU(); }});
     $effect(() => untrack(() => object)?.fromPoints($device, [points], [radius]));
-    $effect(() => untrack(() => object)?.outline(outline, 0));
+    $effect(() => untrack(() => object)?.outline(outline, 0.01, 0));
 
     onMount(() => {
         return () => {
