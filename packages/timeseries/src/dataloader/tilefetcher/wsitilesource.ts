@@ -20,11 +20,9 @@ export class WSITileSource implements TileSource {
 
     constructor(slideId: string) {
         this.slideId = slideId
-        this.fetchInfo()
     }
 
-
-    public async getTile(level: number, x: number, y: number): Promise<number[][][]> {
+    public async getTile(level: number, x: number, y: number): Promise<number[]> {
         const url = this.urlFormatter(level, x, y, this.slideId)
 
         // This is a horrible way to get the raw image data, but apparently there is no other way in javascript....
@@ -46,10 +44,10 @@ export class WSITileSource implements TileSource {
               const imageData = ctx.getImageData(0, 0, img.width, img.height);
               const data = imageData.data; // Flat array: [R, G, B, A, R, G, B, A, ...]
         
-              const result: number[][][] = [];
+              const result: number[] = [];
         
               for (let y = 0; y < img.height; y++) {
-                const row: number[][] = [];
+                //const row: number[][] = [];
         
                 for (let x = 0; x < img.width; x++) {
                   const idx = (y * img.width + x) * 4;
@@ -58,10 +56,11 @@ export class WSITileSource implements TileSource {
                   const b = data[idx + 2];
                   // Alpha is data[idx + 3] if you need it
         
-                  row.push([r, g, b]);
+                  result.push(r, g, b, 255)
+                  //row.push([r, g, b]);
                 }
         
-                result.push(row);
+                //result.push(row);
               }
         
               resolve(result);
@@ -80,14 +79,14 @@ export class WSITileSource implements TileSource {
     }
 
     public getLevelWidth(level: number) {
-        if (level > 0 && level <= this.maxLevel) {
+        if (level >= 0 && level <= this.maxLevel) {
             return this.levels[level].extent.x;
         }
         throw "Accessed level is out of image range."
     }
 
     public getLevelHeight(level: number) {
-        if (level > 0 && level <= this.maxLevel) {
+        if (level >= 0 && level <= this.maxLevel) {
             return this.levels[level].extent.y;
         }
         throw "Accessed level is out of image range."
@@ -106,7 +105,7 @@ export class WSITileSource implements TileSource {
     }
 
 
-    private async fetchInfo() {
+    public async initialize() {
         const url = `http://localhost:8080/v3/slides/info?slide_id=${this.slideId}`
 
         const response = await fetch(url)
