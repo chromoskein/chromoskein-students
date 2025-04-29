@@ -44,14 +44,20 @@ export class HiC {
             const levelSize = this.tileSource.getLevelHeight(tileInfo.level)
             if (!this.tileCache.has(tileSting)) {
                 this.tileCache.set(tileSting, null)
+                let flip = tileInfo.x > tileInfo.y; 
+                let x = flip ? tileInfo.y / tileSize : tileInfo.x / tileSize;
+                let y = flip ? tileInfo.x / tileSize : tileInfo.y / tileSize;
 
-                this.tileSource.getTile(tileInfo.level, tileInfo.x / tileSize, tileInfo.y / tileSize).then(data => {
+                this.tileSource.getTile(tileInfo.level, x, y).then(data => {
                     let [id, tile] = this.viewport.addTile(tileSize, tileSize, data);
                     const sizeRatio = tileSize / levelSize;
                     tile.scale(sizeRatio * this.size);
                     let xTranslate = (this.center[0] - this.size / 2) + (0.5 + tileInfo.x / tileSize) * sizeRatio;
                     let yTranslate = (this.center[0] + this.size / 2) - (0.5 + tileInfo.y / tileSize) * sizeRatio;
                     tile.translate(vec2.fromValues(xTranslate, yTranslate));
+                    if (tileInfo.x == tileInfo.y) tile.mirror(true);
+                    if (flip) tile.flip(true);
+
                     this.tileCache.set(tileSting, tile);
 
                     console.log(`Fetching tile x: ${tileInfo.x} y: ${tileInfo.y}, l: ${tileInfo.level}`)

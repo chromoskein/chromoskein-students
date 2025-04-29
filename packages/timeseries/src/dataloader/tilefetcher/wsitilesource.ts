@@ -22,10 +22,30 @@ export class WSITileSource implements TileSource {
         this.slideId = slideId
     }
 
-    public async getTile(level: number, x: number, y: number): Promise<number[]> {
+    public async getTile(level: number, x: number, y: number): Promise<ArrayBuffer> {
         const url = this.urlFormatter(level, x, y, this.slideId)
 
+        return new Promise((resolve, reject) => {
+            fetch(url + "&image_format=raw")
+                .then(response => response.arrayBuffer()
+                .then(buffer => {
+                    const floatArray = new Float32Array(buffer)
+
+                    floatArray.forEach((value, index) => {
+                        if (isNaN(value)) {
+                            floatArray[index] = -1.0;
+                        }
+                    });
+
+                    resolve(floatArray)
+                })
+            )
+        });
+
+        //console.log("Result:", arrayBuffer)
+
         // This is a horrible way to get the raw image data, but apparently there is no other way in javascript....
+        /*
         return new Promise((resolve, reject) => {
             const img = new Image();
             img.src = url;
@@ -68,6 +88,7 @@ export class WSITileSource implements TileSource {
         
             img.onerror = reject;
           });
+          */
     }
 
     public getWidth(): number {

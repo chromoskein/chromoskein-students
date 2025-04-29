@@ -5,7 +5,7 @@
  *  between the main app and any source that provides tiles 
  */
 export interface TileSource {
-    getTile(level: number, x: number, y: number): Promise<number[]>;
+    getTile(level: number, x: number, y: number): Promise<ArrayBuffer>;
     getWidth(): number;
     getLevelWidth(level: number): number;
     getHeight(): number;
