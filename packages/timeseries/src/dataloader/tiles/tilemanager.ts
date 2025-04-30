@@ -26,7 +26,11 @@ export class TileManager {
     }
 
     public getTileDataDirectKey(key: string): TileData | undefined {
-        return this.cache.get(key); 
+        // Cache only holds tiles with bigger y values than x due to symmetry -> swap x,y if needed
+        let split = key.split('.')
+        const cacheKey = this.tileKey(parseInt(split[0]), parseInt(split[1]), parseInt(split[2]));
+
+        return this.cache.get(cacheKey.key); 
     }
 
     public getTileDataDirect(x: number, y: number, level: number): TileData | undefined {
@@ -44,7 +48,7 @@ export class TileManager {
                 return this.promiseCache.get(tileKey.key)!
             } else {
                 const promise: Promise<TileData> = new Promise((resolve, reject) => {
-                    this.source.getTile(level, x, y).then(data => {
+                    this.source.getTile(level, tileKey.x, tileKey.y).then(data => {
                         const tileData = new TileData(tileKey.x, tileKey.y, level, data);
                         this.cache.set(tileKey.key, tileData);
                         this.promiseCache.delete(tileKey.key);
