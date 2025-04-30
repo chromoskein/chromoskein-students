@@ -5,13 +5,10 @@
  *  between the main app and any source that provides tiles 
  */
 export interface TileSource {
-    getTile(level: number, x: number, y: number): Promise<ArrayBuffer>;
-    getWidth(): number;
-    getLevelWidth(level: number): number;
-    getHeight(): number;
-    getLevelHeight(level: number): number;
+    getTile(level: number, x: number, y: number): Promise<Float32Array>;
+    getSize(): number;
+    getLevelSize(level: number): number;
     getTileSize(): number;
-    getMinLevel(): number;
     getMaxLevel(): number;
     initialize(): void;
 }

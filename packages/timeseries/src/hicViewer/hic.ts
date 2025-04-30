@@ -1,17 +1,20 @@
 import { vec2, vec3, vec4 } from "gl-matrix";
-import type { TileSource } from "../dataloader/tilefetcher/tilesource";
+import type { TileSource } from "../dataloader/tiles/tilefetcher/tilesource";
 import type * as Graphics from "@chromoskein/lib-graphics";
 import { clusterData } from "../utils/hclust";
+import { TileManager } from "../dataloader/tiles/tilemanager";
+import type { TileData } from "../dataloader/tiles/tiledata";
 
 type TileInfo = {
     x: number
     y: number
     level: number
+    key: string
 }
 
 export class HiC {
 
-    private tileSource: TileSource
+    private tileManager: TileManager
     private viewport: Graphics.Viewport2D;
 
     private size: number = 1;
@@ -22,9 +25,10 @@ export class HiC {
     private tileCache: Map<string, Graphics.Tile | null> = new Map() 
 
     constructor(viewport: Graphics.Viewport2D, tileSource: TileSource) {
-        this.tileSource = tileSource;
+        this.tileManager = new TileManager(tileSource);
         this.viewport = viewport;
-        this.update()
+        this.updateZoomLevel();
+        this.updateRenderedTiles();
     }
 
 
@@ -34,35 +38,62 @@ export class HiC {
         this.rotation = rotation;
     }
     
+    private addTilesToRender(add: TileInfo[]) {
+        const tileSize = this.tileManager.getTileSize();
 
-    public update() {
-        let visible: TileInfo[] = this.getVisibleTiles()
-        const tileSize = this.tileSource.getTileSize();
-
-        visible.forEach(tileInfo => {
-            let tileSting = `${tileInfo.x}.${tileInfo.y}.${tileInfo.level}`
-            const levelSize = this.tileSource.getLevelHeight(tileInfo.level)
-            if (!this.tileCache.has(tileSting)) {
-                this.tileCache.set(tileSting, null)
+        add.forEach(tileInfo => {
+            const sizeRatio = tileSize / this.tileManager.getLevelSize(tileInfo.level);
+            
+            if (!this.tileCache.has(tileInfo.key)) {
+                this.tileCache.set(tileInfo.key, null)
                 let flip = tileInfo.x > tileInfo.y; 
-                let x = flip ? tileInfo.y / tileSize : tileInfo.x / tileSize;
-                let y = flip ? tileInfo.x / tileSize : tileInfo.y / tileSize;
 
-                this.tileSource.getTile(tileInfo.level, x, y).then(data => {
-                    let [id, tile] = this.viewport.addTile(tileSize, tileSize, data);
-                    const sizeRatio = tileSize / levelSize;
+                this.tileManager.getTileData(tileInfo.x, tileInfo.y, tileInfo.level).then(data => {
+                    let [id, tile] = this.viewport.addTile(tileSize, tileSize, data.getData());
                     tile.scale(sizeRatio * this.size);
-                    let xTranslate = (this.center[0] - this.size / 2) + (0.5 + tileInfo.x / tileSize) * sizeRatio;
-                    let yTranslate = (this.center[0] + this.size / 2) - (0.5 + tileInfo.y / tileSize) * sizeRatio;
+                    let xTranslate = (this.center[0] - this.size / 2) + (0.5 + tileInfo.x) * sizeRatio;
+                    let yTranslate = (this.center[0] + this.size / 2) - (0.5 + tileInfo.y) * sizeRatio;
                     tile.translate(vec2.fromValues(xTranslate, yTranslate));
                     if (tileInfo.x == tileInfo.y) tile.mirror(true);
                     if (flip) tile.flip(true);
 
-                    this.tileCache.set(tileSting, tile);
+                    this.tileCache.set(tileInfo.key, tile);
 
                     console.log(`Fetching tile x: ${tileInfo.x} y: ${tileInfo.y}, l: ${tileInfo.level}`)
                 })
             }
+        });
+    }
+
+    private removeTilesFromRender(remove: string[]) {
+        remove.forEach(key => {
+            const tile: Graphics.Tile = this.tileCache.get(key)!;
+            if (tile) this.viewport.removeTile(tile.getId());
+            this.tileCache.delete(key);
+        });
+    }
+
+    public updateRenderedTiles() {
+        let visible: TileInfo[] = this.getVisibleTiles();
+        let currentKeys: string[] = [...this.tileCache.keys()];
+        let visibleKeys: string[] = [...visible.map(val => val.key)];
+    
+        let notVisible: string[] = currentKeys.filter(val => !visibleKeys.includes(val));
+        let newlyVisible: TileInfo[] = visible.filter(val => !currentKeys.includes(val.key));
+        
+        this.removeTilesFromRender(notVisible);
+        this.addTilesToRender(newlyVisible)
+
+        let maxVal = 0.0;
+        this.tileCache.forEach((value, key) => {
+            let data: TileData | undefined = this.tileManager.getTileDataDirectKey(key);
+            if (data) {
+                maxVal = Math.max(maxVal, data.maxVal);
+            }
+        });
+        console.log("Maximum value in visible data:", maxVal);
+        this.tileCache.forEach((value, key) => {
+            value?.maxValue(maxVal);
         });
     }
 
@@ -74,12 +105,8 @@ export class HiC {
     
         // I decided that I want at least two pixels per bin when visualizing the data 
         const optimalBinSize = 2.0
-        let zoom = Math.log2((hicSizePixels / optimalBinSize) / (this.tileSource.getLevelWidth(this.tileSource.getMaxLevel())));
-        let boundedZoom =  Math.max(this.tileSource.getMaxLevel() - Math.floor(Math.max(zoom, 0)), 0)
-        
-        if (boundedZoom != originalZoom) {
-            this.clearCache()
-        }
+        let zoom = Math.log2((hicSizePixels / optimalBinSize) / (this.tileManager.getLevelSize(this.tileManager.getMaxLevel())));
+        let boundedZoom =  Math.max(this.tileManager.getMaxLevel() - Math.floor(Math.max(zoom, 0)), 0)
         
         this.zoomLevel = boundedZoom
     }
@@ -100,16 +127,17 @@ export class HiC {
 
         this.updateZoomLevel()
 
-        const tileSize = this.tileSource.getTileSize();
-        const levelSize = this.tileSource.getLevelHeight(this.zoomLevel);
+        const tileSize = this.tileManager.getTileSize();
+        const levelSize = this.tileManager.getLevelSize(this.zoomLevel);
 
-        let newTiles: TileInfo[] = []
+        let visibleTiles: TileInfo[] = []
         for (let x = Math.floor((xRange[0] * levelSize) / tileSize) * tileSize; x < xRange[1] * levelSize; x += tileSize) {
             for (let y = Math.floor((yRange[0] * levelSize) / tileSize) * tileSize; y < yRange[1] * levelSize; y += tileSize) {
-                newTiles.push({x: x, y: y, level: this.zoomLevel})
+                const tileKey = `${x / tileSize}.${y / tileSize}.${this.zoomLevel}`
+                visibleTiles.push({x: x / tileSize, y: y / tileSize, level: this.zoomLevel, key: tileKey})
             }
         }
-        return newTiles
+        return visibleTiles
     }
 
 

@@ -8,8 +8,7 @@ export class WSITileSource implements TileSource {
     private slideId: string;
     private urlFormatter: (level: number, x: number, y: number, slideId: string) => string = localHostUrl;
 
-    private width: number = 0;
-    private height: number = 0;
+    private size: number = 0;
     private tileSize: number = 0;
     private maxLevel: number = 0;
 
@@ -22,7 +21,7 @@ export class WSITileSource implements TileSource {
         this.slideId = slideId
     }
 
-    public async getTile(level: number, x: number, y: number): Promise<ArrayBuffer> {
+    public async getTile(level: number, x: number, y: number): Promise<Float32Array> {
         const url = this.urlFormatter(level, x, y, this.slideId)
 
         return new Promise((resolve, reject) => {
@@ -30,12 +29,6 @@ export class WSITileSource implements TileSource {
                 .then(response => response.arrayBuffer()
                 .then(buffer => {
                     const floatArray = new Float32Array(buffer)
-
-                    floatArray.forEach((value, index) => {
-                        if (isNaN(value)) {
-                            floatArray[index] = -1.0;
-                        }
-                    });
 
                     resolve(floatArray)
                 })
@@ -91,35 +84,23 @@ export class WSITileSource implements TileSource {
           */
     }
 
-    public getWidth(): number {
-        return this.width;
+    public getSize(): number {
+        return this.size;
     }
 
-    public getHeight(): number {
-        return this.height;
-    }
 
-    public getLevelWidth(level: number) {
+    public getLevelSize(level: number) {
         if (level >= 0 && level <= this.maxLevel) {
             return this.levels[level].extent.x;
         }
         throw "Accessed level is out of image range."
     }
 
-    public getLevelHeight(level: number) {
-        if (level >= 0 && level <= this.maxLevel) {
-            return this.levels[level].extent.y;
-        }
-        throw "Accessed level is out of image range."
-    }
 
     public getTileSize(): number {
         return this.tileSize;
     }
 
-    public getMinLevel(): number {
-        return 0;
-    }
 
     public getMaxLevel(): number {
         return this.maxLevel
@@ -131,8 +112,7 @@ export class WSITileSource implements TileSource {
 
         const response = await fetch(url)
         const json = await response.json()
-        this.width = json.extent.x
-        this.height = json.extent.y
+        this.size = json.extent.x
         this.tileSize = json.tile_extent.x
         this.maxLevel = json.num_levels - 1
         this.levels = json.levels
