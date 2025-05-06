@@ -24,16 +24,16 @@ export class HiC {
     private zoomLevel: number = 0;
     private quadTree!: QuadTree;
 
-    private tileCache: Map<string, Graphics.Tile | null> = new Map() 
+    private tiles: Map<string, Graphics.Tile> = new Map();
+    private tilePromises: Map<string, Promise<Graphics.Tile>> = new Map();
 
-    constructor(viewport: Graphics.Viewport2D, tileSource: TileSource, position: vec2 = vec2.fromValues(0.0, 0.0), size: number = 1, rotation: number = 0) {
-        this.tileManager = new TileManager(tileSource);
+    constructor(viewport: Graphics.Viewport2D, tileManager: TileManager, position: vec2 = vec2.fromValues(0.0, 0.0), size: number = 1, rotation: number = 0) {
+        this.tileManager = tileManager;
         this.viewport = viewport;
         this.setDimensions(position, size, rotation);
         this.updateZoomLevel();
         this.updateRenderedTiles();
     }
-
 
     public setDimensions(position: vec2, size: number = 1, rotation: number = 0) {
         this.center = position;
@@ -48,39 +48,44 @@ export class HiC {
         add.forEach(tileInfo => {
             const sizeRatio = tileSize / this.tileManager.getLevelSize(tileInfo.level);
             
-            if (!this.tileCache.has(tileInfo.key)) {
-                this.tileCache.set(tileInfo.key, null)
-                let flip = tileInfo.x > tileInfo.y; 
+            if (!this.tiles.has(tileInfo.key) && !this.tilePromises.has(tileInfo.key)) {
+                const tilePromise: Promise<Graphics.Tile> = new Promise((resolve, reject) => {
+                    let flip = tileInfo.x > tileInfo.y; 
 
-                this.tileManager.getTileData(tileInfo.x, tileInfo.y, tileInfo.level).then(data => {
-                    let [id, tile] = this.viewport.addTile(tileSize, tileSize, data.data);
-                    tile.scale(sizeRatio * this.size);
-                    tile.globalRotate(this.rotation);
-                    let xTranslate = (this.center[0] - this.size / 2) + (0.5 + tileInfo.x) * sizeRatio;
-                    let yTranslate = (this.center[0] + this.size / 2) - (0.5 + tileInfo.y) * sizeRatio;
-                    tile.translate(vec2.fromValues(xTranslate, yTranslate));
-                    if (tileInfo.x == tileInfo.y) tile.mirror(true);
-                    if (flip) tile.flip(true);
+                    this.tileManager.getTileData(tileInfo.x, tileInfo.y, tileInfo.level).then(data => {
+                        let [id, tile] = this.viewport.addTile(tileSize, tileSize, data.data);
+                        tile.scale(sizeRatio * this.size);
+                        tile.globalRotate(this.rotation);
+                        tile.globalTranslate(this.center);
+                        let xTranslate = (-1 * this.size / 2) + (0.5 + tileInfo.x) * sizeRatio;
+                        let yTranslate = (this.size / 2) - (0.5 + tileInfo.y) * sizeRatio;
+                        tile.translate(vec2.fromValues(xTranslate, yTranslate));
+                        if (tileInfo.x == tileInfo.y) tile.mirror(true);
+                        if (flip) tile.flip(true);
 
-                    this.tileCache.set(tileInfo.key, tile);
+                        this.tilePromises.delete(tileInfo.key);
+                        this.tiles.set(tileInfo.key, tile);
+                        console.log(`Fetched tile x: ${tileInfo.x} y: ${tileInfo.y}, l: ${tileInfo.level}`)
+                        resolve(tile)
+                    });
+                });
 
-                    console.log(`Fetching tile x: ${tileInfo.x} y: ${tileInfo.y}, l: ${tileInfo.level}`)
-                })
+                this.tilePromises.set(tileInfo.key, tilePromise);
             }
         });
     }
 
     private removeTilesFromRender(remove: string[]) {
         remove.forEach(key => {
-            const tile: Graphics.Tile = this.tileCache.get(key)!;
+            const tile: Graphics.Tile = this.tiles.get(key)!;
             if (tile) this.viewport.removeTile(tile.getId());
-            this.tileCache.delete(key);
+            this.tiles.delete(key);
         });
     }
 
     public updateRenderedTiles() {
         let visible: TileInfo[] = this.getVisibleTiles();
-        let currentKeys: string[] = [...this.tileCache.keys()];
+        let currentKeys: string[] = [...this.tiles.keys()];
         let visibleKeys: string[] = [...visible.map(val => val.key)];
     
         let notVisible: string[] = currentKeys.filter(val => !visibleKeys.includes(val));
@@ -90,14 +95,14 @@ export class HiC {
         this.addTilesToRender(newlyVisible)
 
         let maxVal = 0.0;
-        this.tileCache.forEach((value, key) => {
+        this.tiles.forEach((value, key) => {
             let data: TileData | undefined = this.tileManager.getTileDataDirectKey(key);
             if (data) {
                 maxVal = Math.max(maxVal, data.maxVal);
             }
         });
         console.log("Maximum value in visible data:", maxVal);
-        this.tileCache.forEach((value, key) => {
+        this.tiles.forEach((value, key) => {
             value?.maxValue(maxVal);
         });
     }

@@ -69,6 +69,8 @@ export class TileManager {
     }
 
     private async reduceCache() {
+        if (this.cache.size <= this.maxCacheSize) return;
+
         let entries: [string, TileData][] = [...this.cache.entries()];
         let lastAccessedSort = entries.sort((a, b) => { return a[1].lastAccessed - b[1].lastAccessed });
         for (let i = 0; i < this.maxCacheSize / 2.0; i++) {
