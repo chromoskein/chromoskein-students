@@ -3,13 +3,16 @@ export class TileData {
     private _y: number = 0;
     private _level: number = 0;
     private _maxVal: number = 0;
+    private _lastAccessed: number;
 
-    private data!: Float32Array;
+    private _data!: Float32Array;
+
 
     constructor(x: number, y: number, level: number, data: Float32Array) {
         this._x = x;
         this._y = y;
         this._level = level;
+        this._lastAccessed = Date.now();
         this.initializeData(data);
     }
 
@@ -24,11 +27,16 @@ export class TileData {
         })
 
         this._maxVal = maxVal;
-        this.data = data;
+        this._data = data;
     }
 
-    public getData(): Float32Array {
-        return this.data;
+    public get data(): Float32Array {
+        this._lastAccessed = Date.now()
+        return this._data;
+    }
+
+    public get lastAccessed(): number {
+        return this._lastAccessed;
     }
 
     public get maxVal(): number {

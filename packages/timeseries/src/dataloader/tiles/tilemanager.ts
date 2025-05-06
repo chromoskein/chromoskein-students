@@ -12,9 +12,11 @@ export class TileManager {
     private source: TileSource;
     private cache: Map<string, TileData> = new Map();
     private promiseCache: Map<string, Promise<TileData>> = new Map();
+    private maxCacheSize: number;
 
-    constructor(tileSource: TileSource) {
+    constructor(tileSource: TileSource, cacheSize: number = 200) {
         this.source = tileSource;
+        this.maxCacheSize = cacheSize;
     }
 
     private tileKey(x: number, y: number, level: number): TileKey {
@@ -52,12 +54,26 @@ export class TileManager {
                         const tileData = new TileData(tileKey.x, tileKey.y, level, data);
                         this.cache.set(tileKey.key, tileData);
                         this.promiseCache.delete(tileKey.key);
+                        
+                        if (this.cache.size > this.maxCacheSize) {
+                            this.reduceCache();
+                        }
+
                         resolve(tileData);
                     });                   
                 })
                 this.promiseCache.set(tileKey.key, promise);
                 return promise;
             }
+        }
+    }
+
+    private async reduceCache() {
+        let entries: [string, TileData][] = [...this.cache.entries()];
+        let lastAccessedSort = entries.sort((a, b) => { return a[1].lastAccessed - b[1].lastAccessed });
+        for (let i = 0; i < this.maxCacheSize / 2.0; i++) {
+            let entryKey: string = lastAccessedSort[i][0];
+            this.cache.delete(entryKey);
         }
     }
 

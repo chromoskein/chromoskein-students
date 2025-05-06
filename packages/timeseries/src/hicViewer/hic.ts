@@ -53,7 +53,7 @@ export class HiC {
                 let flip = tileInfo.x > tileInfo.y; 
 
                 this.tileManager.getTileData(tileInfo.x, tileInfo.y, tileInfo.level).then(data => {
-                    let [id, tile] = this.viewport.addTile(tileSize, tileSize, data.getData());
+                    let [id, tile] = this.viewport.addTile(tileSize, tileSize, data.data);
                     tile.scale(sizeRatio * this.size);
                     let xTranslate = (this.center[0] - this.size / 2) + (0.5 + tileInfo.x) * sizeRatio;
                     let yTranslate = (this.center[0] + this.size / 2) - (0.5 + tileInfo.y) * sizeRatio;
