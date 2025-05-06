@@ -1,9 +1,10 @@
 import { vec2, vec3, vec4 } from "gl-matrix";
 import type { TileSource } from "../dataloader/tiles/tilefetcher/tilesource";
 import type * as Graphics from "@chromoskein/lib-graphics";
-import { clusterData } from "../utils/hclust";
 import { TileManager } from "../dataloader/tiles/tilemanager";
 import type { TileData } from "../dataloader/tiles/tiledata";
+import { QuadTree, type BoxRange } from "./quadtree";
+import { isBoxVisible, Visibility } from "./utils";
 
 type TileInfo = {
     x: number
@@ -16,17 +17,19 @@ export class HiC {
 
     private tileManager: TileManager
     private viewport: Graphics.Viewport2D;
-
+    
     private size: number = 1;
     private center: vec2 = vec2.fromValues(0, 0)
-    private rotation: number = 0;
+    private rotationRad: number = 0;
     private zoomLevel: number = 0;
+    private quadTree!: QuadTree;
 
     private tileCache: Map<string, Graphics.Tile | null> = new Map() 
 
-    constructor(viewport: Graphics.Viewport2D, tileSource: TileSource) {
+    constructor(viewport: Graphics.Viewport2D, tileSource: TileSource, position: vec2 = vec2.fromValues(0.0, 0.0), size: number = 1, rotation: number = 0) {
         this.tileManager = new TileManager(tileSource);
         this.viewport = viewport;
+        this.setDimensions(position, size, rotation);
         this.updateZoomLevel();
         this.updateRenderedTiles();
     }
@@ -35,7 +38,8 @@ export class HiC {
     public setDimensions(position: vec2, size: number = 1, rotation: number = 0) {
         this.center = position;
         this.size = size;
-        this.rotation = rotation;
+        this.rotationRad = rotation * (Math.PI / 180.0);
+        this.quadTree = new QuadTree(this.getOrientedBoundingBox(), this.tileManager.getMaxLevel());
     }
     
     private addTilesToRender(add: TileInfo[]) {
@@ -111,68 +115,54 @@ export class HiC {
         this.zoomLevel = boundedZoom
     }
 
+    public getOrientedBoundingBox(xt: number = 0.0, yt: number = 0.0, delta: number = 1.0): [vec2, vec2, vec2, vec2] {
+        let nonRotBounds: [vec2, vec2] = [
+            vec2.fromValues(this.center[0] - this.size / 2.0 + xt * this.size, this.center[1] - this.size / 2.0 + yt * this.size),
+            vec2.fromValues(this.center[0] - this.size / 2.0 + (xt + delta) * this.size, this.center[1] - this.size / 2.0 + (yt + delta) * this.size)
+        ];
 
-    public getVisibleTiles() {
-        // We first need to fetch which part of the genome is visible
-        let clip = this.getWorldSpaceClip()
-        if (clip == null) {
-            // There are no visible tiles since the HiC is outside of camera
-            return []
-        }
+        return [
+            vec2.rotate(vec2.create(), vec2.fromValues(nonRotBounds[0][0], nonRotBounds[1][1]), this.center, this.rotationRad),
+            vec2.rotate(vec2.create(), vec2.fromValues(nonRotBounds[1][0], nonRotBounds[1][1]), this.center, this.rotationRad),
+            vec2.rotate(vec2.create(), vec2.fromValues(nonRotBounds[1][0], nonRotBounds[0][1]), this.center, this.rotationRad),
+            vec2.rotate(vec2.create(), vec2.fromValues(nonRotBounds[0][0], nonRotBounds[0][1]), this.center, this.rotationRad),
+        ];
+    }
 
-        let bb = this.getBoundingBox()
-        let xRange = [(clip[0][0] - bb[0][0]) / this.size, (clip[1][0] - bb[0][0]) / this.size]
-        let yRange = [(clip[0][1] - bb[0][1]) / this.size, (clip[1][1] - bb[0][1]) / this.size]
-        yRange = [1.0 - yRange[1], 1.0 - yRange[0]]
+    public getVisibleTiles(): TileInfo[] {
+        const bounds = this.getScreenBounds();
+        let visibleTiles: Map<string, TileInfo> = new Map();
 
-        this.updateZoomLevel()
+        this.updateZoomLevel();
 
+        let visibleRanges: BoxRange[] = this.quadTree.getVisibleNodesMemoryless(bounds, this.zoomLevel);
         const tileSize = this.tileManager.getTileSize();
         const levelSize = this.tileManager.getLevelSize(this.zoomLevel);
 
-        let visibleTiles: TileInfo[] = []
-        for (let x = Math.floor((xRange[0] * levelSize) / tileSize) * tileSize; x < xRange[1] * levelSize; x += tileSize) {
-            for (let y = Math.floor((yRange[0] * levelSize) / tileSize) * tileSize; y < yRange[1] * levelSize; y += tileSize) {
-                const tileKey = `${x / tileSize}.${y / tileSize}.${this.zoomLevel}`
-                visibleTiles.push({x: x / tileSize, y: y / tileSize, level: this.zoomLevel, key: tileKey})
-            }
-        }
-        return visibleTiles
-    }
+        visibleRanges.forEach(range => {
+            for (let x = Math.floor((range.xRange[0] * levelSize) / tileSize); x < range.xRange[1] * levelSize / tileSize; x += 1) {
+                for (let y = Math.floor((range.yRange[0] * levelSize) / tileSize); y < range.yRange[1] * levelSize / tileSize; y += 1) {
+                    const tileKey = `${x}.${y}.${this.zoomLevel}`
+                    if (!visibleTiles.has(tileKey)) {
+                        const xt = x * tileSize / levelSize;
+                        const delta = (x + 1) * tileSize / levelSize - x * tileSize / levelSize;
+                        const yt = 1.0 - (y * tileSize / levelSize + delta);
+                        const tileBox = this.getOrientedBoundingBox(xt, yt, delta);
+                        const tileVisible = isBoxVisible(tileBox, bounds);
 
-
-    private clearCache() {
-        this.tileCache.forEach(tile => {
-            if (tile) {
-                this.viewport.removeTile(tile.getId())
+                        if (tileVisible != Visibility.None) 
+                            visibleTiles.set(tileKey, {x: x, y: y, level: this.zoomLevel, key: tileKey});
+                    }
+                }
             }
         });
-        this.tileCache.clear()
-        console.log(this.tileCache)
+
+        return [...visibleTiles.values()];
     }
 
-    public getBoundingBox(): [vec2, vec2] {
-        return [vec2.fromValues(this.center[0] - this.size / 2.0, this.center[1] - this.size / 2.0), vec2.fromValues(this.center[0] + this.size / 2.0, this.center[1] + this.size / 2.0)]
-    }
-
-    /**
-     * This function returns a bounding box that is the intersection between the current viewport and the HiC bounding box
-     */
-    public getWorldSpaceClip(): [vec2, vec2] | null {
+    private getScreenBounds(): [vec2, vec2] {
         const topRight = vec4.transformMat4(vec4.create(), vec4.fromValues(1, 1, 0, 1), this.viewport.camera.viewProjectionInverseMatrix);
         const botLeft = vec4.transformMat4(vec4.create(), vec4.fromValues(-1, -1, 0, 1), this.viewport.camera.viewProjectionInverseMatrix);
-
-        const bb = this.getBoundingBox();
-
-        const botLeftClip = vec2.fromValues(Math.max(bb[0][0], botLeft[0]), Math.max(bb[0][1], botLeft[1]));
-        const topRightClip = vec2.fromValues(Math.min(bb[1][0], topRight[0]), Math.min(bb[1][1], topRight[1]));
-
-        // Return null in case the bounding box is completely off the screen
-        if (botLeftClip[0] > topRightClip[0] || botLeftClip[1] > topRightClip[1]) {
-            return null
-        }
-
-        return [botLeftClip, topRightClip]
+        return [vec2.fromValues(botLeft[0], botLeft[1]), vec2.fromValues(topRight[0], topRight[1])];
     }
-
 }
