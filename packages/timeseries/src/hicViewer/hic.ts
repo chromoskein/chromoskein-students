@@ -20,7 +20,7 @@ export class HiC {
     
     private size: number = 1;
     private center: vec2 = vec2.fromValues(0, 0)
-    private rotationRad: number = 0;
+    private rotation: number = 0;
     private zoomLevel: number = 0;
     private quadTree!: QuadTree;
 
@@ -38,7 +38,7 @@ export class HiC {
     public setDimensions(position: vec2, size: number = 1, rotation: number = 0) {
         this.center = position;
         this.size = size;
-        this.rotationRad = rotation * (Math.PI / 180.0);
+        this.rotation = rotation;
         this.quadTree = new QuadTree(this.getOrientedBoundingBox(), this.tileManager.getMaxLevel());
     }
     
@@ -55,6 +55,7 @@ export class HiC {
                 this.tileManager.getTileData(tileInfo.x, tileInfo.y, tileInfo.level).then(data => {
                     let [id, tile] = this.viewport.addTile(tileSize, tileSize, data.data);
                     tile.scale(sizeRatio * this.size);
+                    tile.globalRotate(this.rotation);
                     let xTranslate = (this.center[0] - this.size / 2) + (0.5 + tileInfo.x) * sizeRatio;
                     let yTranslate = (this.center[0] + this.size / 2) - (0.5 + tileInfo.y) * sizeRatio;
                     tile.translate(vec2.fromValues(xTranslate, yTranslate));
@@ -121,11 +122,12 @@ export class HiC {
             vec2.fromValues(this.center[0] - this.size / 2.0 + (xt + delta) * this.size, this.center[1] - this.size / 2.0 + (yt + delta) * this.size)
         ];
 
+        const rotationRad: number = this.rotation * (Math.PI / 180.0);
         return [
-            vec2.rotate(vec2.create(), vec2.fromValues(nonRotBounds[0][0], nonRotBounds[1][1]), this.center, this.rotationRad),
-            vec2.rotate(vec2.create(), vec2.fromValues(nonRotBounds[1][0], nonRotBounds[1][1]), this.center, this.rotationRad),
-            vec2.rotate(vec2.create(), vec2.fromValues(nonRotBounds[1][0], nonRotBounds[0][1]), this.center, this.rotationRad),
-            vec2.rotate(vec2.create(), vec2.fromValues(nonRotBounds[0][0], nonRotBounds[0][1]), this.center, this.rotationRad),
+            vec2.rotate(vec2.create(), vec2.fromValues(nonRotBounds[0][0], nonRotBounds[1][1]), this.center, rotationRad),
+            vec2.rotate(vec2.create(), vec2.fromValues(nonRotBounds[1][0], nonRotBounds[1][1]), this.center, rotationRad),
+            vec2.rotate(vec2.create(), vec2.fromValues(nonRotBounds[1][0], nonRotBounds[0][1]), this.center, rotationRad),
+            vec2.rotate(vec2.create(), vec2.fromValues(nonRotBounds[0][0], nonRotBounds[0][1]), this.center, rotationRad),
         ];
     }
 
