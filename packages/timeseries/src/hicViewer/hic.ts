@@ -22,10 +22,12 @@ export class HiC {
     private center: vec2 = vec2.fromValues(0, 0)
     private rotation: number = 0;
     private zoomLevel: number = 0;
+    private triangular: boolean = false;
     private quadTree!: QuadTree;
 
     private tiles: Map<string, Graphics.Tile> = new Map();
     private tilePromises: Map<string, Promise<Graphics.Tile>> = new Map();
+
 
     constructor(viewport: Graphics.Viewport2D, tileManager: TileManager, position: vec2 = vec2.fromValues(0.0, 0.0), size: number = 1, rotation: number = 0) {
         this.tileManager = tileManager;
@@ -41,7 +43,33 @@ export class HiC {
         this.rotation = rotation;
         this.quadTree = new QuadTree(this.getOrientedBoundingBox(), this.tileManager.getMaxLevel());
     }
-    
+
+    public setTriangleShape(triangle: boolean) {
+        this.triangular = triangle;
+        this.transformToTriangular();
+    }
+
+    private transformToTriangular() {
+        if (this.triangular) {
+            this.tiles.forEach((tile, key) => {
+                let info: TileInfo = this.tileInfoFromKey(key);
+                tile.setTriangular(info.x == info.y)
+                if (info.y > info.x) {
+                    this.viewport.removeTile(tile.getId());
+                    this.tiles.delete(key);
+                }
+            });
+        } else {
+            this.tiles.forEach((tile, key) => tile.setTriangular(false));
+            let visible: TileInfo[] = this.getVisibleTiles();
+            let currentKeys: string[] = [...this.tiles.keys()];    
+            let newlyVisible: TileInfo[] = visible.filter(val => !currentKeys.includes(val.key));
+            this.addTilesToRender(newlyVisible);
+        }
+    }
+
+
+
     private addTilesToRender(add: TileInfo[]) {
         const tileSize = this.tileManager.getTileSize();
 
@@ -51,6 +79,7 @@ export class HiC {
             if (!this.tiles.has(tileInfo.key) && !this.tilePromises.has(tileInfo.key)) {
                 const tilePromise: Promise<Graphics.Tile> = new Promise((resolve, reject) => {
                     let flip = tileInfo.x > tileInfo.y; 
+                    let diagonalTile = tileInfo.x == tileInfo.y;
 
                     this.tileManager.getTileData(tileInfo.x, tileInfo.y, tileInfo.level).then(data => {
                         let [id, tile] = this.viewport.addTile(tileSize, tileSize, data.data);
@@ -60,8 +89,9 @@ export class HiC {
                         let xTranslate = (-1 * this.size / 2) + (0.5 + tileInfo.x) * sizeRatio;
                         let yTranslate = (this.size / 2) - (0.5 + tileInfo.y) * sizeRatio;
                         tile.translate(vec2.fromValues(xTranslate, yTranslate));
-                        if (tileInfo.x == tileInfo.y) tile.mirror(true);
-                        if (flip) tile.flip(true);
+                        tile.mirror(diagonalTile);
+                        tile.setTriangular(this.triangular && diagonalTile)
+                        tile.flip(flip);
 
                         this.tilePromises.delete(tileInfo.key);
                         this.tiles.set(tileInfo.key, tile);
@@ -101,7 +131,7 @@ export class HiC {
                 maxVal = Math.max(maxVal, data.maxVal);
             }
         });
-        console.log("Maximum value in visible data:", maxVal);
+        //console.log("Maximum value in visible data:", maxVal);
         this.tiles.forEach((value, key) => {
             value?.maxValue(maxVal);
         });
@@ -142,7 +172,7 @@ export class HiC {
 
         this.updateZoomLevel();
 
-        let visibleRanges: BoxRange[] = this.quadTree.getVisibleNodesMemoryless(bounds, this.zoomLevel);
+        let visibleRanges: BoxRange[] = this.quadTree.getVisibleNodesMemoryless(bounds, this.zoomLevel, this.triangular);
         const tileSize = this.tileManager.getTileSize();
         const levelSize = this.tileManager.getLevelSize(this.zoomLevel);
 
@@ -150,7 +180,8 @@ export class HiC {
             for (let x = Math.floor((range.xRange[0] * levelSize) / tileSize); x < range.xRange[1] * levelSize / tileSize; x += 1) {
                 for (let y = Math.floor((range.yRange[0] * levelSize) / tileSize); y < range.yRange[1] * levelSize / tileSize; y += 1) {
                     const tileKey = `${x}.${y}.${this.zoomLevel}`
-                    if (!visibleTiles.has(tileKey)) {
+                    //if (this.triangular && y > x) continue;
+                    if (!(this.triangular && y > x) && !visibleTiles.has(tileKey)) {
                         const xt = x * tileSize / levelSize;
                         const delta = (x + 1) * tileSize / levelSize - x * tileSize / levelSize;
                         const yt = 1.0 - (y * tileSize / levelSize + delta);
@@ -171,5 +202,15 @@ export class HiC {
         const topRight = vec4.transformMat4(vec4.create(), vec4.fromValues(1, 1, 0, 1), this.viewport.camera.viewProjectionInverseMatrix);
         const botLeft = vec4.transformMat4(vec4.create(), vec4.fromValues(-1, -1, 0, 1), this.viewport.camera.viewProjectionInverseMatrix);
         return [vec2.fromValues(botLeft[0], botLeft[1]), vec2.fromValues(topRight[0], topRight[1])];
+    }
+
+    private tileInfoFromKey(key: string): TileInfo {
+        let split = key.split('.')
+        return {
+            x: parseInt(split[0]),
+            y: parseInt(split[1]),
+            level: parseInt(split[2]),
+            key: key
+        }
     }
 }

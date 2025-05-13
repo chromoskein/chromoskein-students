@@ -18,14 +18,19 @@ export class QuadTree {
     private root: QuadTreeNode;
     private maxZoom: number;
 
+    private minZoom: number = 0;
+    private triangular: boolean = false;
+
     constructor(box: [vec2, vec2, vec2, vec2], levels: number) {
         this.root = this.createNode(box, [0.0, 1.0], [0.0, 1.0], levels);
         this.maxZoom = levels;
     }
 
-    public getVisibleNodesMemoryless(bounds: [vec2, vec2], minZoom: number): BoxRange[] {
+    public getVisibleNodesMemoryless(bounds: [vec2, vec2], minZoom: number, triangular: boolean): BoxRange[] {
         let visible: BoxRange[] = [];
-        this.getVisibleTilesMemoryless(this.root.box, bounds, this.root.xRange, this.root.yRange, this.maxZoom, minZoom, visible);
+        this.minZoom = minZoom;
+        this.triangular = triangular;
+        this.getVisibleTilesMemoryless(this.root.box, bounds, this.root.xRange, this.root.yRange, this.maxZoom, visible);
         return visible;
     }
 
@@ -36,23 +41,23 @@ export class QuadTree {
     }
 
 
-    private getVisibleTilesMemoryless(box: [vec2, vec2, vec2, vec2], bounds: [vec2, vec2], xRange: [number, number], yRange: [number, number], zoom: number, minZoom: number, visibleNodes: BoxRange[]): void {
+    private getVisibleTilesMemoryless(box: [vec2, vec2, vec2, vec2], bounds: [vec2, vec2], xRange: [number, number], yRange: [number, number], zoom: number, visibleNodes: BoxRange[]): void {
+        if (this.triangular && yRange[0] >= xRange[1]) return;
+        
         const visibility = isBoxVisible(box, bounds);
-        if (visibility == Visibility.None) {
-            return;
-        }
-
-        if (visibility == Visibility.Full || zoom == minZoom) {
+        if (visibility == Visibility.None ) return;
+        
+        if (visibility == Visibility.Full || zoom == this.minZoom) {
             visibleNodes.push({
                 xRange: xRange,
                 yRange: yRange
             })
         } else {
             let children = this.getBoxSplit(box);
-            this.getVisibleTilesMemoryless(children[0], bounds, [xRange[0], xRange[0] + (xRange[1] - xRange[0]) / 2.0], [yRange[0], yRange[0] + (yRange[1] - yRange[0]) / 2.0], zoom - 1, minZoom, visibleNodes);
-            this.getVisibleTilesMemoryless(children[1], bounds, [xRange[0] + (xRange[1] - xRange[0]) / 2.0, xRange[1]], [yRange[0], yRange[0] + (yRange[1] - yRange[0]) / 2.0], zoom - 1, minZoom, visibleNodes);
-            this.getVisibleTilesMemoryless(children[2], bounds, [xRange[0] + (xRange[1] - xRange[0]) / 2.0, xRange[1]], [yRange[0] + (yRange[1] - yRange[0]) / 2.0, yRange[1]], zoom - 1, minZoom, visibleNodes);
-            this.getVisibleTilesMemoryless(children[3], bounds, [xRange[0], xRange[0] + (xRange[1] - xRange[0]) / 2.0], [yRange[0] + (yRange[1] - yRange[0]) / 2.0, yRange[1]], zoom - 1, minZoom, visibleNodes);
+            this.getVisibleTilesMemoryless(children[0], bounds, [xRange[0], xRange[0] + (xRange[1] - xRange[0]) / 2.0], [yRange[0], yRange[0] + (yRange[1] - yRange[0]) / 2.0], zoom - 1, visibleNodes);
+            this.getVisibleTilesMemoryless(children[1], bounds, [xRange[0] + (xRange[1] - xRange[0]) / 2.0, xRange[1]], [yRange[0], yRange[0] + (yRange[1] - yRange[0]) / 2.0], zoom - 1, visibleNodes);
+            this.getVisibleTilesMemoryless(children[2], bounds, [xRange[0] + (xRange[1] - xRange[0]) / 2.0, xRange[1]], [yRange[0] + (yRange[1] - yRange[0]) / 2.0, yRange[1]], zoom - 1, visibleNodes);
+            this.getVisibleTilesMemoryless(children[3], bounds, [xRange[0], xRange[0] + (xRange[1] - xRange[0]) / 2.0], [yRange[0] + (yRange[1] - yRange[0]) / 2.0, yRange[1]], zoom - 1, visibleNodes);
         }
     }
 
