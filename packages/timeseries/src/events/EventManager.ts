@@ -1,18 +1,18 @@
-import type { ChromatinEvent, EventObserver } from "./chromatinEvent";
+import type { ChromatinEvent, EventObserver, EventType } from "./ChromatinEvent";
 
 export class EventManager {
-    private observersByEvent: Map<string, EventObserver[]> = new Map();
+    private observersByEvent: Map<EventType, EventObserver[]> = new Map();
 
     public constructor() { /** Nothing */}    
 
-    public on(eventType: string, observer: (event: ChromatinEvent) => void): void {
+    public on(eventType: EventType, observer: (event: ChromatinEvent) => void): void {
         if (!this.observersByEvent.has(eventType)) 
             this.observersByEvent.set(eventType, []);
 
         this.observersByEvent.get(eventType)!.push(observer);    
     }
 
-    public off(eventType: string, observer: (event: ChromatinEvent) => void): void {
+    public off(eventType: EventType, observer: (event: ChromatinEvent) => void): void {
         if (!this.observersByEvent.has(eventType))
             return;
         

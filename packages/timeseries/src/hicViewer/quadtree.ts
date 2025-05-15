@@ -26,6 +26,10 @@ export class QuadTree {
         this.maxZoom = levels;
     }
 
+    public setNewOBB(box: [vec2, vec2, vec2, vec2]) {
+        this.root = this.createNode(box, [0.0, 1.0], [0.0, 1.0], this.maxZoom);
+    }
+
     public getVisibleNodesMemoryless(bounds: [vec2, vec2], minZoom: number, triangular: boolean): BoxRange[] {
         let visible: BoxRange[] = [];
         this.minZoom = minZoom;

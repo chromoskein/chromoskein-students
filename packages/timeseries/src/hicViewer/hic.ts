@@ -1,10 +1,11 @@
-import { vec2, vec3, vec4 } from "gl-matrix";
-import type { TileSource } from "../dataloader/tiles/tilefetcher/tilesource";
+import { vec2, vec4 } from "gl-matrix";
 import type * as Graphics from "@chromoskein/lib-graphics";
 import { TileManager } from "../dataloader/tiles/tilemanager";
 import type { TileData } from "../dataloader/tiles/tiledata";
 import { QuadTree, type BoxRange } from "./quadtree";
 import { isBoxVisible, Visibility } from "./utils";
+import type { EventManager } from "../events/EventManager";
+import { ChromatinEvent, EventType } from "../events/ChromatinEvent";
 
 type TileInfo = {
     x: number
@@ -29,19 +30,22 @@ export class HiC {
     private tilePromises: Map<string, Promise<Graphics.Tile>> = new Map();
 
 
-    constructor(viewport: Graphics.Viewport2D, tileManager: TileManager, position: vec2 = vec2.fromValues(0.0, 0.0), size: number = 1, rotation: number = 0) {
+    constructor(viewport: Graphics.Viewport2D, tileManager: TileManager, eventManager: EventManager) {
         this.tileManager = tileManager;
         this.viewport = viewport;
-        this.setDimensions(position, size, rotation);
+        this.bindEvents(eventManager);
         this.updateZoomLevel();
-        this.updateRenderedTiles();
+        this.quadTree = new QuadTree(this.getOrientedBoundingBox(), this.tileManager.getMaxLevel());
+        this.update();
     }
 
     public setDimensions(position: vec2, size: number = 1, rotation: number = 0) {
         this.center = position;
         this.size = size;
         this.rotation = rotation;
-        this.quadTree = new QuadTree(this.getOrientedBoundingBox(), this.tileManager.getMaxLevel());
+        this.quadTree.setNewOBB(this.getOrientedBoundingBox());
+        this.updateZoomLevel();
+        this.update();
     }
 
     public setTriangleShape(triangle: boolean) {
@@ -68,6 +72,18 @@ export class HiC {
         }
     }
 
+    private onZoomEvent(event: ChromatinEvent) {
+        if (event.type == EventType.Zoom) {
+            let lastZoomLevel = this.zoomLevel;
+            this.updateZoomLevel();
+            if (lastZoomLevel != this.zoomLevel) this.update();            
+        }
+    }
+
+    private bindEvents(eventManager: EventManager) {
+        eventManager.on(EventType.Zoom, (event) => this.onZoomEvent(event));
+        eventManager.on(EventType.MouseDrag, (event) => this.update());
+    }
 
 
     private addTilesToRender(add: TileInfo[]) {
@@ -95,7 +111,7 @@ export class HiC {
 
                         this.tilePromises.delete(tileInfo.key);
                         this.tiles.set(tileInfo.key, tile);
-                        console.log(`Fetched tile x: ${tileInfo.x} y: ${tileInfo.y}, l: ${tileInfo.level}`)
+                        //console.log(`Fetched tile x: ${tileInfo.x} y: ${tileInfo.y}, l: ${tileInfo.level}`)
                         resolve(tile)
                     });
                 });
@@ -113,7 +129,7 @@ export class HiC {
         });
     }
 
-    public updateRenderedTiles() {
+    public update() {
         let visible: TileInfo[] = this.getVisibleTiles();
         let currentKeys: string[] = [...this.tiles.keys()];
         let visibleKeys: string[] = [...visible.map(val => val.key)];
@@ -169,8 +185,6 @@ export class HiC {
     public getVisibleTiles(): TileInfo[] {
         const bounds = this.getScreenBounds();
         let visibleTiles: Map<string, TileInfo> = new Map();
-
-        this.updateZoomLevel();
 
         let visibleRanges: BoxRange[] = this.quadTree.getVisibleNodesMemoryless(bounds, this.zoomLevel, this.triangular);
         const tileSize = this.tileManager.getTileSize();

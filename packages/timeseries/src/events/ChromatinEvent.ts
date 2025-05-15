@@ -1,13 +1,13 @@
 export class ChromatinEvent {
-    private _type = "undefined";
+    private _type = EventType.Undefined;
     private _jsEvent: Event | null = null;
 
-    constructor(type: string, jsEvent: Event | null) {
+    constructor(type: EventType, jsEvent: Event | null) {
         this._type = type;
         this._jsEvent = jsEvent
     }
 
-    public get type(): string {
+    public get type(): EventType {
         return this._type;
     }
 
@@ -17,3 +17,9 @@ export class ChromatinEvent {
 }
 
 export type EventObserver = (event: ChromatinEvent) => void;
+
+export enum EventType {
+    Undefined,
+    Zoom,
+    MouseDrag,
+}
