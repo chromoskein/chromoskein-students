@@ -111,7 +111,7 @@
       <Slider labelText="Cluster amount" fullWidth min={1} max={dataClustersGivenK.length - 1} value={ops.blobsAmount} on:input={(e) => {ops.blobsAmount = e.detail}}/>
     {/if}
     {#if ops.visType == VisualisationType.Test || ops.visType == VisualisationType.Implicit || ops.visType == VisualisationType.Matryoshka || ops.visType == VisualisationType.Pathline || ops.visType == VisualisationType.Spheres || ops.visType == VisualisationType.Spline || ops.visType == VisualisationType.Composite}
-      <Slider labelText="Radius" fullWidth min={0.01} max={0.3} step={0.01} value={ops.radius} on:input={(e) => ops.radius = e.detail} />
+      <Slider labelText="Radius" fullWidth min={0.005} max={0.3} step={0.005} value={ops.radius} on:input={(e) => ops.radius = e.detail} />
     {/if}
     {#if ops.visType == VisualisationType.Matryoshka || ops.visType == VisualisationType.Volume}
       <Slider labelText="Alpha" fullWidth min={0.05} max={1.0} step={0.05} value={ops.alpha} on:input={(e) => ops.alpha = e.detail} />

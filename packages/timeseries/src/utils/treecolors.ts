@@ -22,7 +22,7 @@ let luminanceStart = 45;
 let luminanceDelta = 8;
 let chromaStart = 85;
 let chromaDelta = -5;
-let rootColor = { h: 0, c: 0, l: 70, rgb: vec3 };
+let rootColor = { h: 0, c: 0, l: 9, rgb: vec3 };
 let perturb = true;
 
 type Color = {

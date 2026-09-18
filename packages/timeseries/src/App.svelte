@@ -15,7 +15,7 @@
   import { Slider } from "carbon-components-svelte";
   import { colorBrewerColors, colorHierarchy, iWantHueColors, treeColor } from "./utils/treecolors";
 
-  import { defaultVisOptions, initializeChromosome, type VisOptions, type Chromosome } from "./utils/data-models";
+  import { defaultVisOptions, initializeChromosome, type VisOptions, type Chromosome, getEmptyClustering, getClustering } from "./utils/data-models";
   import ChromosomeItem from "./uiComponents/ChromosomeItem.svelte";
   import ChromatinVisualization from "./uiComponents/ChromatinVisualization.svelte";
   import VisualizationOptions from "./uiComponents/VisualizationOptions.svelte";
@@ -25,6 +25,10 @@
   import LoaderModal from "./uiComponents/LoaderModal.svelte";
   import InteractiveCluster from "./visalizations/InteractiveCluster.svelte";
   import type { CarbonTheme } from "carbon-components-svelte/src/Theme/Theme.svelte";
+    import type { ChromatinModel } from "./dataloader/models";
+    import { parsePdb } from "./dataloader/pdb";
+    import { vec3 } from "gl-matrix";
+
 
   const adapter: Writable<GPUAdapter | null> = writable(null);
   const device: Writable<GPUDevice | null> = writable(null);
@@ -107,14 +111,63 @@
 
   onMount(async () => {
     await getGPU();
-    const filenames: string[] = new Array(600).fill(null).map((v, i) => "./timeseries/timestep_" + (i + 1).toString() + ".XYZ");
-    const timesteps = await loadTimesteps(filenames);
-    const dataTimesteps = normalizePointClouds(timesteps);
+    const pdbFile = await (await fetch("./pdb/GSM2219497_Cell_1_genome_structure_model.pdb")).text()
+    let id = 0;
 
-    let baseChromosome = initializeChromosome("Base", dataTimesteps);
-    chromosomeOptions = [defaultVisOptions()]
-    chromosomes = [baseChromosome]
-    clusteringWorker.postMessage(chromosomes[selectedChromosomeId].points.map((point) => [...point]));
+    let chromatinModel: ChromatinModel = parsePdb(pdbFile);
+    let points = chromatinModel.bins.map((v) => vec3.fromValues(v.x, v.y, v.z))
+
+    let loadedData: any[] = [];
+    chromatinModel.ranges.forEach((model, index) => {
+        const name = model.name + " " + (index + 1);
+        loadedData.push({
+            id: id++,
+            name: name,
+            from: model.from,
+            to: model.to
+        })
+    });
+
+    let filteredData = [loadedData[1], loadedData[2], loadedData[3], loadedData[7]]//, loadedData[9]]
+
+    let modelPoints = filteredData.map((item, index) => points.slice(item.from, item.to + 1));
+
+    modelPoints = normalizePointClouds(modelPoints);
+    
+
+    let concatPoints: vec3[] = modelPoints.flat();
+    // Update the from and to indexes of data based on filtering done in selection
+    let indexStart = 0;
+    for (let i = 0; i < filteredData.length; i++) {
+        filteredData[i].from = indexStart;
+        filteredData[i].to = indexStart + modelPoints[i].length - 1;
+        indexStart = indexStart + modelPoints[i].length;
+    }
+
+    let chromosome = initializeChromosome("Chromosome", [concatPoints]);
+    let clusters = [[], [getEmptyClustering(points.length - 1)]]
+    // Dont create a second hierarchy level if only a single model is selected
+    if (filteredData.length > 1) {
+        let modelClusterIndices: number[] = [];
+        let modelClusters: ClusterNode[] = [];
+        filteredData.forEach((model, index) => {
+            modelClusters.push(getClustering(model.from, model.to, 2, index));
+            modelClusterIndices.push(index);
+        });
+        clusters[1][0].children = modelClusterIndices;
+        clusters.push(modelClusters);
+    }
+
+    chromosome.clusters = clusters;
+    //const filenames: string[] = new Array(600).fill(null).map((v, i) => "./timeseries/timestep_" + (i + 1).toString() + ".XYZ");
+    //const timesteps = await loadTimesteps(filenames);
+    //const dataTimesteps = normalizePointClouds(timesteps);
+    
+    //let baseChromosome = initializeChromosome("Base", dataTimesteps);
+    //chromosomeOptions = [defaultVisOptions()]
+    chromosomes = [chromosome];
+    //chromosomes = [baseChromosome]
+    //clusteringWorker.postMessage(chromosomes[selectedChromosomeId].points.map((point) => [...point]));
   });
 
   // Set default colormap on viewport change
