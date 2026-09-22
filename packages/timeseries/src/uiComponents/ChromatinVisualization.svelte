@@ -15,6 +15,8 @@
     import type { VisOptions } from "../utils/data-models";
     import { calculateSphereParameters } from "../utils/abstractClustersUtils";
     import InteractiveCluster from "../visalizations/InteractiveCluster.svelte";
+    import Cross from "../objects/Cross.svelte";
+    import { onMount } from "svelte";
 
     interface ChromatinVisualizationProps {     
         visible: boolean,
@@ -267,6 +269,15 @@
         {/each} 
     {/if}
     {#if visType == VisualisationType.Test}
+        {#each dataClustersGivenK[clustersAmount] as cluster, _}
+            <Cross
+                radius={radius}
+                length={0.1}
+                points={points[timestep].slice(cluster.from, cluster.to + 1)}
+                color={vec3.fromValues(cluster.color[0], cluster.color[1], cluster.color[2])}
+            />
+        {/each}
+        <!--
         <MatryoshkaClusters
             selectedTimestep={timestep}
             dataClustersGivenK={dataClustersGivenK}
@@ -311,6 +322,7 @@
                 />
             {/each}
         {/if}
+        -->
     {/if}
     {/if}
 </div>

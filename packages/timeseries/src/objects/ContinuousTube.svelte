@@ -55,7 +55,7 @@
 
   onMount(() => {
     return () => {
-      if (viewport && $viewport?.scene && objectID) {
+      if (viewport && $viewport?.scene && objectID != null) {
         $viewport.scene.removeObjectByID(objectID);
       }
     };

@@ -1,7 +1,7 @@
 <script lang="ts">
   // @hmr:keep-all
 
-  import { onMount, setContext } from "svelte";
+  import { onMount, setContext, tick } from "svelte";
   import { writable, type Writable } from "svelte/store";
   import * as Graphics from "@chromoskein/lib-graphics";
   import Viewport3D from "./viewports/Viewport3D.svelte";
@@ -34,7 +34,7 @@
   const device: Writable<GPUDevice | null> = writable(null);
   const graphicsLibrary: Writable<Graphics.GraphicsLibrary | null> = writable(null);
 
-
+  let appReady = $state(false)
   let theme: CarbonTheme = $state("white");
   let clearColor = $state({r: 1.0, g: 1.0,  b: 1.0,  a: 1.0});
 
@@ -73,6 +73,7 @@
       defaultOptions.push(defaultVisOptions())
     });
     chromosomeOptions = chromosomeOptions.concat(defaultOptions)
+    console.log("Adding chromosome")
   }
 
   async function loadClustering(event: Event) {
@@ -158,16 +159,18 @@
         clusters.push(modelClusters);
     }
 
-    chromosome.clusters = clusters;
     //const filenames: string[] = new Array(600).fill(null).map((v, i) => "./timeseries/timestep_" + (i + 1).toString() + ".XYZ");
     //const timesteps = await loadTimesteps(filenames);
     //const dataTimesteps = normalizePointClouds(timesteps);
     
     //let baseChromosome = initializeChromosome("Base", dataTimesteps);
     //chromosomeOptions = [defaultVisOptions()]
+    chromosome.clusters = clusters;
     chromosomes = [chromosome];
     //chromosomes = [baseChromosome]
     //clusteringWorker.postMessage(chromosomes[selectedChromosomeId].points.map((point) => [...point]));
+    await tick()
+    appReady = true
   });
 
   // Set default colormap on viewport change
@@ -218,7 +221,7 @@
       </Pane>
     {/if}
     <Pane size={75}>
-      {#if $adapter && $device && $graphicsLibrary}
+      {#if $adapter && $device && $graphicsLibrary && appReady}
         <Viewport3D bind:viewport clearColor={clearColor}>
           {#each chromosomes as chromosome, i}
               <ChromatinVisualization

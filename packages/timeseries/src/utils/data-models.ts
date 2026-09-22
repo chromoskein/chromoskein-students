@@ -106,7 +106,7 @@ export function getEmptyClustering(length: number): ClusterNode {
         from: 0,
         to: length,
         children: [],
-        color:[0.0, 0.0, 0.0]
+        color:[0.9, 0.9, 0.9]
     }
 }
 
