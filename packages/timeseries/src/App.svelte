@@ -147,6 +147,7 @@
 
     let chromosome = initializeChromosome("Chromosome", [concatPoints]);
     let clusters = [[], [getEmptyClustering(points.length - 1)]]
+    clusters[1][0].color = [0.9, 0.9, 0.9]
     // Dont create a second hierarchy level if only a single model is selected
     if (filteredData.length > 1) {
         let modelClusterIndices: number[] = [];

@@ -17,6 +17,7 @@
     import InteractiveCluster from "../visalizations/InteractiveCluster.svelte";
     import Cross from "../objects/Cross.svelte";
     import { onMount } from "svelte";
+    import ConvexHull from "../objects/ConvexHull.svelte";
 
     interface ChromatinVisualizationProps {     
         visible: boolean,
@@ -269,10 +270,25 @@
         {/each} 
     {/if}
     {#if visType == VisualisationType.Test}
-        {#each dataClustersGivenK[clustersAmount] as cluster, _}
+        <!--{#each dataClustersGivenK[clustersAmount] as cluster, _}
             <Cross
                 radius={radius}
                 length={0.1}
+                points={points[timestep].slice(cluster.from, cluster.to + 1)}
+                color={vec3.fromValues(cluster.color[0], cluster.color[1], cluster.color[2])}
+            />
+        {/each}-->
+
+        {#each dataClustersGivenK[clustersAmount] as cluster, _}
+            {#each points[timestep].slice(cluster.from, cluster.to + 1) as point, _}
+                <Sphere
+                    radius={radius}
+                    center={point}
+                    color={[cluster.color[0], cluster.color[1], cluster.color[2], 1.0]} 
+                />
+            {/each}
+            
+            <ConvexHull
                 points={points[timestep].slice(cluster.from, cluster.to + 1)}
                 color={vec3.fromValues(cluster.color[0], cluster.color[1], cluster.color[2])}
             />
